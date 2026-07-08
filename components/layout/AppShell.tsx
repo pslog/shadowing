@@ -23,7 +23,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const profile = state.profile;
 
   return (
-    <div className="min-h-full">
+    <div className="flex min-h-dvh flex-col">
       <header className="glass sticky top-0 z-30">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4">
           <Link href="/dashboard" className="flex items-center gap-2.5 font-bold">
@@ -106,7 +106,28 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-8">{children}</main>
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>
+
+      <footer className="mt-8 border-t border-border/70">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-4 py-8 text-center sm:flex-row sm:justify-between sm:text-left">
+          <div className="flex items-center gap-2.5">
+            <span className="grid h-8 w-8 place-items-center rounded-lg brand-gradient text-sm text-white shadow-[var(--shadow-glow)]">
+              話
+            </span>
+            <div>
+              <p className="text-sm font-bold text-gradient">Shadow IT JP</p>
+              <p className="text-xs text-muted">Vì cộng đồng học tiếng Nhật IT 🇯🇵💻</p>
+            </div>
+          </div>
+
+          <p className="text-xs text-muted">
+            Miễn phí · phi lợi nhuận — 一緒に頑張りましょう！
+          </p>
+        </div>
+        <div className="border-t border-border/50 px-4 py-3 text-center text-[11px] text-muted">
+          © {new Date().getFullYear()} Shadow IT JP
+        </div>
+      </footer>
     </div>
   );
 }
