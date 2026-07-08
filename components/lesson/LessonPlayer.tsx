@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useData } from "@/lib/store/DataProvider";
 import {
   bestAttemptForSentence,
+  isAdmin,
   isSentencePassed,
   myAttemptsForSentence,
   passedCountForLesson,
@@ -13,7 +14,8 @@ import {
 } from "@/lib/store/selectors";
 import type { AttemptOutcome } from "@/lib/store/engine";
 import { scoreSentence, estimateDurationSeconds } from "@/lib/client/score";
-import { speakJa, cancelSpeech, ttsSupported } from "@/lib/speech/tts";
+import { extractContourFromUrl, contourMetrics } from "@/lib/speech/pitch";
+import { speakJa, cancelSpeech } from "@/lib/speech/tts";
 import type { RecordResult } from "@/lib/speech/useRecorder";
 import type { LessonSentence, ScoreBreakdown, SentenceAttempt } from "@/lib/types";
 import { Button, buttonClasses } from "@/components/ui/button";
@@ -248,7 +250,7 @@ function InlineScore({
         <div className="flex gap-1.5 text-[11px] font-bold tabular-nums text-muted">
           <span>発音 {score.pronunciation}</span>
           <span>速度 {score.speed}</span>
-          <span>抑揚 {score.intonation}</span>
+          <span>抑揚 {score.intonation ?? "—"}</span>
         </div>
       </div>
     </div>
@@ -350,6 +352,35 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
     }
   }
 
+  async function measureIntonation(
+    userAudioUrl: string | null,
+  ): Promise<number | null> {
+    if (!userAudioUrl) return null;
+    try {
+      const userContour = await extractContourFromUrl(userAudioUrl);
+      if (userContour.length === 0) return null;
+
+      let refContour: number[] = [];
+      if (current.audio_url) {
+        refContour = await extractContourFromUrl(current.audio_url);
+      } else if (
+        mediaUrl &&
+        current.audio_start != null &&
+        current.audio_end != null
+      ) {
+        refContour = await extractContourFromUrl(mediaUrl, {
+          start: current.audio_start,
+          end: current.audio_end,
+        });
+      }
+      if (refContour.length === 0) return null;
+
+      return contourMetrics(userContour, refContour)?.score ?? null;
+    } catch {
+      return null;
+    }
+  }
+
   async function handleResult(r: RecordResult) {
     if (!canRecord) return;
 
@@ -360,11 +391,18 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
           ? current.audio_end - current.audio_start
           : estimateDurationSeconds(current.ja_text);
 
+      // Intonation: compare the pitch-contour shape of the recording against the
+      // reference audio. Only possible when a reference exists (per-sentence
+      // audio, or a timed slice of the lesson media) — TTS-only lessons have no
+      // reference, so intonation stays unmeasured (null) rather than faked.
+      const intonationSimilarity = await measureIntonation(r.audioUrl);
+
       const score = await scoreSentence({
         targetText: current.ja_text,
         spokenText: r.transcript || null,
         originalDurationSeconds: originalDuration,
         userDurationSeconds: r.durationSeconds,
+        intonationSimilarity,
         passScore: current.pass_score,
       });
 
@@ -419,12 +457,14 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
               Shadowingへ
               <Icon name="arrow-right" size={16} />
             </button>
-            <Link
-              href={`/lessons/${lesson.id}/edit`}
-              className={`${buttonClasses("ghost")} mt-4 ml-2`}
-            >
-              編集
-            </Link>
+            {isAdmin(state) && (
+              <Link
+                href={`/lessons/${lesson.id}/edit`}
+                className={`${buttonClasses("ghost")} mt-4 ml-2`}
+              >
+                編集
+              </Link>
+            )}
           </div>
 
           <div className="w-full rounded-3xl border border-border bg-surface/80 p-4 lg:w-80">
@@ -521,78 +561,64 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
                     </p>
                   )}
 
-                  <div className="mt-3 flex flex-wrap justify-center gap-2">
+                  <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
                     <Button
                       variant="secondary"
                       onClick={() => handleListen(1)}
+                      className="min-w-[8.5rem]"
                     >
                       <Icon name="volume" size={18} />
                       {mediaUrl ? "この文を聞く" : "TTSで聞く"}
                     </Button>
-                    <Button
-                      variant="ghost"
-                      onClick={() => handleListen(0.75)}
-                      disabled={!mediaUrl && !ttsSupported()}
-                    >
-                      <Icon name="gauge" size={18} />
-                      ゆっくり 0.75x
-                    </Button>
+                    {canRecord ? (
+                      <AudioRecorder
+                        inline
+                        disabled={scoring}
+                        onResult={handleResult}
+                        key={recorderKey}
+                        className="min-w-[8.5rem]"
+                      />
+                    ) : (
+                      <Link
+                        href="/login"
+                        className={buttonClasses("primary", "md", "min-w-[8.5rem]")}
+                      >
+                        <Icon name="mic" size={18} />
+                        ログインして録音
+                      </Link>
+                    )}
+                    <span className="basis-full text-center text-[11px] font-bold text-muted">
+                      録音して採点 · 目標 {current.pass_score}点
+                    </span>
                   </div>
                 </div>
 
-                <div className="border-t border-border bg-card/55 px-4 py-3 text-left">
-                  <div className="mb-2.5 flex items-center justify-center gap-2">
-                    <h3 className="text-sm font-extrabold">録音して採点</h3>
-                    <span className="rounded-full bg-surface px-2 py-0.5 text-[11px] font-bold text-muted">
-                      目標 {current.pass_score}点
-                    </span>
+                {(scoring || fresh?.audioUrl || displayScore) && (
+                  <div className="border-t border-border bg-card/55 px-4 py-3 text-left">
+                    {scoring && (
+                      <p className="text-center text-xs text-muted">採点中...</p>
+                    )}
+                    {fresh?.audioUrl && (
+                      <div className="mx-auto mt-2.5 max-w-md">
+                        <p className="mb-1 text-xs text-muted">録音を聞き直す:</p>
+                        <audio src={fresh.audioUrl} controls className="h-10 w-full" />
+                      </div>
+                    )}
+                    {fresh && (
+                      <p className="mx-auto mt-2 max-w-md text-center text-xs text-muted">
+                        認識された発話:{" "}
+                        <span lang="ja" className="text-fg">
+                          {fresh.transcript || "（認識できませんでした。推定で採点します）"}
+                        </span>
+                      </p>
+                    )}
+                    {displayScore && (
+                      <div ref={inlineScoreRef}>
+                        <InlineScore score={displayScore} improvement={improvement} />
+                      </div>
+                    )}
                   </div>
-                  {canRecord ? (
-                    <AudioRecorder
-                      disabled={scoring}
-                      onResult={handleResult}
-                      key={recorderKey}
-                      compact
-                    />
-                  ) : (
-                    <div className="mx-auto max-w-md rounded-2xl border border-dashed border-primary/30 bg-primary/7 p-3 text-center">
-                      <p className="text-sm font-extrabold text-fg">
-                        録音して採点するにはログインしてください
-                      </p>
-                      <p className="mt-1 text-xs text-muted">
-                        会話の閲覧と音声の再生はログインなしで利用できます。
-                      </p>
-                      <Link
-                        href="/login"
-                        className={buttonClasses("primary", "sm", "mt-3")}
-                      >
-                        ログインして録音する
-                      </Link>
-                    </div>
-                  )}
-                  {scoring && (
-                    <p className="mt-2 text-center text-xs text-muted">採点中...</p>
-                  )}
-                  {fresh?.audioUrl && (
-                    <div className="mx-auto mt-2.5 max-w-md">
-                      <p className="mb-1 text-xs text-muted">録音を聞き直す:</p>
-                      <audio src={fresh.audioUrl} controls className="h-10 w-full" />
-                    </div>
-                  )}
-                  {fresh && (
-                    <p className="mx-auto mt-2 max-w-md text-center text-xs text-muted">
-                      認識された発話:{" "}
-                      <span lang="ja" className="text-fg">
-                        {fresh.transcript || "（認識できませんでした。推定で採点します）"}
-                      </span>
-                    </p>
-                  )}
-                  {displayScore && (
-                    <div ref={inlineScoreRef}>
-                      <InlineScore score={displayScore} improvement={improvement} />
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
             </div>
           </div>

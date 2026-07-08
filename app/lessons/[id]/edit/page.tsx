@@ -7,7 +7,8 @@ import { EditLessonForm } from "@/components/lesson/CreateLessonForm";
 import { FullScreenLoading } from "@/components/ui/loading";
 import { useData } from "@/lib/store/DataProvider";
 import { useRequireProfile } from "@/lib/store/useRequireProfile";
-import { lessonById, sentencesForLesson } from "@/lib/store/selectors";
+import { isAdmin, lessonById, sentencesForLesson } from "@/lib/store/selectors";
+import { AdminOnlyNotice } from "@/components/lesson/AdminOnlyNotice";
 
 export default function EditLessonPage() {
   const params = useParams<{ id: string }>();
@@ -15,6 +16,7 @@ export default function EditLessonPage() {
   const { state } = useData();
 
   if (!ready || !profile) return <FullScreenLoading />;
+  if (!isAdmin(state)) return <AdminOnlyNotice />;
 
   const lesson = lessonById(state, params.id);
   const sentences = sentencesForLesson(state, params.id);

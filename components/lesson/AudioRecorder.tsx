@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Icon } from "@/components/ui/icon";
+import { buttonClasses } from "@/components/ui/button";
 import { useRecorder, type RecordResult } from "@/lib/speech/useRecorder";
 import { cn } from "@/lib/cn";
 
@@ -9,10 +10,14 @@ export function AudioRecorder({
   disabled,
   onResult,
   compact = false,
+  inline = false,
+  className,
 }: {
   disabled?: boolean;
   onResult: (r: RecordResult) => void;
   compact?: boolean;
+  inline?: boolean;
+  className?: string;
 }) {
   const { status, interim, error, sttSupported, start, stop } = useRecorder();
   const [busy, setBusy] = useState(false);
@@ -26,6 +31,45 @@ export function AudioRecorder({
     } finally {
       setBusy(false);
     }
+  }
+
+  // Inline mode: a normal-sized button that sits in the same row as the
+  // "listen" buttons. Live transcript / errors / notes drop onto their own line
+  // below (basis-full) so the button row stays tidy.
+  if (inline) {
+    return (
+      <>
+        <button
+          type="button"
+          onClick={recording ? handleStop : start}
+          disabled={disabled || processing}
+          aria-label={recording ? "録音を停止" : "録音を開始"}
+          className={buttonClasses(recording ? "danger" : "primary", "md", className)}
+        >
+          {processing ? (
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+          ) : (
+            <Icon name={recording ? "stop" : "mic"} size={18} filled={recording} />
+          )}
+          {processing ? "処理中" : recording ? "停止" : "録音"}
+        </button>
+
+        {recording && interim && (
+          <p
+            lang="ja"
+            className="basis-full rounded-xl bg-surface px-3 py-2 text-center text-sm text-muted"
+          >
+            {interim}
+          </p>
+        )}
+        {error && <p className="basis-full text-center text-sm text-danger">{error}</p>}
+        {!sttSupported && (
+          <p className="basis-full text-center text-xs text-[var(--warning)]">
+            このブラウザは音声認識に非対応です。ChromeまたはEdgeを推奨します。
+          </p>
+        )}
+      </>
+    );
   }
 
   return (

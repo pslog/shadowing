@@ -5,6 +5,7 @@ import { useData } from "@/lib/store/DataProvider";
 import {
   dailyPassStats,
   inProgressLesson,
+  isAdmin,
   passedThisWeek,
   todayMission,
   visibleLessons,
@@ -82,13 +83,21 @@ export default function DashboardPage() {
                 今日の練習を始める
                 <Icon name="arrow-right" size={18} />
               </Link>
-            ) : (
+            ) : isAdmin(state) ? (
               <Link
                 href="/lessons/new"
                 className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-3 font-bold text-[var(--primary)] shadow-lg"
               >
                 <Icon name="plus" size={18} />
                 最初のレッスンを作成
+              </Link>
+            ) : (
+              <Link
+                href="/lessons"
+                className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-3 font-bold text-[var(--primary)] shadow-lg"
+              >
+                <Icon name="cap" size={18} />
+                レッスン一覧を見る
               </Link>
             )}
           </section>

@@ -52,7 +52,7 @@ export interface SentenceAttempt {
   recording_url: string | null;
   pronunciation_score: number;
   speed_score: number;
-  intonation_score: number;
+  intonation_score: number | null;
   total_score: number;
   transcript_text: string | null;
   duration_seconds: number | null;
@@ -108,7 +108,8 @@ export interface LessonWithSentences extends Lesson {
 export interface ScoreBreakdown {
   pronunciation: number;
   speed: number;
-  intonation: number;
+  /** null when intonation could not be measured (no reference audio). */
+  intonation: number | null;
   total: number;
   passed: boolean;
   feedback: string;

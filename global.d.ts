@@ -43,3 +43,22 @@ interface Window {
   SpeechRecognition?: SpeechRecognitionConstructor;
   webkitSpeechRecognition?: SpeechRecognitionConstructor;
 }
+
+// Minimal kuromoji typings (package ships no types).
+declare module "kuromoji" {
+  interface KuromojiToken {
+    surface_form: string;
+    reading?: string;
+    pronunciation?: string;
+  }
+  interface Tokenizer {
+    tokenize(text: string): KuromojiToken[];
+  }
+  interface Builder {
+    build(cb: (err: Error | null, tokenizer: Tokenizer) => void): void;
+  }
+  const kuromoji: {
+    builder(opts: { dicPath: string }): Builder;
+  };
+  export default kuromoji;
+}

@@ -11,22 +11,28 @@ import type { ScoreBreakdown } from "@/lib/types";
 export interface ScoreRequest {
   targetText: string;
   spokenText?: string | null;
+  /** Katakana readings, precomputed server-side (see lib/scoring/kana.ts). */
+  targetReading?: string | null;
+  spokenReading?: string | null;
   originalDurationSeconds?: number | null;
   userDurationSeconds?: number | null;
+  /** Pitch-contour similarity 0..1 from the client, or null if not measured. */
+  intonationSimilarity?: number | null;
   passScore?: number;
 }
 
 export function scoreAttempt(req: ScoreRequest): ScoreBreakdown {
   const passScore = req.passScore ?? 80;
 
-  // Independent seeds so mock dimensions don't all move together.
+  // Independent seeds so mock fallbacks don't all move together.
   const seedA = seedFrom(req.targetText, 1);
   const seedB = seedFrom(req.targetText, 2);
-  const seedC = seedFrom(req.targetText, 3);
 
   const pronunciation = scorePronunciation({
     targetText: req.targetText,
     spokenText: req.spokenText,
+    targetReading: req.targetReading,
+    spokenReading: req.spokenReading,
     seed: seedA,
   });
   const speed = scoreSpeed({
@@ -34,7 +40,7 @@ export function scoreAttempt(req: ScoreRequest): ScoreBreakdown {
     userDurationSeconds: req.userDurationSeconds,
     seed: seedB,
   });
-  const intonation = scoreIntonation({ seed: seedC });
+  const intonation = scoreIntonation({ similarity: req.intonationSimilarity });
   const total = scoreTotal(pronunciation, speed, intonation);
 
   return {

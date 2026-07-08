@@ -12,6 +12,19 @@ import type {
   SentenceAttempt,
 } from "@/lib/types";
 
+/** The single fixed admin — only this account may create/edit lessons. */
+export const ADMIN_EMAIL = "vovansinh1991@gmail.com";
+
+/** True when the given email is the fixed admin account. */
+export function isAdminEmail(email?: string | null): boolean {
+  return !!email && email.trim().toLowerCase() === ADMIN_EMAIL;
+}
+
+/** True when the signed-in user is the admin. */
+export function isAdmin(state: AppState): boolean {
+  return isAdminEmail(state.profile?.email);
+}
+
 function isToday(iso: string): boolean {
   return iso.slice(0, 10) === todayKey();
 }
@@ -206,15 +219,22 @@ export function weakestSkill(state: AppState): Skill | null {
   const uid = state.profile?.id;
   const mine = state.attempts.filter((a) => a.user_id === uid);
   if (mine.length === 0) return null;
-  const avg = (sel: (a: SentenceAttempt) => number) =>
-    mine.reduce((s, a) => s + sel(a), 0) / mine.length;
-  const scores: Record<Skill, number> = {
-    pronunciation: avg((a) => a.pronunciation_score),
-    speed: avg((a) => a.speed_score),
-    intonation: avg((a) => a.intonation_score),
+  // Average only over values that exist (intonation may be unmeasured).
+  const avg = (sel: (a: SentenceAttempt) => number | null) => {
+    const vals = mine.map(sel).filter((v): v is number => v != null);
+    return vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : null;
   };
-  return (Object.keys(scores) as Skill[]).reduce((lo, k) =>
-    scores[k] < scores[lo] ? k : lo,
+  const scores: Partial<Record<Skill, number>> = {
+    pronunciation: avg((a) => a.pronunciation_score) ?? undefined,
+    speed: avg((a) => a.speed_score) ?? undefined,
+    intonation: avg((a) => a.intonation_score) ?? undefined,
+  };
+  const measured = (Object.keys(scores) as Skill[]).filter(
+    (k) => scores[k] != null,
+  );
+  if (measured.length === 0) return null;
+  return measured.reduce((lo, k) =>
+    (scores[k] as number) < (scores[lo] as number) ? k : lo,
   );
 }
 

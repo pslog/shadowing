@@ -52,17 +52,30 @@ function ScoreRing({ value, passed }: { value: number; passed: boolean }) {
   );
 }
 
-function Dim({ label, value, hue }: { label: string; value: number; hue: string }) {
+function Dim({
+  label,
+  value,
+  hue,
+  note,
+}: {
+  label: string;
+  value: number | null;
+  hue: string;
+  note?: string;
+}) {
+  const measured = value != null;
   return (
     <div>
       <div className="flex justify-between text-xs">
         <span className="text-muted">{label}</span>
-        <span className="font-semibold tabular-nums">{value}</span>
+        <span className="font-semibold tabular-nums">
+          {measured ? value : note ?? "—"}
+        </span>
       </div>
       <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--muted)_20%,transparent)]">
         <div
           className="h-full rounded-full transition-all"
-          style={{ width: `${value}%`, background: hue }}
+          style={{ width: `${measured ? value : 0}%`, background: hue }}
         />
       </div>
     </div>
@@ -106,7 +119,12 @@ export function ScoreResult({
       <div className="mt-5 grid grid-cols-3 gap-4">
         <Dim label="発音" value={score.pronunciation} hue="var(--c-indigo)" />
         <Dim label="速度" value={score.speed} hue="var(--c-sky)" />
-        <Dim label="イントネーション" value={score.intonation} hue="var(--c-violet)" />
+        <Dim
+          label="イントネーション"
+          value={score.intonation}
+          hue="var(--c-violet)"
+          note="未計測"
+        />
       </div>
 
       {!passed && (

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useData } from "@/lib/store/DataProvider";
 import {
+  isAdmin,
   lessonStatus,
   lastAttemptAtForLesson,
   passedCountForLesson,
@@ -29,10 +30,12 @@ export default function LessonsPage() {
           <h1 className="text-2xl font-bold">レッスン</h1>
           <p className="text-muted">レッスンを選んでシャドーイングを練習しましょう。</p>
         </div>
-        <Link href="/lessons/new" className={buttonClasses("primary")}>
-          <Icon name="plus" size={16} />
-          レッスン作成
-        </Link>
+        {isAdmin(state) && (
+          <Link href="/lessons/new" className={buttonClasses("primary")}>
+            <Icon name="plus" size={16} />
+            レッスン作成
+          </Link>
+        )}
       </div>
 
       <div className="stagger grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

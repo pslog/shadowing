@@ -3,7 +3,8 @@
 export interface FeedbackScores {
   pronunciation: number;
   speed: number;
-  intonation: number;
+  /** null when intonation could not be measured — excluded from the advice. */
+  intonation: number | null;
   total: number;
 }
 
@@ -17,10 +18,17 @@ export function generateFeedback({
   if (total >= 80)
     return "Passです。もう少し練習すると、さらに自然に話せます。";
 
-  const lowest = Math.min(pronunciation, speed, intonation);
-  if (lowest === pronunciation)
+  // Only coach on dimensions we actually measured.
+  const dims: Array<{ key: "pron" | "speed" | "inton"; value: number }> = [
+    { key: "pron", value: pronunciation },
+    { key: "speed", value: speed },
+  ];
+  if (intonation != null) dims.push({ key: "inton", value: intonation });
+  const lowest = dims.reduce((a, b) => (b.value < a.value ? b : a));
+
+  if (lowest.key === "pron")
     return "一番の課題は発音です。原文をもう一度聞いて、音をはっきり出してみましょう。";
-  if (lowest === speed)
+  if (lowest.key === "speed")
     return "一番の課題は速度です。原文と比べて速すぎる、または遅すぎる可能性があります。";
   return "一番の課題はイントネーションです。文の区切りと上がり下がりに注意しましょう。";
 }
