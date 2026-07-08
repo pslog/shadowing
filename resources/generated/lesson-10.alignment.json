@@ -1,0 +1,111 @@
+{
+  "lesson_id": "resource-lesson-10",
+  "whisper_model": "tiny",
+  "source_audio": "resources/10.m4a",
+  "groups": [
+    {
+      "order_index": 0,
+      "audio_start": 6,
+      "audio_end": 13,
+      "clip_url": "/audio/lessons/lesson-10/s01.m4a",
+      "ja_text": "最後に1点だけお願いがあるのですが、よろしいですか。",
+      "whisper_text": "最後に1点だけお願いがあるのですがよろしいですか"
+    },
+    {
+      "order_index": 1,
+      "audio_start": 13,
+      "audio_end": 17,
+      "clip_url": "/audio/lessons/lesson-10/s02.m4a",
+      "ja_text": "はい、荷でしょう。",
+      "whisper_text": "はい 何でしょう"
+    },
+    {
+      "order_index": 2,
+      "audio_start": 17,
+      "audio_end": 26,
+      "clip_url": "/audio/lessons/lesson-10/s03.m4a",
+      "ja_text": "昨日、Q&A ファイルに5番~8番の4件の質問を追加しましたので、今週金曜日までにご回答いただけますか。",
+      "whisper_text": "昨日急アンド英ファイルに5番から8番の4件の質問を追加しましたので"
+    },
+    {
+      "order_index": 3,
+      "audio_start": 26,
+      "audio_end": 41,
+      "clip_url": "/audio/lessons/lesson-10/s04.m4a",
+      "ja_text": "今まだ時間があるので、すぐ確認して、回答できる範囲で回答したいですが、いかがですか。",
+      "whisper_text": "今まだ時間があるので すごく確認して回答できる範囲で回答したいですか"
+    },
+    {
+      "order_index": 4,
+      "audio_start": 41,
+      "audio_end": 50,
+      "clip_url": "/audio/lessons/lesson-10/s05.m4a",
+      "ja_text": "はい、ではQ&A ファイルを映しますので、少しお待ちください。",
+      "whisper_text": "はい では急アンド英ファイルを打ちますので少しお待ちください"
+    },
+    {
+      "order_index": 5,
+      "audio_start": 51,
+      "audio_end": 54,
+      "clip_url": "/audio/lessons/lesson-10/s06.m4a",
+      "ja_text": "映っていますか。",
+      "whisper_text": "打つっていますか"
+    },
+    {
+      "order_index": 6,
+      "audio_start": 54,
+      "audio_end": 59,
+      "clip_url": "/audio/lessons/lesson-10/s07.m4a",
+      "ja_text": "はい。見えています。",
+      "whisper_text": "はい 見えています"
+    },
+    {
+      "order_index": 7,
+      "audio_start": 59,
+      "audio_end": 95,
+      "clip_url": "/audio/lessons/lesson-10/s08.m4a",
+      "ja_text": "5番のQ&Aはテスト環境についてです。 先日、 iPad Air も対象にするというお話でしたが、テストブラウザは Safari のみでよろしいですか。 それとも Chrome もテストしないといけないですか。 対象にする場合、 テストは最新のバージョンのみで問題ありませんか。それとも一つ前のバージョンもテストする必要がありますか。",
+      "whisper_text": "5番の急アンド英はテスト環境についてです先日アイパッドエアーも対象にするというお話でしたがテストブラウザはサファリのみでよろしいですかそれともクロームもテストしないといけないですか対象にする場合 テストは最新のバージョンのみで問題ありませんかそれとも一つ前のバージョンもテストする必要がありますか"
+    },
+    {
+      "order_index": 8,
+      "audio_start": 95,
+      "audio_end": 106,
+      "clip_url": "/audio/lessons/lesson-10/s09.m4a",
+      "ja_text": "そうですね。 Chromeもお願いします。 バージョンは、最新のものだけでよいです。",
+      "whisper_text": "そうですね クロームもお願いしますアジョーマー最新のものだけで良いです"
+    },
+    {
+      "order_index": 9,
+      "audio_start": 106,
+      "audio_end": 143,
+      "clip_url": "/audio/lessons/lesson-10/s10.m4a",
+      "ja_text": "承知しました。 では、次の6番に行きます。 アプリを操作するときの動きについて相談させてください。 ブラウザでアプリを開くときに、複数のタブやウィンドウで開けないように制限を設けたいです。理由はファイルにも書いた通り、RAM をたくさん使うことになり、パフォーマンスに影響を与える可能性があるからです。",
+      "whisper_text": "少ししましたでは次の6番に行きますアプリを操作する時の動きについて相談させてくださいブラウザーでアプリを開く時に 復数のタブやウィンドウで開けないように制限を向けたいですデューはファイルにも書いた通り ラムをたくさん使うことになりバフォーマンスに影響を与える可能性があるからです"
+    },
+    {
+      "order_index": 10,
+      "audio_start": 143,
+      "audio_end": 152,
+      "clip_url": "/audio/lessons/lesson-10/s11.m4a",
+      "ja_text": "操作には制限をかけたくないのですが、社内で確認してから回答します。",
+      "whisper_text": "操作には制限をかけたくないのですがじゃないで確認してから書いておします"
+    },
+    {
+      "order_index": 11,
+      "audio_start": 152,
+      "audio_end": 168,
+      "clip_url": "/audio/lessons/lesson-10/s12.m4a",
+      "ja_text": "承知しました。 そろそろ終了時間ですので、 残りの質問を含めて、今週中に回答していただけると幸いです。ありがとうございました。",
+      "whisper_text": "処置しましたそろそろ終了時間ですので 残りの質問を含めて今週中に回答していただけると幸いですありがとうございました"
+    },
+    {
+      "order_index": 12,
+      "audio_start": 168,
+      "audio_end": 179,
+      "clip_url": "/audio/lessons/lesson-10/s13.m4a",
+      "ja_text": "はい、では本日はここで終わりましょう。 ありがとうございました。 引き続きよろしくお願いします。",
+      "whisper_text": "はいでは本日はここで終わりましょう ありがとうございました行き続きよろしくお願いします"
+    }
+  ]
+}

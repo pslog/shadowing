@@ -1,0 +1,95 @@
+{
+  "lesson_id": "resource-lesson-07",
+  "whisper_model": "tiny",
+  "source_audio": "resources/7.m4a",
+  "groups": [
+    {
+      "order_index": 0,
+      "audio_start": 0,
+      "audio_end": 20,
+      "clip_url": "/audio/lessons/lesson-07/s01.m4a",
+      "ja_text": "プロジェクトのメンバーが全員そろいましたので、要件の説明会を始めたいと思います。説明の中で、わかりにくいところや確認しておきたいことがありましたら、その場で質問してください。",
+      "whisper_text": "プロジェクトのメンバーが全員そろいましたので表現の説明会を始めたいと思います。説明の中でわかりにくいところや確認しておきたいことがありましたら、その場で説明してください。"
+    },
+    {
+      "order_index": 1,
+      "audio_start": 20,
+      "audio_end": 25,
+      "clip_url": "/audio/lessons/lesson-07/s02.m4a",
+      "ja_text": "承知しました。 よろしくお願いいたします。",
+      "whisper_text": "正直しました。よろしくお願いいたします。"
+    },
+    {
+      "order_index": 2,
+      "audio_start": 25,
+      "audio_end": 49,
+      "clip_url": "/audio/lessons/lesson-07/s03.m4a",
+      "ja_text": "昨年は、デジタル教科書のデスクトップアプリケーションを開発していただき、ありがとうございました。 キックオフミーティングで説明した通り、今回はこのアプリをベースに、WebGL を使用してアプリを Web 化し、一部機能の追加・修正を行います。",
+      "whisper_text": "昨年はデスタル教科書のデスクトップアプリケーションを開発していただき、ありがとうございました。機構フミーティングで説明した通り、今回はこのアプリをベースにメブジーエルを使用してアプリをウェブ化し、一部機能の追加修正を行います。"
+    },
+    {
+      "order_index": 3,
+      "audio_start": 49,
+      "audio_end": 79,
+      "clip_url": "/audio/lessons/lesson-07/s04.m4a",
+      "ja_text": "まず、 今回の Web 版の画面について説明します。 お見せしているファイルは昨年開発されたアプリの資料なので、皆さんにとってはなじみのあるものだと思います。 新規画面には、「新規」 と、 Web版で実装しなくてよいものには 「Web 化対象外」 と追記しました。",
+      "whisper_text": "まず、今回のメブバンの画面について説明します。お見せしている場合は、昨年開発されたアプリの資料なので、皆さんにとってはじみのあるものだと思います。新規画面には新規と、ベブバンで実装しなくてよいものには、ベブ化対象外と追加しました。"
+    },
+    {
+      "order_index": 4,
+      "audio_start": 79,
+      "audio_end": 91,
+      "clip_url": "/audio/lessons/lesson-07/s05.m4a",
+      "ja_text": "はい。 「新規」 または 「Web 化対象外」 の追記がない場合は、 以前のアプリと同じ画面にするということですね。",
+      "whisper_text": "はい、新規または、ベブ化対象外の追加がない場合は、以前のアプリと同じ画面にするということですね。"
+    },
+    {
+      "order_index": 5,
+      "audio_start": 91,
+      "audio_end": 94,
+      "clip_url": "/audio/lessons/lesson-07/s06.m4a",
+      "ja_text": "その通りです。",
+      "whisper_text": "その通りです。"
+    },
+    {
+      "order_index": 6,
+      "audio_start": 94,
+      "audio_end": 102,
+      "clip_url": "/audio/lessons/lesson-07/s07.m4a",
+      "ja_text": "また、機能の修正点がいくつかあるので、別のファイルにまとめました。",
+      "whisper_text": "また、機能の修正転がいくつかあるので、別のバイルに求めました。"
+    },
+    {
+      "order_index": 7,
+      "audio_start": 102,
+      "audio_end": 108,
+      "clip_url": "/audio/lessons/lesson-07/s08.m4a",
+      "ja_text": "はい。「Web _ 修正点」というものですか。",
+      "whisper_text": "はい、ベブ化修正転というものですか?"
+    },
+    {
+      "order_index": 8,
+      "audio_start": 108,
+      "audio_end": 111,
+      "clip_url": "/audio/lessons/lesson-07/s09.m4a",
+      "ja_text": "はい、そうです。",
+      "whisper_text": "はい、そうです。"
+    },
+    {
+      "order_index": 9,
+      "audio_start": 111,
+      "audio_end": 126,
+      "clip_url": "/audio/lessons/lesson-07/s10.m4a",
+      "ja_text": "そのファイルであれば、すでに読んでいますので、この場で説明していただかなくても問題ありません。疑問点がでてきたら、確認させてください。",
+      "whisper_text": "そのファイルであれば、すでに読んでいますので、この場で説明していただかなくても問題ありません。基本点が出てきたら、確認させてください。"
+    },
+    {
+      "order_index": 10,
+      "audio_start": 126,
+      "audio_end": 135,
+      "clip_url": "/audio/lessons/lesson-07/s11.m4a",
+      "ja_text": "わかりました。 今後、実装中に何かありましたら、遠慮なくいつでも聞いてください。",
+      "whisper_text": "わかりました。今後、実装中に何かありましたら、延々なく、いつでも聞いてください。"
+    }
+  ]
+}

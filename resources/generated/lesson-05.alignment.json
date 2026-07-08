@@ -1,0 +1,111 @@
+{
+  "lesson_id": "resource-lesson-05",
+  "whisper_model": "tiny",
+  "source_audio": "resources/5.m4a",
+  "groups": [
+    {
+      "order_index": 0,
+      "audio_start": 5.84,
+      "audio_end": 21.52,
+      "clip_url": "/audio/lessons/lesson-05/s01.m4a",
+      "ja_text": "紹介します。 プロジェクト実施のためにベトナムから来てくださった DKH 社のリーさんです。 本日からこちらで勤務していただきます。 では、リーさん、簡単に自己紹介をお願いします。",
+      "whisper_text": "DKH者のリーサンです 本日からこちらでキームして頂きますではリーサン簡単に自己紹介をお願いします 本日よりお世話になります"
+    },
+    {
+      "order_index": 1,
+      "audio_start": 21.52,
+      "audio_end": 36.88,
+      "clip_url": "/audio/lessons/lesson-05/s02.m4a",
+      "ja_text": "本日よりお世話になります。 ベトナムから参りました、リーと申します。 DKH でSEをしております。 日本は初めてですので、わからないことも多いかと思いますが、どうぞよろしくお願いいたします。",
+      "whisper_text": "ベトナムからマイリマしたEと申しますTKHでSUをしております 日本は初めてですのでわからないことも多いかと思いますが どうぞいろしくお願い致します"
+    },
+    {
+      "order_index": 2,
+      "audio_start": 36.88,
+      "audio_end": 43.48,
+      "clip_url": "/audio/lessons/lesson-05/s03.m4a",
+      "ja_text": "困ったことがあったら、私や山本に遠慮なく相談してください。",
+      "whisper_text": "こまったことがあったら 私ややま元にエンディオなくそうだしてください"
+    },
+    {
+      "order_index": 3,
+      "audio_start": 43.48,
+      "audio_end": 56.98,
+      "clip_url": "/audio/lessons/lesson-05/s04.m4a",
+      "ja_text": "はい。ありがとうございます。 こちらはホアンからのおみやげです。 どうぞ皆さんで召し上がってください。 ホアンも皆さんによろしくと申しておりました。",
+      "whisper_text": "はい ありがとうございます こちらは本からのお見上げです当然皆さんで明治がってください ファンも皆さんに広しくと申しておりました"
+    },
+    {
+      "order_index": 4,
+      "audio_start": 56.98,
+      "audio_end": 64.74,
+      "clip_url": "/audio/lessons/lesson-05/s05.m4a",
+      "ja_text": "お気遣いありがとうございます。 これはベトナムで有名なお菓子か何かですか。",
+      "whisper_text": "お気づかいありがとうございます これはベトナムで有名なおかしか何かですか"
+    },
+    {
+      "order_index": 5,
+      "audio_start": 64.74,
+      "audio_end": 70.62,
+      "clip_url": "/audio/lessons/lesson-05/s06.m4a",
+      "ja_text": "はい。 北部の名物で、緑豆からできたお菓子です。",
+      "whisper_text": "はい 北部のメーブツで極当からできたおかしいです"
+    },
+    {
+      "order_index": 6,
+      "audio_start": 70.62,
+      "audio_end": 76.58,
+      "clip_url": "/audio/lessons/lesson-05/s07.m4a",
+      "ja_text": "ところで、御社のルールについて教えていただけますか。",
+      "whisper_text": "ところで本社のルールについて教えていただけますか"
+    },
+    {
+      "order_index": 7,
+      "audio_start": 76.58,
+      "audio_end": 81.7,
+      "clip_url": "/audio/lessons/lesson-05/s08.m4a",
+      "ja_text": "そうですね。 山本から説明しましょう。",
+      "whisper_text": "そうですね やま元から説明しましょう"
+    },
+    {
+      "order_index": 8,
+      "audio_start": 81.7,
+      "audio_end": 92.18,
+      "clip_url": "/audio/lessons/lesson-05/s09.m4a",
+      "ja_text": "まず、勤務時間は、朝9時から夕方6時までです。 だいたい皆さん 10分前には出社しています。",
+      "whisper_text": "まずキング時間は朝9時からユーガター6時までです だいたい皆さん10分前には出したしています"
+    },
+    {
+      "order_index": 9,
+      "audio_start": 92.18,
+      "audio_end": 100.58,
+      "clip_url": "/audio/lessons/lesson-05/s10.m4a",
+      "ja_text": "承知しました。 9時から6時までですね。 お昼休みは何時から取ればよいですか。",
+      "whisper_text": "正直しました 9時から6時までですね ホフィル休みは何時からとれば良いですか"
+    },
+    {
+      "order_index": 10,
+      "audio_start": 100.58,
+      "audio_end": 110.5,
+      "clip_url": "/audio/lessons/lesson-05/s11.m4a",
+      "ja_text": "一応12時から1時ですが、外のお店は混むので、少しずらして取っても問題ありません。",
+      "whisper_text": "1を12時から1時ですが 外のお見せはコムので少しずらしてとっても問題ありません"
+    },
+    {
+      "order_index": 11,
+      "audio_start": 110.5,
+      "audio_end": 115.3,
+      "clip_url": "/audio/lessons/lesson-05/s12.m4a",
+      "ja_text": "ずらしてというのは、どういうことですか。",
+      "whisper_text": "ずらしてというのはどういうことですか"
+    },
+    {
+      "order_index": 12,
+      "audio_start": 115.3,
+      "audio_end": 132.18,
+      "clip_url": "/audio/lessons/lesson-05/s13.m4a",
+      "ja_text": "例えば、12時半から1時半にするとか、1時から2時にしてもかまわないということです。 1時間であればよいです。 会議室と給湯室へも案内しましょう。",
+      "whisper_text": "例えば12時半から1時半にするとか1時から2時にしても構わないということです1時間であれば良いです 回復してとキュートを捨てても案内しましょう"
+    }
+  ]
+}

@@ -1,0 +1,103 @@
+{
+  "lesson_id": "resource-lesson-06",
+  "whisper_model": "tiny",
+  "source_audio": "resources/6.m4a",
+  "groups": [
+    {
+      "order_index": 0,
+      "audio_start": 0,
+      "audio_end": 16,
+      "clip_url": "/audio/lessons/lesson-06/s01.m4a",
+      "ja_text": "こちらの会議室はIT部門の専用です。 使いたいときは、事前に会議室予約システムから予約してください。後で予約サイトのリンクを送っておきますね。",
+      "whisper_text": "こちらの会議室はIT部門の戦予です。使いたい時は事前に会議室予約システムから予約してください。あとで予約サイトのリンクを送っておきますね。"
+    },
+    {
+      "order_index": 1,
+      "audio_start": 16,
+      "audio_end": 22,
+      "clip_url": "/audio/lessons/lesson-06/s02.m4a",
+      "ja_text": "はい。 オフショアチームとの会議もあるので、ありがとうございます。",
+      "whisper_text": "はい、オフシュアチェンもとの会議もあるので、ありがとうございます。"
+    },
+    {
+      "order_index": 2,
+      "audio_start": 23,
+      "audio_end": 49,
+      "clip_url": "/audio/lessons/lesson-06/s03.m4a",
+      "ja_text": "こちらは給湯室です。 このポットのお湯は自由にお使いください。そして、冷蔵庫は共用ですので、ものを入れるときは自分の名前を書いて、賞味期限切れのものは処分するようにしてくださいね。 ごみは生ごみやペットボトルなどに分別することになっています。",
+      "whisper_text": "こちらはキュートシッツです。このポットのお湯は自由にお使いください。そして、冷蔵庫は強いようですので、ものを入れる時は、自分の名前を書いて、正密綺麗のものは、総文するようにしてくださいね。ゴミは名前ゴミやペットボトルなどに分別することになっています。"
+    },
+    {
+      "order_index": 3,
+      "audio_start": 49,
+      "audio_end": 57,
+      "clip_url": "/audio/lessons/lesson-06/s04.m4a",
+      "ja_text": "分別というのは、ものによって、これらのごみ箱に分けて捨てるということですね。",
+      "whisper_text": "分別というのは、ものによって、これらのゴミまこに分けてしているということですね。"
+    },
+    {
+      "order_index": 4,
+      "audio_start": 57,
+      "audio_end": 63,
+      "clip_url": "/audio/lessons/lesson-06/s05.m4a",
+      "ja_text": "そうです。他になにか気になることはありますか。",
+      "whisper_text": "そうです。他に何か気になることはありますか?"
+    },
+    {
+      "order_index": 5,
+      "audio_start": 63,
+      "audio_end": 75,
+      "clip_url": "/audio/lessons/lesson-06/s06.m4a",
+      "ja_text": "すぐには思いつかないので、 逆に質問してもよいですか。 御社で他になにか気をつけた方がよいことはありませんか。",
+      "whisper_text": "そうには思いつかないので、逆に質問しても良いですか?オンシャで他に何か気をつけた方が良いことをありませんか?"
+    },
+    {
+      "order_index": 6,
+      "audio_start": 75,
+      "audio_end": 96,
+      "clip_url": "/audio/lessons/lesson-06/s07.m4a",
+      "ja_text": "そうですね。 整理整頓とセキュリティですかね。席を離れるときは、机の上に社外秘の資料などを置いたままにしないようにしてください。 また、退社するときは、ノートパソコンを鍵付きロッカーに入れて帰ってください。",
+      "whisper_text": "そうですね、正理性とんとセキュリティですかね?セキを離れる時は、つくへの上に仕上がりの資料などを、おいたままにしないようにしてください。また、ダイシャする時は、ノートパソコンを描きつきろっかに入れて帰ってください。"
+    },
+    {
+      "order_index": 7,
+      "audio_start": 96,
+      "audio_end": 99,
+      "clip_url": "/audio/lessons/lesson-06/s08.m4a",
+      "ja_text": "はい。 気をつけます。",
+      "whisper_text": "はい、気をつけます。"
+    },
+    {
+      "order_index": 8,
+      "audio_start": 99,
+      "audio_end": 114,
+      "clip_url": "/audio/lessons/lesson-06/s09.m4a",
+      "ja_text": "では、席に戻ってパソコンの設定をしましょうか。 弊社で指定されているウイルス対策ソフトやメール誤送信防止ツールをインストールしましょう。",
+      "whisper_text": "では、セキにもろってパソコンの設定をしましょうか?ヘイシャで、指定されているウィルス対策ソフトや、メールご操心防止通るをインストールしましょう。"
+    },
+    {
+      "order_index": 9,
+      "audio_start": 114,
+      "audio_end": 124,
+      "clip_url": "/audio/lessons/lesson-06/s10.m4a",
+      "ja_text": "これが持参したノートパソコンです。ベトナムにいる間に、 必要なデータはバックアップを取ってあります。",
+      "whisper_text": "これが地産したノートパソコンです。ベトナムにいる間に、必要なデータはパクアップを撮ってあります。"
+    },
+    {
+      "order_index": 10,
+      "audio_start": 124,
+      "audio_end": 137,
+      "clip_url": "/audio/lessons/lesson-06/s11.m4a",
+      "ja_text": "では、一度お預かりしましょう。 弊社では、IT部門のセキュリティチェックを受けてからでないと、社内で使ってはいけないことになっています。",
+      "whisper_text": "では、一度おはずかりしましょう。フェーシャでは、IT部門のセキュリティチェックを受けてかられないと、しゃないで使ってはいけないことになっています。"
+    },
+    {
+      "order_index": 11,
+      "audio_start": 137,
+      "audio_end": 142,
+      "clip_url": "/audio/lessons/lesson-06/s12.m4a",
+      "ja_text": "承知しました。 では、お願いします。",
+      "whisper_text": "正直しました。では、お願いいします。"
+    }
+  ]
+}

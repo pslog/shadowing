@@ -1,0 +1,121 @@
+{
+  "id": "resource-lesson-15",
+  "lesson_no": 15,
+  "title": "第15課 – オンサイト終了のあいさつ",
+  "topic": "敬語",
+  "level": "N3-N2",
+  "source_type": "upload",
+  "source_url": null,
+  "media_url": "/audio/lessons/lesson-15.m4a",
+  "audio_source": "resources/15.m4a",
+  "sentences": [
+    {
+      "order_index": 0,
+      "ja_text": "皆さん、ちょっといいですか。 作業の手を止めてこちらへ集まってください。",
+      "vi_translation": "Mọi người, tôi xin một chút thời gian được không ạ? Hãy dừng công việc của bạn và tập trung ở đây.",
+      "audio_start": 6,
+      "audio_end": 16,
+      "pass_score": 80,
+      "clip_url": "/audio/lessons/lesson-15/s01.m4a",
+      "clip_start": 5.85,
+      "clip_end": 16.2,
+      "whisper_text": "皆さんちょっといいですか?作業の手を止めてこちらへ集まってください"
+    },
+    {
+      "order_index": 1,
+      "ja_text": "デジタル教科書アプリの受入テストと展開も無事終わりました。 本日はリーさんのオンサイト最終日です。リーさん、これまで約4か月間お疲れさまでした。",
+      "vi_translation": "Quá trình nghiệm thu và triển khai ứng dụng sách kỹ thuật số đã hoàn tất thành công. Hôm nay là ngày cuối cùng chị Ly ở đây. Ông Lee, cảm ơn vì đã làm việc chăm chỉ trong bốn tháng qua.",
+      "audio_start": 16,
+      "audio_end": 37,
+      "pass_score": 80,
+      "clip_url": "/audio/lessons/lesson-15/s02.m4a",
+      "clip_start": 15.85,
+      "clip_end": 37.2,
+      "whisper_text": "デジタル教科書アプリの受け入れてストート展開もブジ終わりました本日はリーサンの本再と最終日リーサンこれまで約4ヶ月間お疲れ様でした"
+    },
+    {
+      "order_index": 2,
+      "ja_text": "はい、皆様、オンサイト中はいろいろとお世話になり、ありがとうございました。 おかげさまで、受入テストの間、大きな不具合もなく、本日を迎えることができました。",
+      "vi_translation": "Vâng, xin cảm ơn rất nhiều vì tất cả sự giúp đỡ của bạn trong thời gian tôi onsite. Nhờ có các bạn, chúng ta đã đến được ngày hôm nay mà không gặp bất kỳ vấn đề lớn nào trong quá trình kiểm thử chấp nhận.",
+      "audio_start": 37,
+      "audio_end": 55,
+      "pass_score": 80,
+      "clip_url": "/audio/lessons/lesson-15/s03.m4a",
+      "clip_start": 36.85,
+      "clip_end": 55.2,
+      "whisper_text": "はい皆様、おんさいと中はいろいろとお世話になりありがとうございましたお疲れ様で受け入れてストノアイだ大きな不愛もなく本日を迎えることができました"
+    },
+    {
+      "order_index": 3,
+      "ja_text": "そうですね。リーさんがいてくれたので、技術面で課題が出てきたときもスムーズに会話ができ、 対応も早かったですね。 来週は振り返り会議をすることになっていますが、そこでも良かった点として報告させてもらいます。",
+      "vi_translation": "Vâng. Nhờ có chị Ly ở đây nên khi có vấn đề kỹ thuật phát sinh, chúng tôi có thể trao đổi suôn sẻ và đối ứng nhanh chóng. Chúng tôi dự kiến ​​sẽ có một cuộc họp tổng kết vào tuần tới và báo cáo về những điểm tốt ở đó.",
+      "audio_start": 56,
+      "audio_end": 82,
+      "pass_score": 80,
+      "clip_url": "/audio/lessons/lesson-15/s04.m4a",
+      "clip_start": 55.85,
+      "clip_end": 82.2,
+      "whisper_text": "そうですね、リーサンが入ってくれたので、技術面で課題が出てきたときも、スムズに会話ができ対応も早かったですね来週は振り返り会議をすることになっていますがそこでもよかった点として報告させてもらいます"
+    },
+    {
+      "order_index": 4,
+      "ja_text": "ありがとうございます。 本日の定例会で話があった通り、帰国したらチーム全員で良かった点、改善すべき点について相談し、まとめます。",
+      "vi_translation": "Cảm ơn. Như đã thảo luận tại cuộc họp thường kỳ hôm nay, khi về nước, toàn team sẽ thảo luận về những điểm tốt, những điểm cần cải thiện và tổng hợp kết quả.",
+      "audio_start": 82,
+      "audio_end": 97,
+      "pass_score": 80,
+      "clip_url": "/audio/lessons/lesson-15/s05.m4a",
+      "clip_start": 81.85,
+      "clip_end": 97.2,
+      "whisper_text": "ありがとうございます本日の定例会で話があった通り、結局したらチーム前にいいんで良かった点、改善すべき点について相談しまとめます"
+    },
+    {
+      "order_index": 5,
+      "ja_text": "はい、弊社でもまとめておきますので、来週の会議では、今後のプロジェクトに向けて見直すべきところについても検討しましょう。",
+      "vi_translation": "Vâng, chúng tôi cũng sẽ tổng hợp lại, vì vậy tại cuộc họp tuần tới, chúng ta hãy xem xét những gì cần sửa đổi cho các dự án trong tương lai.",
+      "audio_start": 97,
+      "audio_end": 111,
+      "pass_score": 80,
+      "clip_url": "/audio/lessons/lesson-15/s06.m4a",
+      "clip_start": 96.85,
+      "clip_end": 111.2,
+      "whisper_text": "はい、平者でもまとめておきますので、最終の会議では今後のプロジェクトに向けて見直すべきところについても、検討しましょう"
+    },
+    {
+      "order_index": 6,
+      "ja_text": "はい、よろしくお願いします。",
+      "vi_translation": "Vâng cám ơn các bạn rất nhiều.",
+      "audio_start": 111,
+      "audio_end": 115,
+      "pass_score": 80,
+      "clip_url": "/audio/lessons/lesson-15/s07.m4a",
+      "clip_start": 110.85,
+      "clip_end": 115.2,
+      "whisper_text": "はい、よろしくお願いします"
+    },
+    {
+      "order_index": 7,
+      "ja_text": "現在は調整中で、まだ確定していませんが、 次はもう少し規模の大きなプロジェクトを実施する予定です。確定すれば、クラウドの人材など要員追加を依頼することになると思います。詳しいことが決まったら、また御社に連絡しますね。リーさん、次のプロジェクトもよろしくお願いしますね。",
+      "vi_translation": "Chúng tôi hiện đang thực hiện các điều chỉnh và chưa quyết định bất kỳ điều gì, nhưng chúng tôi đang có kế hoạch thực hiện một dự án lớn hơn một chút vào lần tới. Sau khi được xác định, tôi nghĩ chúng tôi sẽ yêu cầu bổ sung nhân sự như nhân sự Cloud. Khi chúng tôi đã quyết định xong các chi tiết, chúng tôi sẽ liên hệ lại với công ty của bạn. Chị Ly, tôi rất mong được làm việc với chị trong dự án tiếp theo.",
+      "audio_start": 115,
+      "audio_end": 150,
+      "pass_score": 80,
+      "clip_url": "/audio/lessons/lesson-15/s08.m4a",
+      "clip_start": 114.85,
+      "clip_end": 150.2,
+      "whisper_text": "現在は女性中でまだ隠定していませんが、次はもう少し基本の大きなプロジェクトを実施する予定です隠定すれば、クラウドの人材など、予因追加をいらえすることになると思います詳しいことが決まったらまた、本者に連絡しますねリーさん、次のプロジェクトもよろしくお願いしますね"
+    },
+    {
+      "order_index": 8,
+      "ja_text": "はい。こちらこそよろしくお願いいたします。",
+      "vi_translation": "Vâng. Tôi cũng rất hân hạnh ạ.",
+      "audio_start": 150,
+      "audio_end": 154,
+      "pass_score": 80,
+      "clip_url": "/audio/lessons/lesson-15/s09.m4a",
+      "clip_start": 149.85,
+      "clip_end": 154.2,
+      "whisper_text": "はい、こちらこそ、よろしくお願い致します"
+    }
+  ]
+}

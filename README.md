@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Shadow IT Japanese 🗣️
 
-## Getting Started
+Web app luyện **shadowing** tiếng Nhật chuyên ngành IT cho người Việt. Nói lại
+từng câu thoại → được chấm điểm (phát âm / tốc độ / ngữ điệu) → giữ **streak**,
+tích **XP**, lên **level**.
 
-First, run the development server:
+- **Speech-to-text thật**: dùng Web Speech API của trình duyệt (`ja-JP`) để lấy
+  transcript, so khớp với câu mẫu bằng Levenshtein → điểm phát âm thật.
+- **Supabase-backed**: lessons, sentences, profile, attempts, progress, XP được
+  đọc/ghi qua Supabase khi có env. Nếu thiếu env, app fallback về localStorage.
+
+## Chạy dev
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
 pnpm dev
-# or
-bun dev
+# mở http://localhost:3000  (Chrome/Edge để có nhận diện giọng nói)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+> **Micro + STT chỉ hoạt động trên Chrome/Edge.** Firefox/Safari sẽ fallback
+> sang chấm điểm ước lượng (vẫn chạy đủ flow).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Tech stack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Next.js 16 (App Router) · TypeScript · Tailwind v4 · Web Speech API +
+MediaRecorder · Supabase (sẵn sàng cắm) · Vercel.
 
-## Learn More
+## Cấu trúc
 
-To learn more about Next.js, take a look at the following resources:
+```
+app/            login · dashboard · lessons · lessons/new · lessons/[id] · progress · api/score
+components/     ui/ · layout/ · dashboard/ · lesson/ · progress/
+lib/
+  scoring/      pronunciation · speed · intonation · total · feedback  (rule-based, thay bằng AI sau)
+  gamification/ streak · xp · level
+  speech/       useRecorder (MediaRecorder + Web Speech) · tts
+  store/        DataProvider (Supabase + local fallback) · engine · selectors · state
+  supabase/     client · server
+supabase/       schema.sql · seed.sql
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Scoring
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`POST /api/score` nhận `{ targetText, spokenText?, originalDurationSeconds?,
+userDurationSeconds?, passScore? }` và trả `{ pronunciation, speed, intonation,
+total, passed, feedback }`. Đây là **điểm nối duy nhất** để sau này thay bằng
+API AI thật — hợp đồng request/response giữ nguyên.
 
-## Deploy on Vercel
+Công thức: `total = pronunciation*0.5 + speed*0.3 + intonation*0.2`, pass khi
+`total >= 80`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Supabase
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Tạo project Supabase, chạy `supabase/schema.sql` rồi `supabase/seed.sql`.
+2. Bật Google OAuth trong Authentication → Providers.
+3. Tạo Storage bucket `recordings` public.
+4. Copy `.env.example` → `.env.local`, điền `NEXT_PUBLIC_SUPABASE_URL` và
+   `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+5. Để deploy tự động schema, seed resource và audio, thêm `SUPABASE_DB_URL`,
+   `SUPABASE_SERVICE_ROLE_KEY`, rồi chạy:
+
+```bash
+python scripts/deploy-supabase-resources.py
+```
+
+## Deploy
+
+Đẩy lên Vercel, thêm 2 biến env ở trên (nếu dùng Supabase). Không cần server
+riêng — chấm điểm chạy trong Next.js Route Handler.

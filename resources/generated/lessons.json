@@ -1,0 +1,1397 @@
+[
+  {
+    "id": "resource-lesson-01",
+    "lesson_no": 1,
+    "title": "第1課 – 初回訪問のあいさつ",
+    "topic": "敬語",
+    "level": "N3-N2",
+    "source_type": "upload",
+    "source_url": null,
+    "media_url": "/audio/lessons/lesson-01.m4a",
+    "audio_source": "resources/1.m4a",
+    "sentences": [
+      {
+        "order_index": 0,
+        "ja_text": "私は、E-Learning プロジェクトのPMのアンと申します。どうぞよろしくお願いいたしま す。",
+        "vi_translation": "Tôi là An, PM của dự án E-Learning. Rất mong nhận được sự giúp đỡ",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 1,
+        "ja_text": "今回のプロジェクト責任者の小巻と申します。どうぞよろしくお願いいたします。",
+        "vi_translation": "Tôi là Komaki, người chịu trách nhiệm dự án lần này. Rất mong nhận được sự giúp đỡ",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 2,
+        "ja_text": "この度は、ご来社くださり、 まことにありがとうございます。 日本企業向けシステム開発 部門長をしております、ホアンと申します。どうぞよろしくお願いいたします。",
+        "vi_translation": "Cảm ơn quý anh/chị lần này đã ghé thăm công ty. Tôi là Hoàn, trưởng phòng phát triển hệ thống khối doanh nghiệp Nhật",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 3,
+        "ja_text": "私は、 SESのIT部門でIT関連のプロジェクトを管理しています、 小巻と申します。どうぞよろしくお願いいたします。",
+        "vi_translation": "Tên tôi là Komaki – quản lý các dự án liên quan đến IT tại bộ phận IT của SES. Cảm ơn quý anh/chị rất nhiều",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 4,
+        "ja_text": "よろしくお願いいたします。 私は日本のお客様向けのシステム開発プロジェクトを主に 担当しております。今回のプロジェクトのPMをつとめることになりました､アンと申します。どうぞよろしくお願いいたします。",
+        "vi_translation": "Cảm ơn quý anh/chị. Tôi là người chịu phụ trách chính các dự án phát triển hệ thống cho khách hàng Nhật Bản. Tên tôi là An – PM cho dự án này. Rất mong nhận được sự giúp đỡ",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 5,
+        "ja_text": "今回は、 皆さんとベトナムでプロジェクトのキックオフをするために参りましたので、2日間どうぞよろしくお願いします。 前回訪問した黒田もぜひよろしくと申しておりました。",
+        "vi_translation": "Lần này tôi đến VN để khởi động dự án cùng mọi người nên rất mong nên 2 ngày tới nhận được sự giúp đỡ của quý vị. Anh Kuroda, người đã đến thăm lần trước cũng bày tỏ lòng biết ơn.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 6,
+        "ja_text": "はい。 弊社も対面でキックオフができ、光栄です。 帰国されたあとに、SEのリーが要件 定義の工程からオンサイトすることになっております。その際もよろしくお願いいたします。",
+        "vi_translation": "Vâng. Chúng tôi cũng rất vinh dự khi có thể trực tiếp họp Kickoff. Sau khi trở về Nhật Bản, anh Ly – sẽ được cử đi onsite để bắt đầu quá trình xác định yêu cầu. Lúc đó cũng rất mong anh giúp đỡ",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      }
+    ]
+  },
+  {
+    "id": "resource-lesson-02",
+    "lesson_no": 2,
+    "title": "第2課 – キックオフミーティング　プロジェクトの目的と概要",
+    "topic": "キックオフ",
+    "level": "N3-N2",
+    "source_type": "upload",
+    "source_url": null,
+    "media_url": "/audio/lessons/lesson-02.m4a",
+    "audio_source": "resources/2.m4a",
+    "sentences": [
+      {
+        "order_index": 0,
+        "ja_text": "では、プロジェクトのキックオフミーティングを始めたいと思います。 よろしくお願いいたします。",
+        "vi_translation": "Tôi xin phép được bắt đầu buổi meeting kickoff",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 1,
+        "ja_text": "はい、よろしくお願いいたします。",
+        "vi_translation": "Vâng, xin nhờ anh",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 2,
+        "ja_text": "まず、本日のアジェンダについて説明いたします。 最初に、 SES 様にプロジェクトの目的を説明していただきます。 次に、 弊社がキックオフ資料を説明いたします。そして、最後にQ&Aと相談をします。この順番で進めたいと思いますが、よろしいでしょうか。",
+        "vi_translation": "Trước tiên tôi xin phép giải thích về Agenda cuộc họp hôm nay. Đầu tiên phía SES sẽ trình bày về mục đích của dự án. Tiếp đó phía công tu chúng tôi sẽ giải thích tài liệu Kickoff. Và cuối cùng là phần thảo luận và Q&A. Trình tự như vậy anh/chị thấy ok chứ ạ?",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 3,
+        "ja_text": "はい。そうしましょう。 ではまず、私から目的についてお話しします。 今回はデジタル教科書のWeb アプリケーションを開発します。 動きのあるUIにすることで、生徒たちが楽しく学べるようにしたいと思っています。",
+        "vi_translation": "Vâng, cùng tiến hành như vậy nhé. Đầu tiên tôi xin nói về mục đích. Lần này, chúng tôi sẽ phát triển một ứng dụng web cho sách giáo khoa điện tử. Bằng cách tạo UI động, chúng tôi muốn tạo niềm vui học tập cho học sinh.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 4,
+        "ja_text": "ご説明ありがとうございます。 それでは、私からキックオフ資料を説明いたします。",
+        "vi_translation": "Cảm ơn chị đã giải thích. Tiếp theo tôi xin giải thích về tài liệu Kickoff",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 5,
+        "ja_text": "こちらをご覧ください。 キックオフ資料の内容は､ プロジェクトの概要、 体制、 開発手法、スケジュール、コミュニケーションプラン、リスクと課題です。では、順を追って説明いたします。",
+        "vi_translation": "Xin hãy quan sát vào đây. Nội dung của tài liệu kickoff gồm Overview về dự án, cấu trúc, phương pháp phát triển, Schedule, kế hoạch giao tiếp, các rủi ro và vấn đề.Tôi xin được giải thích từng bước.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 6,
+        "ja_text": "はい。お願いします。",
+        "vi_translation": "Vâng, xin nhờ anh",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 7,
+        "ja_text": "まず、プロジェクト概要についてです。 今回のE-Learning プロジェクトは、 Web アプリを開発するプロジェクトです。既存システムをベースに、 WebGLを取り入れて機能追加と変更をします。",
+        "vi_translation": "Đầu tiên là về Overview dự án. Dự án E-learning lần này là một dự án phát triển web-app. Dựa trên hệ thống hiện có, chúng tôi kết hợp WebGL để update và bổ sung thêm chức năng.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      }
+    ]
+  },
+  {
+    "id": "resource-lesson-03",
+    "lesson_no": 3,
+    "title": "第3課 – キックオフミーティング　スケジュールと進め方",
+    "topic": "キックオフ",
+    "level": "N3-N2",
+    "source_type": "upload",
+    "source_url": null,
+    "media_url": "/audio/lessons/lesson-03.m4a",
+    "audio_source": "resources/3.m4a",
+    "sentences": [
+      {
+        "order_index": 0,
+        "ja_text": "次に、マスタースケジュールと進め方について説明いたします。 開発期間は4月1日から7月8日までです。 SRS, UIなどインプットは御社より提供していただき、弊社がコーディング、 UT、IT をベトナムで行います。 SEのリーは要件定義からオンサイトし、UAT とデプロイメントもサポートします。",
+        "vi_translation": "Tiếp theo tôi sẽ trình bày về kế hoạch tổng thể và cách tiến hành. Thời gian phát triển là từ 1/4 đến 8/7. Các tài liệu đầu vào như SRS, UI thì phía quý công ty sẽ cung cấp, còn phía công ty chúng tôi sẽ tiến hành code, UnitTest, InterarationTest ở VN. Anh Ly – nhân viên SE sẽ onsite hỗ trợ từ giai đoạn định nghĩa yêu cầu, UAT và cả Deployment",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 1,
+        "ja_text": "はい。 SRSは完成しましたので、明日説明します。 UIは弊社で準備していますが、開発期間中、ロジックに合わせて直したほうがよいものがありましたら、教えていただければと思います。",
+        "vi_translation": "Vâng. SRS đã hoàn thành, ngày mai chúng tôi sẽ giải thích. UI thì công ty chúng tôi đang chuẩn bị, nếu có bất kỳ điều gì cần sửa đổi để phù hợp với logic trong quá trình phát triển, vui lòng cho chúng tôi biết.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 2,
+        "ja_text": "承知しました。 開発手法に関しては要件がかなりはっきりしているので、ウォーターフォールで開発を進めます。",
+        "vi_translation": "Tôi hiểu rồi. Về phương pháp phát triển, các yêu cầu khá rõ ràng nên chúng tôi sẽ tiến hành phát triển bằng mô hình Waterfall",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 3,
+        "ja_text": "はい。そうですね。 少しは要件の変更が発生するかもしれませんが、 ほぼ決まっていますので、それで問題ないと思います。",
+        "vi_translation": "Vâng. Tôi đồng ý. Có thể sẽ có phát sinh 1 vài update về yêu cầu, nhưng hầu hết yêu cầu đã được quyết định nên tôi nghĩ không có vấn đề gì",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 4,
+        "ja_text": "はい。ありがとうございます。 また、UI が御社の期待通りになっているかをチェックするため、3回のデモを実施することを提案します。 そこで、修正すべき点を確認し、必要であれば修正します。 そうすれば、手戻りを減らせると考えています。",
+        "vi_translation": "Vâng. Xin cảm ơn. Thêm nữa chúng tôi đề xuất thực hiện demo 3 lần để check giao diện UI có đáp ứng mong đợi của công ty bạn hay không. tại demo xác nhận điểm cần chỉnh sửa, nếu cần thiết chúng tôi sẽ sửa. Tôi tin rằng điều này sẽ làm giảm việc phải làm lại.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 5,
+        "ja_text": "そうですね。 賛成です。実は、SRS で一部決まっていない内容があります。 デモで何を改善すればよいか、はっきり見えるようになり、より良い製品ができると思いますので、ぜひ行いましょう。",
+        "vi_translation": "Vâng. Tôi tán thành. Thực ra là, có 1 vài phần nội dung SRS chưa được quyết định. Tôi nghĩ demo sẽ giúp thấy rõ những gì cần cải thiện và tạo ra sản phẩm tốt hơn nên nhất định hãy tiến hành demo",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      }
+    ]
+  },
+  {
+    "id": "resource-lesson-04",
+    "lesson_no": 4,
+    "title": "第4課 – キックオフミーティング　プロジェクトの体制の説明",
+    "topic": "キックオフ",
+    "level": "N3-N2",
+    "source_type": "upload",
+    "source_url": null,
+    "media_url": "/audio/lessons/lesson-04.m4a",
+    "audio_source": "resources/4.m4a",
+    "sentences": [
+      {
+        "order_index": 0,
+        "ja_text": "ここまでプロジェクト概要と開発手法について説明しましたが、 何かご質問はありますか。 ご質問がなければ、体制とメンバーについて紹介いたします。",
+        "vi_translation": "Chúng tôi đã giải thích tổng quan về dự án và phương pháp phát triển cho đến thời điểm này, các bạn có thắc mắc gì không? Nếu bạn không có câu hỏi nào, tôi xin giới thiệu cơ cấu và thành viên của chúng tôi.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 1,
+        "ja_text": "ここまでは問題ないので、続けてください。",
+        "vi_translation": "Cho đến nay không có vấn đề gì, vì vậy hãy tiếp tục.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 2,
+        "ja_text": "はい。こちらがプロジェクトの体制です。 黒田様がプロジェクト統括管理者で、小巻様が御社のPMです。このプロジェクトに関係する課題などは私が小巻様と確認すればよいという理解ですが、間違いないでしょうか。",
+        "vi_translation": "Vâng. Đây là cấu trúc của dự án. Ông Kuroda là tổng phụ trách dự án, chị Komaki là PM của công ty bạn. Tôi đang hiểu rằng tôi có thể xác nhận các vấn đề liên quan đến dự án này với chị Komaki, có đúng không ạ?",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 3,
+        "ja_text": "はい。 その通りです。 今回のプロジェクトは設計工程がなく、 何度かデモをしてお互いの認識を確認するという方法で進めます。 そうすると、ひんぱんに質問のやりとりをする必要が出てくると思います。 日本にはリーさんもいらっしゃいますし、確認したいことがあったら、いつでもけっこうですので、遠慮なく聞いてください。",
+        "vi_translation": "Vâng. Đúng vậy. Dự án lần này không có công đoạn thiết kế và chúng ta sẽ tiến hành một số buổi demo để xác nhận sự hiểu biết của nhau. Vì thế, tôi nghĩ chúng ta cần phải trao đổi hỏi đáp thường xuyên. Anh Lee cũng đang ở Nhật Bản nên nếu có thắc mắc gì xin vui lòng hỏi.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 4,
+        "ja_text": "はい。ありがとうございます。 オフショアの体制ですが、 統括管理者はホアンです。PMは私アンで、開発、テスト、 コミュニケーション、品質保証の4つのチームを管理します。そして、SEのリーが御社にオンサイトします。 レポートラインですが、メンバーがチームリーダーに報告し、チームリーダーが私に報告します。私がそれらの情報をまとめて、小巻様に報告します。",
+        "vi_translation": "Vâng. Xin cảm ơn. Về cơ cấu Offshore thì tổng phụ trách là anh Hoàn. Tôi là An, là PM quản lý 4 nhóm: Dev, Tester, Comtor và QA. Và có anh Lee – SE sẽ onsite tại công ty bạn. Về luồng report thì các thành viên báo cáo với leader, leader báo cáo với tôi. Tôi sẽ tổng hợp thông tin và báo cáo với chị Komaki.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 5,
+        "ja_text": "わかりました。 レポートラインについては弊社も同じ認識です。",
+        "vi_translation": "Tôi hiểu rồi. Về luồng report thì công ty chúng tôi cũng nhận thức như vậy",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 6,
+        "ja_text": "技術的な問題は、私もしくはリーが確認します。 営業と契約に関しては当初から御社とやりとりをさせていただいているリンが引き続き担当します。 プロジェクトで解決の難しい課題があれば、黒田様、 ホアンにエスカレーションします。場合によっては、リンも参加いたします。",
+        "vi_translation": "Mọi vấn đề technical sẽ được tôi hoặc Lee kiểm tra. Về vấn đề hợp đồng và business thì do chị Linh, người đã làm việc với công ty của bạn ngay từ đầu sẽ tiếp tục phụ trách. Trong dự án nếu có vấn đề khó giải quyết, tôi sẽ báo cáo vấn đề đó với ông Kuroda và anh Hoàn. Trong một số trường hợp, Linh cũng sẽ tham gia.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 7,
+        "ja_text": "はい。わかりました。 ご説明ありがとうございました。",
+        "vi_translation": "Vâng, tôi rõ rồi. Cảm ơn anh đã giải thích",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      }
+    ]
+  },
+  {
+    "id": "resource-lesson-05",
+    "lesson_no": 5,
+    "title": "第5課 – オンサイト初日のあいさつ",
+    "topic": "敬語",
+    "level": "N3-N2",
+    "source_type": "upload",
+    "source_url": null,
+    "media_url": "/audio/lessons/lesson-05.m4a",
+    "audio_source": "resources/5.m4a",
+    "sentences": [
+      {
+        "order_index": 0,
+        "ja_text": "紹介します。 プロジェクト実施のためにベトナムから来てくださった DKH 社のリーさんです。 本日からこちらで勤務していただきます。 では、リーさん、簡単に自己紹介をお願いします。",
+        "vi_translation": "Xin giới thiệu, đây là chị Ly đến từ DKH, người đến từ Việt Nam để thực hiện dự án. Chị ấy sẽ làm việc ở đây từ hôm nay. Chị Ly, xin vui lòng giới thiệu ngắn gọn về bản thân.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 1,
+        "ja_text": "本日よりお世話になります。 ベトナムから参りました、リーと申します。 DKH でSEをしております。 日本は初めてですので、わからないことも多いかと思いますが、どうぞよろしくお願いいたします。",
+        "vi_translation": "Từ hôm nay rất mong được giúp đỡ, tôi là Ly đến từ Việt Nam. Tôi làm SE ở DKH. Lần đầu tới Nhật có nhiều điều chưa rõ, rất mong các anh/chị giúp đỡ.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 2,
+        "ja_text": "困ったことがあったら、私や山本に遠慮なく相談してください。",
+        "vi_translation": "Có gì khó khăn thì cứ thảo luận với tôi hoặc anh Yamamoto, đừng ngại.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 3,
+        "ja_text": "はい。ありがとうございます。 こちらはホアンからのおみやげです。 どうぞ皆さんで召し上がってください。 ホアンも皆さんによろしくと申しておりました。",
+        "vi_translation": "Vâng, xin cảm ơn. Đây là quà của anh Hoàn. Xin mời mọi người ạ. Anh Hoàn cũng gửi lời chúc tới mọi người",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 4,
+        "ja_text": "お気遣いありがとうございます。 これはベトナムで有名なお菓子か何かですか。",
+        "vi_translation": "Cảm ơn vì sự quan tâm của bạn. Đây là loại bánh kẹo nổi tiếng gì của Việt Nam à?",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 5,
+        "ja_text": "はい。 北部の名物で、緑豆からできたお菓子です。",
+        "vi_translation": "Vâng, đây là đặc sản của miền bắc, một loại bánh làm từ đậu xanh",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 6,
+        "ja_text": "ところで、御社のルールについて教えていただけますか。",
+        "vi_translation": "Nhân tiện, bạn có thể cho tôi biết về nội quy của công ty được không?",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 7,
+        "ja_text": "そうですね。 山本から説明しましょう。",
+        "vi_translation": "Vâng, anh Yamamoto sẽ giải thích cho bạn",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 8,
+        "ja_text": "まず、勤務時間は、朝9時から夕方6時までです。 だいたい皆さん 10分前には出社しています。",
+        "vi_translation": "Trước hết, giờ làm việc là từ 9 giờ sáng đến 6 giờ chiều. Hầu hết mọi người đến nơi làm việc sớm 10 phút.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 9,
+        "ja_text": "承知しました。 9時から6時までですね。 お昼休みは何時から取ればよいですか。",
+        "vi_translation": "Tôi hiểu rồi. Từ 9 giờ sáng đến 6 giờ chiều nhỉ. Nghỉ trưa thì vào lúc mấy giờ vậy?",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 10,
+        "ja_text": "一応12時から1時ですが、外のお店は混むので、少しずらして取っても問題ありません。",
+        "vi_translation": "Đáng lẽ là từ 12h đến 1h nhưng các quán rất đông nên dời thời gian khác một chút cũng không sao.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 11,
+        "ja_text": "ずらしてというのは、どういうことですか。",
+        "vi_translation": "Dời thời gian là sao ạ?",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 12,
+        "ja_text": "例えば、12時半から1時半にするとか、1時から2時にしてもかまわないということです。 1時間であればよいです。 会議室と給湯室へも案内しましょう。",
+        "vi_translation": "Ví dụ: có thể từ 12:30 đến 1:30 hoặc từ 1:00 đến 2:00. Trong khoảng 1 tiếng là được. Tôi cũng sẽ dẫn bạn đến phòng họp và phòng bếp pha trà.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      }
+    ]
+  },
+  {
+    "id": "resource-lesson-06",
+    "lesson_no": 6,
+    "title": "第6課 – お客様の会社のルール",
+    "topic": "会話",
+    "level": "N3-N2",
+    "source_type": "upload",
+    "source_url": null,
+    "media_url": "/audio/lessons/lesson-06.m4a",
+    "audio_source": "resources/6.m4a",
+    "sentences": [
+      {
+        "order_index": 0,
+        "ja_text": "こちらの会議室はIT部門の専用です。 使いたいときは、事前に会議室予約システムから予約してください。後で予約サイトのリンクを送っておきますね。",
+        "vi_translation": "Phòng họp này dành riêng cho bộ phận CNTT. Nếu bạn muốn sử dụng, vui lòng đặt chỗ trước thông qua hệ thống đặt phòng hội nghị. Tôi sẽ gửi cho bạn link trang đặt phòng sau.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 1,
+        "ja_text": "はい。 オフショアチームとの会議もあるので、ありがとうございます。",
+        "vi_translation": "Vâng. Tôi cũng có cuộc họp với team Offshore, vì vậy cảm ơn bạn rất nhiều.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 2,
+        "ja_text": "こちらは給湯室です。 このポットのお湯は自由にお使いください。そして、冷蔵庫は共用ですので、ものを入れるときは自分の名前を書いて、賞味期限切れのものは処分するようにしてくださいね。 ごみは生ごみやペットボトルなどに分別することになっています。",
+        "vi_translation": "Đây là phòng pha trà. Hãy dùng nước nóng ở đây tự nhiên. Ngoài ra, tủ lạnh được dùng chung nên hãy viết tên bạn lên đó khi cho đồ vào và nhớ vứt bỏ những đồ đã hết hạn sử dụng. Rác thải sẽ cần phân loại thành rác thải thực phẩm, chai nhựa, v.v.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 3,
+        "ja_text": "分別というのは、ものによって、これらのごみ箱に分けて捨てるということですね。",
+        "vi_translation": "Phân loại có nghĩa là vứt bỏ các vật phẩm khác nhau vào các thùng khác nhau nhỉ",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 4,
+        "ja_text": "そうです。他になにか気になることはありますか。",
+        "vi_translation": "Ngoài ra chị còn lo lắng điều gì không?",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 5,
+        "ja_text": "すぐには思いつかないので、 逆に質問してもよいですか。 御社で他になにか気をつけた方がよいことはありませんか。",
+        "vi_translation": "Giờ tôi không nghĩ được luôn, trái lại tôi muốn hỏi 1 câu hỏi được không? Ở công ty anh có điều gì nên lưu ý hay không?",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 6,
+        "ja_text": "そうですね。 整理整頓とセキュリティですかね。席を離れるときは、机の上に社外秘の資料などを置いたままにしないようにしてください。 また、退社するときは、ノートパソコンを鍵付きロッカーに入れて帰ってください。",
+        "vi_translation": "À, về an toàn vệ sinh và bảo mật nhỉ? Khi rời khỏi bàn làm việc, vui lòng không để lại tài liệu mật trên bàn làm việc. Ngoài ra, khi tan làm, vui lòng cất máy tính xách tay của bạn vào tủ có khóa.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 7,
+        "ja_text": "はい。 気をつけます。",
+        "vi_translation": "Vâng, tôi sẽ chú ý",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 8,
+        "ja_text": "では、席に戻ってパソコンの設定をしましょうか。 弊社で指定されているウイルス対策ソフトやメール誤送信防止ツールをインストールしましょう。",
+        "vi_translation": "Vậy giờ chúng ta cùng về chỗ và cài đặt máy tính. Vui lòng cài đặt tool ngăn chặn việc gửi email sai, và các phần mềm diệt virus do công ty chúng tôi chỉ định.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 9,
+        "ja_text": "これが持参したノートパソコンです。ベトナムにいる間に、 必要なデータはバックアップを取ってあります。",
+        "vi_translation": "Đây là chiếc máy tính xách tay tôi mang theo. Khi ở Việt Nam, tôi đã sao lưu những dữ liệu cần thiết.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 10,
+        "ja_text": "では、一度お預かりしましょう。 弊社では、IT部門のセキュリティチェックを受けてからでないと、社内で使ってはいけないことになっています。",
+        "vi_translation": "Thôi tạm thời giữ nó đã. Tại công ty của chúng tôi, chúng tôi phải trải qua quá trình kiểm tra bảo mật bởi bộ phận CNTT trước khi sử dụng nội bộ.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 11,
+        "ja_text": "承知しました。 では、お願いします。",
+        "vi_translation": "Vâng, xin nhờ anh",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      }
+    ]
+  },
+  {
+    "id": "resource-lesson-07",
+    "lesson_no": 7,
+    "title": "第7課 – 要件の説明",
+    "topic": "要件定義",
+    "level": "N3-N2",
+    "source_type": "upload",
+    "source_url": null,
+    "media_url": "/audio/lessons/lesson-07.m4a",
+    "audio_source": "resources/7.m4a",
+    "sentences": [
+      {
+        "order_index": 0,
+        "ja_text": "プロジェクトのメンバーが全員そろいましたので、要件の説明会を始めたいと思います。説明の中で、わかりにくいところや確認しておきたいことがありましたら、その場で質問してください。",
+        "vi_translation": "Tất cả member đã có mặt nên tôi xin bắt đầu cuộc họp giải thích yêu cầu. Trong lúc giải thích có chỗ nào khó hiểu hay có gì cần xác nhận thì anh hãy hỏi ở đấy nhé.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 1,
+        "ja_text": "承知しました。 よろしくお願いいたします。",
+        "vi_translation": "Vâng tôi biết rồi, cảm ơn chị",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 2,
+        "ja_text": "昨年は、デジタル教科書のデスクトップアプリケーションを開発していただき、ありがとうございました。 キックオフミーティングで説明した通り、今回はこのアプリをベースに、WebGL を使用してアプリを Web 化し、一部機能の追加・修正を行います。",
+        "vi_translation": "Cảm ơn năm ngoái phía bên anh đã phát triển app desktop giáo trình điện tử. Như đã giải thích tại kickoff meeting, lần này chúng tôi sẽ base trên ứng dụng này, biến nó thành web bằng WebGL, đồng thời thêm và sửa đổi một số chức năng.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 3,
+        "ja_text": "まず、 今回の Web 版の画面について説明します。 お見せしているファイルは昨年開発されたアプリの資料なので、皆さんにとってはなじみのあるものだと思います。 新規画面には、「新規」 と、 Web版で実装しなくてよいものには 「Web 化対象外」 と追記しました。",
+        "vi_translation": "Đầu tiên tôi sẽ giải thích về màn hình của phiên bản web này. File tôi đang cho bạn xem là app được phát triển năm ngoái, vì vậy chắc chắn là chúng quen thuộc với các anh. Với các màn mới chúng tôi đã thêm vào danh mục “新規”, và với các mục không cần triển khai trên bản web thì thêm vào danh mục “Web 化対象外”.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 4,
+        "ja_text": "はい。 「新規」 または 「Web 化対象外」 の追記がない場合は、 以前のアプリと同じ画面にするということですね。",
+        "vi_translation": "Vâng. Nếu không tính phần danh mục “新規” và “Web 化対象外” thì các màn hình sẽ giống như ứng dụng trước đó nhỉ.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 5,
+        "ja_text": "その通りです。",
+        "vi_translation": "Đúng như vậy",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 6,
+        "ja_text": "また、機能の修正点がいくつかあるので、別のファイルにまとめました。",
+        "vi_translation": "Thêm nữa còn một số chỗ chức năng cần sửa tôi đã biên soạn thành một file riêng.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 7,
+        "ja_text": "はい。「Web _ 修正点」というものですか。",
+        "vi_translation": "Vâng, ở file “Web _ 修正点” đúng không ạ?",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 8,
+        "ja_text": "はい、そうです。",
+        "vi_translation": "Vâng, đúng rồi",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 9,
+        "ja_text": "そのファイルであれば、すでに読んでいますので、この場で説明していただかなくても問題ありません。疑問点がでてきたら、確認させてください。",
+        "vi_translation": "Nếu là file đó thì chúng tôi đã đọc rồi nên không cần giải thích ở đây cũng được. Nếu có thắc mắc gì tôi lại xin phép xác nhận",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 10,
+        "ja_text": "わかりました。 今後、実装中に何かありましたら、遠慮なくいつでも聞いてください。",
+        "vi_translation": "Tôi hiểu rồi. Trong quá trình thực hiện nếu có thắc mắc xin vui lòng hỏi.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      }
+    ]
+  },
+  {
+    "id": "resource-lesson-08",
+    "lesson_no": 8,
+    "title": "第8課 – 進捗の報告",
+    "topic": "進捗報告",
+    "level": "N3-N2",
+    "source_type": "upload",
+    "source_url": null,
+    "media_url": "/audio/lessons/lesson-08.m4a",
+    "audio_source": "resources/8.m4a",
+    "sentences": [
+      {
+        "order_index": 0,
+        "ja_text": "こんにちは。 御社は小巻様のみが参加されるのでしょうか。",
+        "vi_translation": "Xin chào, quý công ty chỉ có chị Komaki join họp đúng không ạ?",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 1,
+        "ja_text": "はい、そうです。 私だけです。",
+        "vi_translation": "Vâng, có mỗi tôi thôi",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 2,
+        "ja_text": "弊社は全員そろいましたので会議を始めたいと思います。 よろしくお願いいたします。",
+        "vi_translation": "Phía công ty tôi mọi người sẵn sàng cả rồi nên chúng ta bắt đầu nhé",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 3,
+        "ja_text": "はい、よろしくお願いいたします。",
+        "vi_translation": "Vâng, xin nhờ anh",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 4,
+        "ja_text": "昨日の夕方に進捗の詳細をまとめた WBS と進捗報告書を送付しました。",
+        "vi_translation": "Tối hôm qua, chúng tôi đã gửi báo cáo tiến độ và WBS chi tiết tiến độ",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 5,
+        "ja_text": "はい、受け取ってざっと確認しました。",
+        "vi_translation": "Vâng, tôi đã nhận được và check nhanh qua",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 6,
+        "ja_text": "それでは、画面共有をして報告いたします。内容は進捗報告、リスク・課題とQ&Aの3つです。 まず、 3.3 3.4の2つの実装タスクを除いて、 全体の進捗は計画通りです。 開発環境の調査と構築、 パフォーマンス改善は完了しました。",
+        "vi_translation": "Bây giờ tôi sẽ share màn hình và báo cáo. Nội dung bao gồm ba phần: báo cáo tiến độ, risk/issue và Q&A. Trước hết, ngoại trừ 2 task 3.3 và 3.4 thì tiến độ tổng thể đều đúng kế hoạch. Nghiên cứu, xây dựng môi trường phát triển và cải tiến performance đã hoàn thành.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 7,
+        "ja_text": "現在は、画面の実装と結合テスト仕様書作成を進めています。 画面の実装は50%結合テスト仕様書の作成は30%完了しました。進捗の詳細は WBS ファイルをご確認ください。",
+        "vi_translation": "Hiện tại, chúng tôi đang tạo test spec IT và implement màn hình. Code màn hình hoàn thành 50%, IT test spec hoàn thành 30%. Chi tiết tiến độ vui lòng xem ở file WBS",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 8,
+        "ja_text": "承知しました。 実装は全体で50%ということでしたが、 どの機能も順調に進んでいるのですか。",
+        "vi_translation": "Tôi hiểu rồi. Implement tổng thể là 50%, nhưng tất cả function đều đang suôn sẻ không?",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 9,
+        "ja_text": "現在、4つの機能の実装タスクを並行して進めています。 そのうち、一つのタスク は完了しており、1つが実施中、2つが遅延です。",
+        "vi_translation": "Chúng tôi hiện đang implement song song 4 task code function. Trong số này, 1 task đã hoàn thành, 1 task đang thực hiện và 2 task đang chậm.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 10,
+        "ja_text": "遅延のタスクがあるんですね。 それについて詳しく教えていただけますか。 週報を見ると、確かに 3.3番の「学習データ保存」は50%、 3.4番の「学習の結果」 は0%で、 赤字になっていますね。",
+        "vi_translation": "Có task đang chậm nhỉ. Hãy cho tôi biết chi tiết được không? Nhìn vào báo cáo hàng tuần thì đúng là số 3.3, “Lưu dữ liệu học tập” là 50%, và số 3.4, “Kết quả học tập” là 0%, có màu đỏ.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 11,
+        "ja_text": "はい、その通りです。 学習データ保存、 学習の結果の実装で課題が発生しています。",
+        "vi_translation": "Đúng vậy, đang phát sinh issue khi implement tính năng “Lưu dữ liệu học tập” và “Kết quả học tập”",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      }
+    ]
+  },
+  {
+    "id": "resource-lesson-09",
+    "lesson_no": 9,
+    "title": "第9課 – 課題の報告",
+    "topic": "会話",
+    "level": "N3-N2",
+    "source_type": "upload",
+    "source_url": null,
+    "media_url": "/audio/lessons/lesson-09.m4a",
+    "audio_source": "resources/9.m4a",
+    "sentences": [
+      {
+        "order_index": 0,
+        "ja_text": "メモリ不足の課題が発生していると聞いていますが、状況を教えてもらえますか。",
+        "vi_translation": "Tôi nghe nói có vấn đề là không đủ bộ nhớ. Bạn có thể vui lòng cho tôi biết tình hình không?",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 1,
+        "ja_text": "はい。ここは、以前のデスクトップアプリのときは、静的データをRAM に保存する方法で、問題ありませんでした。 ですが、Webの開発では、その方法だとメモリ不足になります。",
+        "vi_translation": "Vâng. Trước đó ở app desktop, dữ liệu tĩnh được lưu trong RAM và không có vấn đề gì. Tuy nhiên, trong phát triển web, dùng phương pháp nàythì không đủ bộ nhớ",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 2,
+        "ja_text": "メモリ不足が原因で、 一部の画面がデスクトップアプリと同じように動作しないのですね。",
+        "vi_translation": "Vì không đủ bộ nhớ nên một số màn hình không hoạt động được như app desktop nhỉ",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 3,
+        "ja_text": "はい。そのとおりです。 弊社で調査した結果、 静的データを使う代わりにindexedDB という API にデータを保存すれば、解決することがわかりました。 現在、この対策で実装を進めています。",
+        "vi_translation": "Vâng. Đúng thế. Theo kết quả điều tra, chúng tôi nhận thấy rằng vấn đề có thể được giải quyết bằng cách lưu trữ dữ liệu trong API có tên là indexedDB thay vì sử dụng dữ liệu tĩnh. Chúng tôi hiện đang tiến hành implement biện pháp này.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 4,
+        "ja_text": "わかりました。 Web では indexedDB を使えば、問題なく動くということですね。それで、全体の進捗には影響しませんか。",
+        "vi_translation": "Tôi hiểu rồi. Thế nếu sử dụng indexedDB trên web, nó sẽ hoạt động mà không gặp vấn đề gì nhỉ. Vậy tiến độ chung có bị ảnh hưởng không?",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 5,
+        "ja_text": "これらのタスクは予定より2人日遅延していますが、 代わりに結合テスト仕様書の作成を前倒しして対応しております。 そのため、全体の進捗には影響しません。ここの遅延は来週中に取り戻す予定です。",
+        "vi_translation": "Task này chậm hơn hai ngày so với plan nhưng thay vào đó, chúng tôi đã tiến hành tạo ra đặc tả Intergration test. Vì vậy, nó không ảnh hưởng đến tiến độ chung. Chúng tôi dự định sẽ bù đắp cho mọi sự chậm trễ ở này trong tuần tới.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 6,
+        "ja_text": "はい。では引き続き対応していただいて、 また何か問題があれば、ご連絡お願いします。",
+        "vi_translation": "Vâng. Cảm ơn bạn đã tiếp tục hỗ trợ và nếu bạn có thêm bất kỳ vấn đề nào, vui lòng liên hệ với chúng tôi.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 7,
+        "ja_text": "はい。 承知しました。",
+        "vi_translation": "Vâng",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 8,
+        "ja_text": "他に何か課題はありますか。",
+        "vi_translation": "Ngoài ra còn vấn đề gì không?",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      }
+    ]
+  },
+  {
+    "id": "resource-lesson-10",
+    "lesson_no": 10,
+    "title": "第10課 – 定例会議：Q&Aの確認",
+    "topic": "会話",
+    "level": "N3-N2",
+    "source_type": "upload",
+    "source_url": null,
+    "media_url": "/audio/lessons/lesson-10.m4a",
+    "audio_source": "resources/10.m4a",
+    "sentences": [
+      {
+        "order_index": 0,
+        "ja_text": "最後に1点だけお願いがあるのですが、よろしいですか。",
+        "vi_translation": "Còn 1 điểm cuối tôi muốn xác nhận, có tiện không ạ?",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 1,
+        "ja_text": "はい、荷でしょう。",
+        "vi_translation": "Vâng, sao vậy ạ?",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 2,
+        "ja_text": "昨日、Q&A ファイルに5番~8番の4件の質問を追加しましたので、今週金曜日までにご回答いただけますか。",
+        "vi_translation": "Hôm qua file QA có thêm 4 câu từ câu 5~8 thì đến thứ 6 tuần này chị trả lời giúp chúng tôi được không?",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 3,
+        "ja_text": "今まだ時間があるので、すぐ確認して、回答できる範囲で回答したいですが、いかがですか。",
+        "vi_translation": "Bây giờ cũng ko có thời gian, tôi sẽ trả lời trong phạm vi có thể trả lời được không?",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 4,
+        "ja_text": "はい、ではQ&A ファイルを映しますので、少しお待ちください。",
+        "vi_translation": "Vâng, vậy tôi sẽ mở luôn file QA, xin chờ tôi 1 chút.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 5,
+        "ja_text": "映っていますか。",
+        "vi_translation": "Chị thấy chưa?",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 6,
+        "ja_text": "はい。見えています。",
+        "vi_translation": "Vâng, tôi thấy rồi",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 7,
+        "ja_text": "5番のQ&Aはテスト環境についてです。 先日、 iPad Air も対象にするというお話でしたが、テストブラウザは Safari のみでよろしいですか。 それとも Chrome もテストしないといけないですか。 対象にする場合、 テストは最新のバージョンのみで問題ありませんか。それとも一つ前のバージョンもテストする必要がありますか。",
+        "vi_translation": "QA5 là về môi trường Test. Hôm trước đã thảo luận là test với Ipad Air, browser test là chỉ trên Safari có được không? Hay là phải test trên cả Chrome? Nếu phải test thì test với version chrome mới nhất thì ok chứ? Hay là phải test với version trước",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 8,
+        "ja_text": "そうですね。 Chromeもお願いします。 バージョンは、最新のものだけでよいです。",
+        "vi_translation": "Vâng, nhờ anh test cả Chrome, version mới nhất cũng được",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 9,
+        "ja_text": "承知しました。 では、次の6番に行きます。 アプリを操作するときの動きについて相談させてください。 ブラウザでアプリを開くときに、複数のタブやウィンドウで開けないように制限を設けたいです。理由はファイルにも書いた通り、RAM をたくさん使うことになり、パフォーマンスに影響を与える可能性があるからです。",
+        "vi_translation": "Tôi hiểu rồi. Tiếp theo là câu 6, tôi muốn thảo luận về chuyển động khi thao tác app. Khi mở app trên browser, tôi muốn đặt giới hạn để không thể mở ứng dụng đó trong nhiều tab hoặc cửa sổ. Lý do là như tôi đã viết trong file, nó ngốn nhiều RAM và có thể ảnh hưởng đến hiệu năng.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 10,
+        "ja_text": "操作には制限をかけたくないのですが、社内で確認してから回答します。",
+        "vi_translation": "Tôi thì không muốn giới hạn thao tác, tôi sẽ xác nhận trong công ty rồi sẽ trả lời",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 11,
+        "ja_text": "承知しました。 そろそろ終了時間ですので、 残りの質問を含めて、今週中に回答していただけると幸いです。ありがとうございました。",
+        "vi_translation": "Tôi hiểu rồi. Cùng đến giờ rồi, rất mong chị có thể trả lời các câu hỏi còn lại trước cuối tuần này. Cảm ơn rất nhiều.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 12,
+        "ja_text": "はい、では本日はここで終わりましょう。 ありがとうございました。 引き続きよろしくお願いします。",
+        "vi_translation": "Vâng, thế hôm nay kết thúc ở đây. Xin cảm ơn, rất mong anh tiếp tục hỗ trợ.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      }
+    ]
+  },
+  {
+    "id": "resource-lesson-11",
+    "lesson_no": 11,
+    "title": "第11課 – 製品デモ",
+    "topic": "会話",
+    "level": "N3-N2",
+    "source_type": "upload",
+    "source_url": null,
+    "media_url": "/audio/lessons/lesson-11.m4a",
+    "audio_source": "resources/11.m4a",
+    "sentences": [
+      {
+        "order_index": 0,
+        "ja_text": "では、学習結果確認機能の詳細画面のデモを始めます。よろしくお願いします。",
+        "vi_translation": "Vâng, tôi xin phép được bắt đầu demo màn hình Detail chức năng xác nhận kết quả học tập",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 1,
+        "ja_text": "はい、よろしくお願いします。",
+        "vi_translation": "Vâng, xin nhờ anh",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 2,
+        "ja_text": "詳細画面では、要件通り、画像を上部に配置しています。 画面レイアウトはこれでよいかご確認お願いします。",
+        "vi_translation": "Ở màn hình Detail, hình ảnh được đặt ở trên cùng theo requirement. Vui lòng kiểm tra xem layout màn hình này có đúng không.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 3,
+        "ja_text": "うーん。やはり、画像にボタンが重なってしまうのは避けたいですね。 ここは、そうならないように対応してもらえますか。",
+        "vi_translation": "Ừm. Đúng là nên tránh chồng button lên hình ảnh nhỉ. Bạn có thể đối ứng để tránh điều đó được không?",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 4,
+        "ja_text": "そうですね……。ボタンが重ならないように、画像の表示領域を小さくして対応することはできますが、いかがですか。",
+        "vi_translation": "Ùm… Có thể giảm vùng hiển thị của hình ảnh để các button không bị chồng lên nhau, chị nghĩ sao?",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 5,
+        "ja_text": "可能であれば、 表示領域は変更しないようにしたいです。 デフォルトの画像サイズを小さくして、対応するわけにはいかないですか。",
+        "vi_translation": "Nếu có thể, tôi không muốn thay đổi vùng hiển thị. Bạn có thể đối ứng theo hướng làm nhỏ size ảnh default được không?",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 6,
+        "ja_text": "実は、アプリの表示枠は画面の縦横の比率に固定しているので、その案での対応は、難しいかと思います。 では、一度持ち帰って、技術的に実現可能か検討してみます。その結果を次の定例会のときに報告してもよろしいですか。",
+        "vi_translation": "Thực ra khung hiển thị của App được cố định theo tỷ lệ khung hình của màn hình, nên tôi nghĩ sẽ khó thực hiện được ý tưởng này. Thôi, chúng tôi sẽ mang về và thử xem xét lại về technical xem có thực hiện được không. Tôi xin phép báo cáo kết quả tại cuộc họp định kỳ tiếp theo được không?",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 7,
+        "ja_text": "はい、お願いします。 それと、対応にかかる工数も見積もって報告してください。",
+        "vi_translation": "Vâng, xin nhờ anh. Thêm nữa, xin hãy báo cáo lại công số đối ứng cho tôi.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 8,
+        "ja_text": "はい、承知しました。変更する場合は、いくつか修正する必要が出てくると思います。 画像の拡大縮小やペンツールなどです。 デスクトップ版とWeb版の両方で変更点と変更の工数をまとめて報告します。",
+        "vi_translation": "Vâng, tôi hiểu rồi. Trường hợp có update, tôi nghĩ sẽ cần một số điều chỉnh như thu phóng hình ảnh, pen tool, v.v… Chúng tôi sẽ tổng hợp và báo cáo những điểm thay đổi và công số thay đổi ở bản Desktop và bản Web.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 9,
+        "ja_text": "はい、お待ちしています。",
+        "vi_translation": "Vâng, tôi xin chờ đợi ạ",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      }
+    ]
+  },
+  {
+    "id": "resource-lesson-12",
+    "lesson_no": 12,
+    "title": "第12課 – 課題解決の相談",
+    "topic": "会話",
+    "level": "N3-N2",
+    "source_type": "upload",
+    "source_url": null,
+    "media_url": "/audio/lessons/lesson-12.m4a",
+    "audio_source": "resources/12.m4a",
+    "sentences": [
+      {
+        "order_index": 0,
+        "ja_text": "小巻さん、スケジュールについて相談したいことがありますが、お時間よろしいですか。",
+        "vi_translation": "Chị Komaki, chị có thời gian ko? Tôi có việc muốn thảo luận với chị",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 1,
+        "ja_text": "はい。いいですよ。",
+        "vi_translation": "Ok",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 2,
+        "ja_text": "Q&Aの6番に関してです。 同じブラウザで複数ウィンドウを開くのに制限をかけないというご要望でしたが、これに対応するには予定よりも時間がかかりそうです。",
+        "vi_translation": "Về câu QA6, có yêu cầu không hạn chế về việc mở nhiều cửa sổ trong cùng 1 browser nhưng có vẻ như sẽ mất nhiều thời gian hơn dự kiến ​​để đối ứng yêu cầu này",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 3,
+        "ja_text": "そうですか。時間がかかるということですが、 今回のリリーススケジュールには影響しますか。",
+        "vi_translation": "Thế à? Mất thời gian nhưng có ảnh hưởng đến schedule release lần này không?",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 4,
+        "ja_text": "それが、スケジュールに影響しそうなので、 ご相談したいです。 制限をかけないように対応した場合は、 今回のリリースに間に合わないと思っています。",
+        "vi_translation": "Tôi muốn thảo luận vấn đề này vì nó có lẽ sẽ ảnh hưởng đến schedule. Trường hợp mà đối ứng để không hạn chế thì tôi nghĩ sẽ không kịp release lần này",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 5,
+        "ja_text": "うーん……そうですか。 対応には、どの程度工数がかかる見込みですか。",
+        "vi_translation": "Vậy à…Việc xử lý thì dự kiến mất bao nhiêu công số",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 6,
+        "ja_text": "はい、対応工数を見積もった結果、少なくとも10人目かかる見込みです。そこで、ご相談ですが、今回のリリースは制限を設けたバージョンを納品し、次回のリリースの際に制限なしのバージョンを納品したいです。それで、ご了承いただけないでしょうか。",
+        "vi_translation": "Vâng, sau khi ước tính công số, dự kiến ​​sẽ cần ít nhất 10 người. Vì vậy, tôi muốn nộp một version có limit cho lần bản nộp lần này và một version không có hạn chế trong bản phát hành tiếp theo. Như vậy thì có được không?",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 7,
+        "ja_text": "1点確認しておきたいのですが、見積り工数は、テストも含めた工数ですか。",
+        "vi_translation": "Tôi có điều muốn xác nhận thêm, công số estimate đã bao gồm test chưa?",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 8,
+        "ja_text": "はい、そうです。そのうち3人はテスト工数です。",
+        "vi_translation": "Vâng, trong đó là 3 người test rồi ạ.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 9,
+        "ja_text": "状況についてはわかりました。受け入れテストの日程も近いので、一旦、 担当者とも相談します。 回答は早いほうがいいですね。",
+        "vi_translation": "Tôi đã nắm được tình hình. Vì ngày kiểm tra nghiệm thu sắp đến nên tôi sẽ tham khảo ý kiến ​​của người phụ trách. Câu trả lời càng sớm thì càng tốt nhỉ.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 10,
+        "ja_text": "はい、できれば、 明日中にご回答いただけないでしょうか。 どうぞよろしくお願いいたします。",
+        "vi_translation": "Vâng, nếu có thể, chị có thể vui lòng trả lời vào ngày mai được không? Cảm ơn rất nhiều.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      }
+    ]
+  },
+  {
+    "id": "resource-lesson-13",
+    "lesson_no": 13,
+    "title": "第13課 – 製品とリリースノート",
+    "topic": "会話",
+    "level": "N3-N2",
+    "source_type": "upload",
+    "source_url": null,
+    "media_url": "/audio/lessons/lesson-13.m4a",
+    "audio_source": "resources/13.m4a",
+    "sentences": [
+      {
+        "order_index": 0,
+        "ja_text": "昨日は納品していただきありがとうございました。 では、今回の納品についてご説明いただけますか。",
+        "vi_translation": "Cảm ơn bạn đã bàn giao sản phẩm ngày hôm qua. Bạn có thể vui lòng giải thích về việc lần bàn giao này được không?",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 1,
+        "ja_text": "はい。 承知しました。 では、 リリースノートの記載内容に沿って説明いたします。",
+        "vi_translation": "Đúng. Tôi hiểu rồi. Bây giờ tôi sẽ giải thích theo nội dung Release note",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 2,
+        "ja_text": "1点だけお願いですが、デモのときに弊社からあげた要望や御社からのご提案があったと思いますので、その対応についても教えてください",
+        "vi_translation": "Tôi có 1 chỗ cần confirm, khi demo thì cũng có request phía chúng tôi và đề xuất phía công ty bạn, thì hãy cho tôi biết cả về đối ứng những cái đấy",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 3,
+        "ja_text": "はい。まず、納品物ですが、 ソースコードとソースコードからビルドしたアプリケーション、そして、ドキュメントをこちらのフォルダに配置しました。 ご要望に応じて、インストール手順書には、アンインストールの手順についても記載しています。",
+        "vi_translation": "Vâng. Đầu tiên, về bàn giao sản phẩm, chúng tôi đã để source code và App đã build từ source code cùng với document trong thư mục này. Theo yêu cầu, ở tài liệu hướng dẫn cài đặt cũng bao gồm hướng dẫn gỡ cài đặt.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 4,
+        "ja_text": "はい、拝見したところ、手順書の中で少しわかりにくい記載があるので、後ほど確認させてください。",
+        "vi_translation": "Vâng, tôi đã xem và thấy trong hướng dẫn các bước có một số thông tin hơi khó hiểu nên vui lòng để tôi kiểm tra lại sau.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 5,
+        "ja_text": "今回は、開発の中でいくつか制限事項も残っています。 それについて説明します。iPad 版の学習データ保存機能では、 お気に入り画面に画像が3枚以上あると、 ページが再読み込みされます。 また、 iPad 版の お気に入りに登録できる画像は最大2MB で 10枚までです。",
+        "vi_translation": "Lần này, trong quá trình phát triển vẫn còn lại 1 số mục giới hạn. Hãy để tôi giải thích về nó. Ở chức năng lưu dữ liệu học tập của phiên bản iPad, nếu có ba hình ảnh trở lên trên màn hình yêu thích, page sẽ reload. Ngoài ra, ở bản Ipad bạn có thể thêm tối đa 10 hình ảnh có dung lượng max là 2MB vào mục yêu thích.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 6,
+        "ja_text": "はい。これは以前からご説明がありましたね。",
+        "vi_translation": "Vâng. Điều này đã được giải thích trước đây.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 7,
+        "ja_text": "はい。見積りの際に説明した通り、端末のハードウェアのスペックによるものです。機能は実行できますが、デスクトップ版と比べると動作が重くなります。 そこで、端末のRAM は 4GB 以上を推奨しています。",
+        "vi_translation": "Đúng. Như đã giải thích khi đưa ra estimation, nó phụ thuộc vào thông số kỹ thuật phần cứng của thiết bị. Mặc dù có thể thực hiện functio nhưng hoạt động sẽ chậm hơn so với phiên bản dành cho bản desktop. Do đó, chúng tôi khuyến nghị thiết bị của bạn nên có RAM 4GB trở lên.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 8,
+        "ja_text": "はい。これに関しては弊社でも承知しています。",
+        "vi_translation": "Vâng. Chúng tôi cũng nhận thức được điều này.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      }
+    ]
+  },
+  {
+    "id": "resource-lesson-14",
+    "lesson_no": 14,
+    "title": "第14課 – UATサポートタスクの確認",
+    "topic": "会話",
+    "level": "N3-N2",
+    "source_type": "upload",
+    "source_url": null,
+    "media_url": "/audio/lessons/lesson-14.m4a",
+    "audio_source": "resources/14.m4a",
+    "sentences": [
+      {
+        "order_index": 0,
+        "ja_text": "リーさん、今回のUATサポートでお願いしたいことがありますが、いいですか。",
+        "vi_translation": "Chị Ly, tôi muốn hỏi về việc support UAT lần này được không ạ?",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 1,
+        "ja_text": "はい。なんでしょうか。",
+        "vi_translation": "Vâng, có việc gì ạ?",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 2,
+        "ja_text": "先日、成果物を受け取りました。 これから受入テストを行っていきます。 そこで、 不具合が出た場合の体制について、念のためもう一度聞かせてください。",
+        "vi_translation": "Tôi đã nhận được hàng giao vào ngày hôm trước. Bây giờ chúng tôi sẽ tiến hành kiểm thử chấp nhận. Vì vậy, để chắc chắn, tôi muốn hỏi lại bạn về việc đối ứng trường hợp phát sinh bug",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 3,
+        "ja_text": "はい。 定例会のときにも相談しましたが、 受入テストで検出された不具合は、まず私が原因を分析することになっています。",
+        "vi_translation": "Vâng. Như tôi đã thảo luận trong cuộc họp định kỳ, khi phát hiện ra bug trong quá trình kiểm thử chấp nhận, tôi là người đầu tiên phân tích nguyên nhân.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 4,
+        "ja_text": "そうでしたね。その後、どちらで対応するのか切り分けするのですね。",
+        "vi_translation": "Vâng, sau đó phía bạn sẽ quyết định nên giải quyết vấn đề nào nhỉ",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 5,
+        "ja_text": "はい、その通りです。分析に加えて、私が対応するものとオフショアが対応するものの切り分けもします。 再現手順についても確認します。確認に際して分からないことがあったら、山本さんにお聞きしてもよろしいですか。",
+        "vi_translation": "Vâng đúng vậy. Ngoài việc phân tích, tôi cũng tách biệt những gì tôi giải quyết và những gì đội offshore giải quyết. Chúng tôi cũng xác nhận trình tự tái hiện. Nếu có điều gì tôi không hiểu trong quá trình xác nhận, tôi có thể hỏi ông Yamamoto được không?",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 6,
+        "ja_text": "もちろん、いいですよ。 困ったときは、いつでも声をかけてください。",
+        "vi_translation": "Tất nhiên rồi. Nếu bạn gặp khó khăn gì, hãy gọi cho chúng tôi bất cứ lúc nào.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 7,
+        "ja_text": "はい、ありがとうございます。",
+        "vi_translation": "Vâng, xin cảm ơn",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 8,
+        "ja_text": "不具合が何件か同時に発生した場合は、まず不具合管理システムに登録します。その後、 一旦、弊社で対応の優先順位を決めて、 連絡します。 ですが、リーさんが分析をしたときに優先順位を変更したいものがありましたら、相談に来てください。",
+        "vi_translation": "Nếu có nhiều bug xảy ra cùng lúc, trước tiên hãy log chúng vào hệ thống quản lý bug. Sau đó, chúng tôi sẽ quyết định mức độ ưu tiên đối ứng và liên hệ với bạn. Tuy nhiên, nếu khi chị Ly phân tích có sự thay đổi về thứu tự ưu tiên thì hãy thảo luận với chúng tôi",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 9,
+        "ja_text": "承知しました。 そう言えば、先日、仕様を少し変えたいというお話がありましたが、具体的に教えていただけますか。",
+        "vi_translation": "Tôi hiểu rồi. À, hôm trước anh có nói là muốn thay đổi 1 chút, hãy cho tôi biết cụ thể được không?",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 10,
+        "ja_text": "あ、そうですね。その件に関わる資料を準備していますので、午後、相談しましょう。どれぐらい時間がかかるかを教えていただきたいです。",
+        "vi_translation": "À, đúng rồi. Tôi đang chuẩn bị tài liệu liên quan đến vấn đề này, chiều sẽ bàn tiếp nhé. Tôi muốn biết sẽ mất bao nhiêu thời gian.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 11,
+        "ja_text": "承知しました。 準備されたら、お声がけください。 よろしくお願いいたします。",
+        "vi_translation": "Tôi hiểu rồi. Xin vui lòng cho tôi biết khi bạn chuẩn bị xong. Cảm ơn.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      }
+    ]
+  },
+  {
+    "id": "resource-lesson-15",
+    "lesson_no": 15,
+    "title": "第15課 – オンサイト終了のあいさつ",
+    "topic": "敬語",
+    "level": "N3-N2",
+    "source_type": "upload",
+    "source_url": null,
+    "media_url": "/audio/lessons/lesson-15.m4a",
+    "audio_source": "resources/15.m4a",
+    "sentences": [
+      {
+        "order_index": 0,
+        "ja_text": "皆さん、ちょっといいですか。 作業の手を止めてこちらへ集まってください。",
+        "vi_translation": "Mọi người, tôi xin một chút thời gian được không ạ? Hãy dừng công việc của bạn và tập trung ở đây.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 1,
+        "ja_text": "デジタル教科書アプリの受入テストと展開も無事終わりました。 本日はリーさんのオンサイト最終日です。リーさん、これまで約4か月間お疲れさまでした。",
+        "vi_translation": "Quá trình nghiệm thu và triển khai ứng dụng sách kỹ thuật số đã hoàn tất thành công. Hôm nay là ngày cuối cùng chị Ly ở đây. Ông Lee, cảm ơn vì đã làm việc chăm chỉ trong bốn tháng qua.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 2,
+        "ja_text": "はい、皆様、オンサイト中はいろいろとお世話になり、ありがとうございました。 おかげさまで、受入テストの間、大きな不具合もなく、本日を迎えることができました。",
+        "vi_translation": "Vâng, xin cảm ơn rất nhiều vì tất cả sự giúp đỡ của bạn trong thời gian tôi onsite. Nhờ có các bạn, chúng ta đã đến được ngày hôm nay mà không gặp bất kỳ vấn đề lớn nào trong quá trình kiểm thử chấp nhận.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 3,
+        "ja_text": "そうですね。リーさんがいてくれたので、技術面で課題が出てきたときもスムーズに会話ができ、 対応も早かったですね。 来週は振り返り会議をすることになっていますが、そこでも良かった点として報告させてもらいます。",
+        "vi_translation": "Vâng. Nhờ có chị Ly ở đây nên khi có vấn đề kỹ thuật phát sinh, chúng tôi có thể trao đổi suôn sẻ và đối ứng nhanh chóng. Chúng tôi dự kiến ​​sẽ có một cuộc họp tổng kết vào tuần tới và báo cáo về những điểm tốt ở đó.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 4,
+        "ja_text": "ありがとうございます。 本日の定例会で話があった通り、帰国したらチーム全員で良かった点、改善すべき点について相談し、まとめます。",
+        "vi_translation": "Cảm ơn. Như đã thảo luận tại cuộc họp thường kỳ hôm nay, khi về nước, toàn team sẽ thảo luận về những điểm tốt, những điểm cần cải thiện và tổng hợp kết quả.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 5,
+        "ja_text": "はい、弊社でもまとめておきますので、来週の会議では、今後のプロジェクトに向けて見直すべきところについても検討しましょう。",
+        "vi_translation": "Vâng, chúng tôi cũng sẽ tổng hợp lại, vì vậy tại cuộc họp tuần tới, chúng ta hãy xem xét những gì cần sửa đổi cho các dự án trong tương lai.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 6,
+        "ja_text": "はい、よろしくお願いします。",
+        "vi_translation": "Vâng cám ơn các bạn rất nhiều.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 7,
+        "ja_text": "現在は調整中で、まだ確定していませんが、 次はもう少し規模の大きなプロジェクトを実施する予定です。確定すれば、クラウドの人材など要員追加を依頼することになると思います。詳しいことが決まったら、また御社に連絡しますね。リーさん、次のプロジェクトもよろしくお願いしますね。",
+        "vi_translation": "Chúng tôi hiện đang thực hiện các điều chỉnh và chưa quyết định bất kỳ điều gì, nhưng chúng tôi đang có kế hoạch thực hiện một dự án lớn hơn một chút vào lần tới. Sau khi được xác định, tôi nghĩ chúng tôi sẽ yêu cầu bổ sung nhân sự như nhân sự Cloud. Khi chúng tôi đã quyết định xong các chi tiết, chúng tôi sẽ liên hệ lại với công ty của bạn. Chị Ly, tôi rất mong được làm việc với chị trong dự án tiếp theo.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      },
+      {
+        "order_index": 8,
+        "ja_text": "はい。こちらこそよろしくお願いいたします。",
+        "vi_translation": "Vâng. Tôi cũng rất hân hạnh ạ.",
+        "audio_start": null,
+        "audio_end": null,
+        "pass_score": 80
+      }
+    ]
+  }
+]

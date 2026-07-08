@@ -1,0 +1,87 @@
+{
+  "lesson_id": "resource-lesson-11",
+  "whisper_model": "tiny",
+  "source_audio": "resources/11.m4a",
+  "groups": [
+    {
+      "order_index": 0,
+      "audio_start": 0,
+      "audio_end": 17,
+      "clip_url": "/audio/lessons/lesson-11/s01.m4a",
+      "ja_text": "では、学習結果確認機能の詳細画面のデモを始めます。よろしくお願いします。",
+      "whisper_text": "第11日、製品でも、では学習結果、各人機能の詳細画面のでもを始めます。よろしくお願いします。"
+    },
+    {
+      "order_index": 1,
+      "audio_start": 17,
+      "audio_end": 21,
+      "clip_url": "/audio/lessons/lesson-11/s02.m4a",
+      "ja_text": "はい、よろしくお願いします。",
+      "whisper_text": "はい、よろしくお願いします。"
+    },
+    {
+      "order_index": 2,
+      "audio_start": 22,
+      "audio_end": 36,
+      "clip_url": "/audio/lessons/lesson-11/s03.m4a",
+      "ja_text": "詳細画面では、要件通り、画像を上部に配置しています。 画面レイアウトはこれでよいかご確認お願いします。",
+      "whisper_text": "詳細画面では、要件通り、画像を上部に配置しています。画面でアウトは、これで良いか、ご確認お願いします。"
+    },
+    {
+      "order_index": 3,
+      "audio_start": 36,
+      "audio_end": 50,
+      "clip_url": "/audio/lessons/lesson-11/s04.m4a",
+      "ja_text": "うーん。やはり、画像にボタンが重なってしまうのは避けたいですね。 ここは、そうならないように対応してもらえますか。",
+      "whisper_text": "うーん。やはり、画像にボタンが重なってしまうのはさけたいですね。ここは、そうならないように対応してもらえますか?"
+    },
+    {
+      "order_index": 4,
+      "audio_start": 51,
+      "audio_end": 64,
+      "clip_url": "/audio/lessons/lesson-11/s05.m4a",
+      "ja_text": "そうですね……。ボタンが重ならないように、画像の表示領域を小さくして対応することはできますが、いかがですか。",
+      "whisper_text": "そうですね。ボタンが重ならないように、画像の表示料理器を小さくして対応することはできますが、いかがですか?"
+    },
+    {
+      "order_index": 5,
+      "audio_start": 64,
+      "audio_end": 79,
+      "clip_url": "/audio/lessons/lesson-11/s06.m4a",
+      "ja_text": "可能であれば、 表示領域は変更しないようにしたいです。 デフォルトの画像サイズを小さくして、対応するわけにはいかないですか。",
+      "whisper_text": "この出あれば、表示料理器は変更しないようにしたいです。デフォルトの画像サイズを小さくして、対応するわけにはいかないですか?"
+    },
+    {
+      "order_index": 6,
+      "audio_start": 79,
+      "audio_end": 109,
+      "clip_url": "/audio/lessons/lesson-11/s07.m4a",
+      "ja_text": "実は、アプリの表示枠は画面の縦横の比率に固定しているので、その案での対応は、難しいかと思います。 では、一度持ち帰って、技術的に実現可能か検討してみます。その結果を次の定例会のときに報告してもよろしいですか。",
+      "whisper_text": "実は、アプリの表示惑は、画面の縦横の振りつに固定しているので、その編での対応は難しいかと思います。では、一度、持ち返って、技術的に実現可能かを検討してみます。その結果を次の定例会の時に報告してもよろしいですか?"
+    },
+    {
+      "order_index": 7,
+      "audio_start": 109,
+      "audio_end": 120,
+      "clip_url": "/audio/lessons/lesson-11/s08.m4a",
+      "ja_text": "はい、お願いします。 それと、対応にかかる工数も見積もって報告してください。",
+      "whisper_text": "はい、お願いします。それと対応にかかる公数もいつもって報告してください。"
+    },
+    {
+      "order_index": 8,
+      "audio_start": 120,
+      "audio_end": 145,
+      "clip_url": "/audio/lessons/lesson-11/s09.m4a",
+      "ja_text": "はい、承知しました。変更する場合は、いくつか修正する必要が出てくると思います。 画像の拡大縮小やペンツールなどです。 デスクトップ版とWeb版の両方で変更点と変更の工数をまとめて報告します。",
+      "whisper_text": "はい、勝ちました。変更する場合は、いくつか修正する必要が出てくると思います。画像の拡大式省や便通るなるです。デスクトップバント、ペブバンの両方で変更点と変更の公数をまとめて報告します。"
+    },
+    {
+      "order_index": 9,
+      "audio_start": 145,
+      "audio_end": 149,
+      "clip_url": "/audio/lessons/lesson-11/s10.m4a",
+      "ja_text": "はい、お待ちしています。",
+      "whisper_text": "はい、お待ちしています。"
+    }
+  ]
+}

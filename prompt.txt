@@ -1,0 +1,598 @@
+Bạn là senior full-stack engineer. Hãy giúp tôi xây dựng một web app tên tạm là **Shadow IT Japanese**.
+
+## 1. Mục tiêu sản phẩm
+
+Đây là web app luyện shadowing tiếng Nhật chuyên ngành IT dành cho người Việt làm IT hoặc học IT tiếng Nhật.
+
+Trọng tâm của app:
+
+* Luyện phát âm tiếng Nhật qua từng câu thoại.
+* Chủ đề bài học xoay quanh môi trường IT: daily standup, code review, bug report, API, database, deployment, BrSE, interview, keigo công ty.
+* Tạo thói quen học mỗi ngày bằng daily mission, streak, XP, level.
+* User nói từng câu, được chấm điểm, câu nào đạt từ 80 điểm trở lên thì pass.
+* Pass đủ daily target thì giữ streak.
+* Pass hết câu trong bài thì hoàn thành bài.
+
+App không cần làm quá phức tạp ngay. Ưu tiên làm bản chạy được với flow học hoàn chỉnh.
+
+## 2. Tech stack yêu cầu
+
+Sử dụng:
+
+* Next.js App Router
+* TypeScript
+* Tailwind CSS
+* shadcn/ui nếu phù hợp
+* Supabase cho Auth, Database, Storage
+* Vercel để deploy
+* Browser MediaRecorder API để ghi âm
+* Không cần backend riêng ngoài Next.js API routes/server actions
+
+## 3. Các màn hình chính cần làm
+
+### 3.1 Login Page
+
+Route: `/login`
+
+Chức năng:
+
+* Đăng nhập bằng Google qua Supabase Auth.
+* Sau khi login thành công, chuyển về `/dashboard`.
+* Nếu user chưa có profile thì tạo profile.
+
+### 3.2 Dashboard
+
+Route: `/dashboard`
+
+Mục tiêu: tạo động lực cho user học mỗi ngày.
+
+Hiển thị:
+
+* Streak hiện tại.
+* Level hiện tại.
+* Total XP.
+* Daily mission hôm nay.
+* Số câu đã pass hôm nay.
+* Nút “Bắt đầu học hôm nay”.
+* Bài học đang học dở nếu có.
+* Tóm tắt 7 ngày gần nhất.
+
+Ví dụ UI text:
+
+* “🔥 Streak: 6 ngày”
+* “🎯 Hôm nay: Pass 5 câu để giữ streak”
+* “⭐ Level: Junior Dev Speaker Lv. 4”
+* “📈 Tuần này bạn đã pass 42 câu”
+
+Daily mission mặc định:
+
+* Pass 5 câu bất kỳ trong ngày để giữ streak.
+* Nếu hoàn thành cả bài thì nhận thêm bonus XP.
+
+### 3.3 Lesson List
+
+Route: `/lessons`
+
+Hiển thị danh sách bài học.
+
+Mỗi lesson card có:
+
+* Title
+* Topic
+* Level
+* Duration
+* Số câu
+* Số câu đã pass của user
+* Trạng thái: Not started / In progress / Completed
+* Nút “Học tiếp”
+
+Topic gợi ý:
+
+* Daily Standup
+* Code Review
+* Bug Report
+* API Meeting
+* Database
+* Deployment
+* BrSE
+* Interview
+* Keigo
+
+### 3.4 Create Lesson
+
+Route: `/lessons/new`
+
+Cho phép user tạo bài học thủ công.
+
+Fields:
+
+* Title
+* Topic
+* Level
+* Upload audio file
+* Script tiếng Nhật
+* Vietnamese translation optional
+* Sentences
+
+Yêu cầu:
+
+* Có thể nhập script nhiều dòng.
+* Mỗi dòng được coi là một sentence.
+* Cho phép edit từng sentence trước khi save.
+* Lưu media vào Supabase Storage.
+* Lưu lesson và lesson_sentences vào Supabase Database.
+
+Chưa cần tự động lấy transcript YouTube.
+Có thể thêm field `source_url` để lưu YouTube URL nếu user nhập, nhưng không cần xử lý download video.
+
+### 3.5 Lesson Player
+
+Route: `/lessons/[id]`
+
+Đây là màn hình quan trọng nhất.
+
+Hiển thị:
+
+* Lesson title
+* Progress: ví dụ “Câu 7/24”
+* Current sentence tiếng Nhật
+* Vietnamese translation nếu có
+* Audio player
+* Nút nghe câu gốc
+* Nút nghe chậm 0.75x nếu dễ làm
+* Nút record
+* Nút retry
+* Điểm lần gần nhất
+* Trạng thái pass/fail của câu
+* Danh sách câu bên cạnh hoặc phía dưới để thấy câu nào pass/chưa pass
+
+Flow:
+
+1. User chọn câu.
+2. User nghe audio gốc.
+3. User bấm record.
+4. App ghi âm bằng MediaRecorder.
+5. User dừng record.
+6. Upload recording lên Supabase Storage.
+7. Gọi scoring function.
+8. Hiển thị điểm:
+
+   * Pronunciation
+   * Speed
+   * Intonation
+   * Total
+9. Nếu total >= 80 thì câu pass.
+10. Nếu total < 80 thì hiển thị feedback ngắn và yêu cầu luyện lại.
+11. Khi pass đủ 5 câu trong ngày thì daily mission completed.
+12. Khi pass hết câu trong bài thì lesson completed.
+
+Ví dụ kết quả pass:
+
+“83 ✅ Pass”
+
+Breakdown:
+
+* Phát âm: 85
+* Tốc độ: 79
+* Ngữ điệu: 82
+
+Ví dụ fail:
+
+“74 🟡 Almost”
+
+Feedback:
+
+* “Bạn chỉ còn thiếu 6 điểm để pass.”
+* “Vấn đề chính là tốc độ hơi nhanh.”
+* “Hãy nghe lại câu gốc rồi thử nói chậm hơn một chút.”
+
+### 3.6 Progress Page
+
+Route: `/progress`
+
+Hiển thị:
+
+* Tổng số bài đã hoàn thành.
+* Tổng số câu đã pass.
+* Điểm trung bình.
+* Streak hiện tại.
+* Longest streak.
+* XP.
+* Level.
+* Lịch sử học 7 hoặc 30 ngày.
+* Kỹ năng yếu nhất: pronunciation/speed/intonation.
+
+## 4. Database schema
+
+Tạo Supabase tables sau.
+
+### profiles
+
+Fields:
+
+* id uuid primary key, references auth.users(id)
+* email text
+* display_name text
+* avatar_url text
+* total_xp int default 0
+* current_level int default 1
+* current_streak int default 0
+* longest_streak int default 0
+* last_completed_date date nullable
+* created_at timestamptz default now()
+
+### lessons
+
+Fields:
+
+* id uuid primary key default gen_random_uuid()
+* user_id uuid references profiles(id)
+* title text not null
+* topic text
+* level text
+* duration_seconds int nullable
+* source_type text default 'upload'
+* source_url text nullable
+* media_url text nullable
+* is_public boolean default false
+* created_at timestamptz default now()
+
+### lesson_sentences
+
+Fields:
+
+* id uuid primary key default gen_random_uuid()
+* lesson_id uuid references lessons(id) on delete cascade
+* order_index int not null
+* ja_text text not null
+* vi_translation text nullable
+* audio_start numeric nullable
+* audio_end numeric nullable
+* pass_score int default 80
+* created_at timestamptz default now()
+
+### sentence_attempts
+
+Fields:
+
+* id uuid primary key default gen_random_uuid()
+* user_id uuid references profiles(id)
+* lesson_id uuid references lessons(id)
+* sentence_id uuid references lesson_sentences(id)
+* recording_url text nullable
+* pronunciation_score int
+* speed_score int
+* intonation_score int
+* total_score int
+* transcript_text text nullable
+* duration_seconds numeric nullable
+* is_passed boolean default false
+* feedback text nullable
+* created_at timestamptz default now()
+
+### lesson_progress
+
+Fields:
+
+* id uuid primary key default gen_random_uuid()
+* user_id uuid references profiles(id)
+* lesson_id uuid references lessons(id)
+* status text default 'in_progress'
+* passed_sentence_count int default 0
+* total_sentence_count int default 0
+* completed_at timestamptz nullable
+* updated_at timestamptz default now()
+* unique(user_id, lesson_id)
+
+### daily_missions
+
+Fields:
+
+* id uuid primary key default gen_random_uuid()
+* user_id uuid references profiles(id)
+* mission_date date not null
+* target_sentence_count int default 5
+* passed_sentence_count int default 0
+* is_completed boolean default false
+* created_at timestamptz default now()
+* unique(user_id, mission_date)
+
+### xp_events
+
+Fields:
+
+* id uuid primary key default gen_random_uuid()
+* user_id uuid references profiles(id)
+* event_type text not null
+* xp_amount int not null
+* lesson_id uuid references lessons(id) nullable
+* sentence_id uuid references lesson_sentences(id) nullable
+* created_at timestamptz default now()
+
+## 5. Scoring logic
+
+Làm scoring đơn giản trước, nhưng code cần tách module để sau này thay bằng AI/API thật.
+
+File gợi ý:
+
+* `lib/scoring/pronunciation.ts`
+* `lib/scoring/speed.ts`
+* `lib/scoring/intonation.ts`
+* `lib/scoring/total.ts`
+
+### Công thức total
+
+Total Score = Pronunciation 50% + Speed 30% + Intonation 20%
+
+```ts
+totalScore = Math.round(
+  pronunciationScore * 0.5 +
+  speedScore * 0.3 +
+  intonationScore * 0.2
+)
+```
+
+### Pronunciation score
+
+Bản đầu nếu chưa có speech-to-text thật thì làm mock hoặc input transcript giả.
+
+Yêu cầu:
+
+* Tạo function nhận `targetText` và `spokenText`.
+* Tính similarity đơn giản bằng Levenshtein distance hoặc token similarity.
+* Return score 0–100.
+
+Nếu chưa có spokenText thì trả random realistic score 60–95 để test flow.
+
+### Speed score
+
+Input:
+
+* originalDurationSeconds
+* userDurationSeconds
+
+Rule:
+
+* Nếu ratio từ 0.85 đến 1.15: 90–100
+* Nếu ratio từ 0.70 đến 1.30: 70–89
+* Ngoài khoảng đó: 40–69
+
+ratio = userDurationSeconds / originalDurationSeconds
+
+Nếu không có originalDurationSeconds thì dùng mock score 70–95.
+
+### Intonation score
+
+Bản đầu mock score 65–95.
+
+Sau này có thể thay bằng audio energy contour/pitch contour.
+
+### Feedback
+
+Tạo function generateFeedback(scores) trả về feedback ngắn.
+
+Rule:
+
+* Nếu total >= 90: “Rất tốt, câu này nghe tự nhiên.”
+* Nếu total >= 80: “Pass rồi. Có thể luyện thêm để nói tự nhiên hơn.”
+* Nếu pronunciation thấp nhất: “Vấn đề chính là phát âm. Hãy nghe lại câu gốc và nói rõ từng cụm.”
+* Nếu speed thấp nhất: “Vấn đề chính là tốc độ. Bạn đang nói quá nhanh hoặc quá chậm so với câu mẫu.”
+* Nếu intonation thấp nhất: “Vấn đề chính là ngữ điệu. Hãy chú ý nhịp ngắt và độ lên xuống của câu.”
+
+## 6. Pass/fail logic
+
+Một sentence pass khi:
+
+```ts
+totalScore >= passScore
+```
+
+Mặc định passScore = 80.
+
+Khi sentence pass:
+
+* Tạo sentence_attempts.
+* Cập nhật lesson_progress.
+* Cập nhật daily_missions.
+* Cộng XP.
+* Nếu pass hết sentence trong lesson thì set lesson_progress.status = completed.
+* Nếu daily mission đạt 5 câu thì set is_completed = true và cập nhật streak.
+
+## 7. Streak logic
+
+Daily mission chính:
+
+* User chỉ cần pass 5 câu bất kỳ trong ngày để giữ streak.
+* Không bắt buộc hoàn thành cả bài.
+* Hoàn thành cả bài chỉ là bonus.
+
+Khi daily_mission từ chưa completed chuyển sang completed:
+
+* Kiểm tra profiles.last_completed_date.
+
+Logic:
+
+1. Nếu last_completed_date là hôm qua:
+
+   * current_streak += 1
+2. Nếu last_completed_date là hôm nay:
+
+   * không tăng nữa
+3. Nếu last_completed_date null:
+
+   * current_streak = 1
+4. Nếu last_completed_date cũ hơn hôm qua:
+
+   * current_streak = 1
+
+Sau đó:
+
+* last_completed_date = hôm nay
+* longest_streak = max(longest_streak, current_streak)
+
+Quan trọng:
+
+* Một ngày chỉ được tăng streak 1 lần.
+* Pass thêm nhiều câu trong cùng ngày không tăng streak nữa.
+* Pass thêm thì vẫn cộng XP.
+
+## 8. XP và level logic
+
+XP rule:
+
+* Pass 1 câu: +5 XP
+* Pass câu total >= 90: +8 XP thay vì +5
+* Hoàn thành 1 bài: +50 XP
+* Hoàn thành daily mission: +100 XP
+* Streak đạt mốc 7 ngày: +300 XP bonus
+
+Level formula:
+
+```ts
+level = Math.floor(totalXp / 500) + 1
+```
+
+Level title:
+
+* Lv. 1: IT Shadow Beginner
+* Lv. 5: Junior Dev Speaker
+* Lv. 10: Daily Meeting Survivor
+* Lv. 15: Code Review Speaker
+* Lv. 20: BrSE Candidate
+* Lv. 30: Japanese Tech Communicator
+* Lv. 50: Tech Lead Speaker
+
+## 9. UX quan trọng
+
+App phải tạo cảm giác user muốn quay lại.
+
+Nguyên tắc UI:
+
+* Dashboard phải đơn giản, tập trung vào streak và mission hôm nay.
+* Daily target phải nhỏ: pass 5 câu.
+* Sau khi user pass 5 câu, hiện message: “Bạn đã giữ streak hôm nay 🔥”
+* Sau mỗi attempt, show điểm và 1 feedback chính, không show quá nhiều lỗi.
+* Nếu user cải thiện điểm, show: “+9 điểm so với lần trước 🎉”
+* Nếu fail, không làm user nản. Dùng text nhẹ:
+
+  * “Gần đạt rồi”
+  * “Bạn chỉ còn thiếu 6 điểm”
+  * “Thử lại một lần nữa nhé”
+* Nếu mất streak, không trách user. Message:
+
+  * “Không sao, hôm nay pass 5 câu để bắt đầu lại.”
+
+## 10. Component gợi ý
+
+Tạo các component:
+
+* `StreakCard`
+* `DailyMissionCard`
+* `LevelCard`
+* `LessonCard`
+* `LessonPlayer`
+* `SentenceCard`
+* `AudioRecorder`
+* `ScoreResult`
+* `ProgressBar`
+* `XPBadge`
+* `CalendarHeatmap`
+* `CreateLessonForm`
+
+## 11. File structure gợi ý
+
+```txt
+app/
+  login/
+    page.tsx
+  dashboard/
+    page.tsx
+  lessons/
+    page.tsx
+    new/
+      page.tsx
+    [id]/
+      page.tsx
+  progress/
+    page.tsx
+  api/
+    score/
+      route.ts
+
+components/
+  dashboard/
+    StreakCard.tsx
+    DailyMissionCard.tsx
+    LevelCard.tsx
+  lesson/
+    LessonCard.tsx
+    LessonPlayer.tsx
+    SentenceCard.tsx
+    AudioRecorder.tsx
+    ScoreResult.tsx
+  progress/
+    CalendarHeatmap.tsx
+
+lib/
+  supabase/
+    client.ts
+    server.ts
+  scoring/
+    pronunciation.ts
+    speed.ts
+    intonation.ts
+    total.ts
+    feedback.ts
+  gamification/
+    streak.ts
+    xp.ts
+    level.ts
+```
+
+## 12. Seed data
+
+Tạo sẵn 1–2 bài học mẫu để test.
+
+Lesson sample:
+
+Title: APIレビュー会議
+Topic: API Meeting
+Level: N3-N2
+
+Sentences:
+
+1. 昨日はAPIのエラーハンドリングを修正しました。
+   Hôm qua tôi đã sửa phần xử lý lỗi của API.
+
+2. 本番環境でエラーが発生しています。
+   Đang phát sinh lỗi ở môi trường production.
+
+3. 原因を調査して、午後までに報告します。
+   Tôi sẽ điều tra nguyên nhân và báo cáo trước buổi chiều.
+
+4. このエンドポイントは認証が必要です。
+   Endpoint này cần xác thực.
+
+5. レスポンスの形式をもう一度確認してください。
+   Hãy kiểm tra lại format của response.
+
+## 13. Yêu cầu triển khai trước
+
+Hãy triển khai theo thứ tự:
+
+1. Setup Next.js + Tailwind.
+2. Tạo layout cơ bản.
+3. Tạo Dashboard mock.
+4. Tạo Lesson Player mock với seed sentences.
+5. Tạo AudioRecorder dùng MediaRecorder.
+6. Tạo scoring mock/rule-based.
+7. Tạo pass/fail sentence logic.
+8. Tạo daily mission: pass 5 câu.
+9. Tạo streak + XP + level logic.
+10. Kết nối Supabase Auth.
+11. Tạo schema SQL cho Supabase.
+12. Kết nối lesson thật từ database.
+13. Upload recording lên Supabase Storage.
+14. Hoàn thiện UI flow.
+
+Ưu tiên code sạch, dễ mở rộng. Không cần làm AI scoring thật ngay, nhưng scoring module phải được thiết kế để sau này thay bằng AI/API.

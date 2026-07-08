@@ -1,0 +1,103 @@
+{
+  "lesson_id": "resource-lesson-14",
+  "whisper_model": "tiny",
+  "source_audio": "resources/14.m4a",
+  "groups": [
+    {
+      "order_index": 0,
+      "audio_start": 3,
+      "audio_end": 16,
+      "clip_url": "/audio/lessons/lesson-14/s01.m4a",
+      "ja_text": "リーさん、今回のUATサポートでお願いしたいことがありますが、いいですか。",
+      "whisper_text": "UATサポートタスクのお確認D3今回のUATサポートでお願いしたいことがありますがいいですか"
+    },
+    {
+      "order_index": 1,
+      "audio_start": 16,
+      "audio_end": 20,
+      "clip_url": "/audio/lessons/lesson-14/s02.m4a",
+      "ja_text": "はい。なんでしょうか。",
+      "whisper_text": "はい 何でしょうか"
+    },
+    {
+      "order_index": 2,
+      "audio_start": 20,
+      "audio_end": 38,
+      "clip_url": "/audio/lessons/lesson-14/s03.m4a",
+      "ja_text": "先日、成果物を受け取りました。 これから受入テストを行っていきます。 そこで、 不具合が出た場合の体制について、念のためもう一度聞かせてください。",
+      "whisper_text": "先日生画物を受け取りましたこれから受け入れテストを行っていきますそこで、フォーアイが出た場合の体制について年のため、もう一度聞かせてください"
+    },
+    {
+      "order_index": 3,
+      "audio_start": 38,
+      "audio_end": 53,
+      "clip_url": "/audio/lessons/lesson-14/s04.m4a",
+      "ja_text": "はい。 定例会のときにも相談しましたが、 受入テストで検出された不具合は、まず私が原因を分析することになっています。",
+      "whisper_text": "はいデーレーカーの時にも相談しましたが受け入れてストで検出されたフォーアイはまず、私が原因を分析することになっています"
+    },
+    {
+      "order_index": 4,
+      "audio_start": 53,
+      "audio_end": 61,
+      "clip_url": "/audio/lessons/lesson-14/s05.m4a",
+      "ja_text": "そうでしたね。その後、どちらで対応するのか切り分けするのですね。",
+      "whisper_text": "そうですよねその後、どちらで対応するのか、切り分けするのですね"
+    },
+    {
+      "order_index": 5,
+      "audio_start": 61,
+      "audio_end": 84,
+      "clip_url": "/audio/lessons/lesson-14/s06.m4a",
+      "ja_text": "はい、その通りです。分析に加えて、私が対応するものとオフショアが対応するものの切り分けもします。 再現手順についても確認します。確認に際して分からないことがあったら、山本さんにお聞きしてもよろしいですか。",
+      "whisper_text": "はい、その通りです分析に加えて、私が対応するものとオフシュアーが対応するものの切り分けもします再現手順についても確認します確認にさせてわからないことがあったらマモドさんにおけきしてもよろしいですか"
+    },
+    {
+      "order_index": 6,
+      "audio_start": 84,
+      "audio_end": 91,
+      "clip_url": "/audio/lessons/lesson-14/s07.m4a",
+      "ja_text": "もちろん、いいですよ。 困ったときは、いつでも声をかけてください。",
+      "whisper_text": "もちろんいいですよ困った時はいつでも声をかけてください"
+    },
+    {
+      "order_index": 7,
+      "audio_start": 91,
+      "audio_end": 95,
+      "clip_url": "/audio/lessons/lesson-14/s08.m4a",
+      "ja_text": "はい、ありがとうございます。",
+      "whisper_text": "はい、ありがとうございます"
+    },
+    {
+      "order_index": 8,
+      "audio_start": 95,
+      "audio_end": 122,
+      "clip_url": "/audio/lessons/lesson-14/s09.m4a",
+      "ja_text": "不具合が何件か同時に発生した場合は、まず不具合管理システムに登録します。その後、 一旦、弊社で対応の優先順位を決めて、 連絡します。 ですが、リーさんが分析をしたときに優先順位を変更したいものがありましたら、相談に来てください。",
+      "whisper_text": "フォーアイが何件か同時に発生した場合はまず、フォーアイ管理ステムに登録しますその後、一旦平者で対応の優先順に置きめて連絡しますですが、ディーさんが分析をした時に優先順にを変更したいものがありましたら相談に来てください"
+    },
+    {
+      "order_index": 9,
+      "audio_start": 123,
+      "audio_end": 136,
+      "clip_url": "/audio/lessons/lesson-14/s10.m4a",
+      "ja_text": "承知しました。 そう言えば、先日、仕様を少し変えたいというお話がありましたが、具体的に教えていただけますか。",
+      "whisper_text": "正直しましたそういえば、戦術しよう少し書いたいという話がありましたが具体的に教えていただけますか"
+    },
+    {
+      "order_index": 10,
+      "audio_start": 136,
+      "audio_end": 144,
+      "clip_url": "/audio/lessons/lesson-14/s11.m4a",
+      "ja_text": "あ、そうですね。その件に関わる資料を準備していますので、午後、相談しましょう。どれぐらい時間がかかるかを教えていただきたいです。",
+      "whisper_text": "そうですねその県にかかわる資料を順域していますのでご後、相談しましょう"
+    },
+    {
+      "order_index": 11,
+      "audio_start": 144,
+      "audio_end": 149,
+      "clip_url": "/audio/lessons/lesson-14/s12.m4a",
+      "ja_text": "承知しました。 準備されたら、お声がけください。 よろしくお願いいたします。",
+      "whisper_text": "どれぐらい時間がかかるかを教えていただきたいです"
+    }
+  ]
+}

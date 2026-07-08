@@ -1,0 +1,79 @@
+{
+  "lesson_id": "resource-lesson-09",
+  "whisper_model": "tiny",
+  "source_audio": "resources/9.m4a",
+  "groups": [
+    {
+      "order_index": 0,
+      "audio_start": 5.4,
+      "audio_end": 14.6,
+      "clip_url": "/audio/lessons/lesson-09/s01.m4a",
+      "ja_text": "メモリ不足の課題が発生していると聞いていますが、状況を教えてもらえますか。",
+      "whisper_text": "メモリーブ書くの課題が発生していると聞いていますが状況は教えてもらえますか"
+    },
+    {
+      "order_index": 1,
+      "audio_start": 14.6,
+      "audio_end": 34.6,
+      "clip_url": "/audio/lessons/lesson-09/s02.m4a",
+      "ja_text": "はい。ここは、以前のデスクトップアプリのときは、静的データをRAM に保存する方法で、問題ありませんでした。 ですが、Webの開発では、その方法だとメモリ不足になります。",
+      "whisper_text": "はいここは以前のデスクトップアプリの時は正的データをラムに保存する方法で問題ありませんでしたですがウェブの開発ではその方法だとメモリ部属になります"
+    },
+    {
+      "order_index": 2,
+      "audio_start": 34.6,
+      "audio_end": 45,
+      "clip_url": "/audio/lessons/lesson-09/s03.m4a",
+      "ja_text": "メモリ不足が原因で、 一部の画面がデスクトップアプリと同じように動作しないのですね。",
+      "whisper_text": "メモリーブ書くが原因で一部の画面がデスクトップアプリと同じようにどうさしないのですね"
+    },
+    {
+      "order_index": 3,
+      "audio_start": 45,
+      "audio_end": 69,
+      "clip_url": "/audio/lessons/lesson-09/s04.m4a",
+      "ja_text": "はい。そのとおりです。 弊社で調査した結果、 静的データを使う代わりにindexedDB という API にデータを保存すれば、解決することがわかりました。 現在、この対策で実装を進めています。",
+      "whisper_text": "はいその通りです平者で調査した結果正的データを使う変わりにインデックスデービートユーブアイニーデータを保存すれば開決することが分かりました現在この対策で実装を進めています"
+    },
+    {
+      "order_index": 4,
+      "audio_start": 69,
+      "audio_end": 83,
+      "clip_url": "/audio/lessons/lesson-09/s05.m4a",
+      "ja_text": "わかりました。 Web では indexedDB を使えば、問題なく動くということですね。それで、全体の進捗には影響しませんか。",
+      "whisper_text": "分かりましたメブではインデックスデービート使えば問題なく動くということですねそれで全体の新宿には影響しませんか"
+    },
+    {
+      "order_index": 5,
+      "audio_start": 83,
+      "audio_end": 109,
+      "clip_url": "/audio/lessons/lesson-09/s06.m4a",
+      "ja_text": "これらのタスクは予定より2人日遅延していますが、 代わりに結合テスト仕様書の作成を前倒しして対応しております。 そのため、全体の進捗には影響しません。ここの遅延は来週中に取り戻す予定です。",
+      "whisper_text": "これらの助くは予定より2人1人していますが代わりに決合テスト使用産作成をマイダウスして対応しておりますそのため全体の新宿には影響しませんこの支援はライシュ中に取り戻す予定です"
+    },
+    {
+      "order_index": 6,
+      "audio_start": 109,
+      "audio_end": 119,
+      "clip_url": "/audio/lessons/lesson-09/s07.m4a",
+      "ja_text": "はい。では引き続き対応していただいて、 また何か問題があれば、ご連絡お願いします。",
+      "whisper_text": "はいでは生き続き対応していただいてまた何か問題があればこれらくお願いします"
+    },
+    {
+      "order_index": 7,
+      "audio_start": 119,
+      "audio_end": 123,
+      "clip_url": "/audio/lessons/lesson-09/s08.m4a",
+      "ja_text": "はい。 承知しました。",
+      "whisper_text": "はい処置しました"
+    },
+    {
+      "order_index": 8,
+      "audio_start": 123,
+      "audio_end": 127,
+      "clip_url": "/audio/lessons/lesson-09/s09.m4a",
+      "ja_text": "他に何か課題はありますか。",
+      "whisper_text": "他に何か課題はありますか"
+    }
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "lesson_id": "resource-lesson-12",
+  "whisper_model": "tiny",
+  "source_audio": "resources/12.m4a",
+  "groups": [
+    {
+      "order_index": 0,
+      "audio_start": 8,
+      "audio_end": 17,
+      "clip_url": "/audio/lessons/lesson-12/s01.m4a",
+      "ja_text": "小巻さん、スケジュールについて相談したいことがありますが、お時間よろしいですか。",
+      "whisper_text": "ごまきさん スケチュールについて相談したいことがありますがお時間をよろしいですか"
+    },
+    {
+      "order_index": 1,
+      "audio_start": 17,
+      "audio_end": 21,
+      "clip_url": "/audio/lessons/lesson-12/s02.m4a",
+      "ja_text": "はい。いいですよ。",
+      "whisper_text": "はい いいですよ"
+    },
+    {
+      "order_index": 2,
+      "audio_start": 21,
+      "audio_end": 41,
+      "clip_url": "/audio/lessons/lesson-12/s03.m4a",
+      "ja_text": "Q&Aの6番に関してです。 同じブラウザで複数ウィンドウを開くのに制限をかけないというご要望でしたが、これに対応するには予定よりも時間がかかりそうです。",
+      "whisper_text": "912円の6番に関してです同じブラウザーで吹くす運動を開くのに正限をかけないというご用望でしたがこれに対応するには予定よりも時間がかかりそうです"
+    },
+    {
+      "order_index": 3,
+      "audio_start": 41,
+      "audio_end": 50,
+      "clip_url": "/audio/lessons/lesson-12/s04.m4a",
+      "ja_text": "そうですか。時間がかかるということですが、 今回のリリーススケジュールには影響しますか。",
+      "whisper_text": "そうですか時間がかかるということですか今回のリリーススケチュールには影響しますか"
+    },
+    {
+      "order_index": 4,
+      "audio_start": 52,
+      "audio_end": 69,
+      "clip_url": "/audio/lessons/lesson-12/s05.m4a",
+      "ja_text": "それが、スケジュールに影響しそうなので、 ご相談したいです。 制限をかけないように対応した場合は、 今回のリリースに間に合わないと思っています。",
+      "whisper_text": "それがスケチュールに影響しそうなのでご存談したいです正限をかけないように対応した場合は今回のリリースに間に合わないと思っています"
+    },
+    {
+      "order_index": 5,
+      "audio_start": 69,
+      "audio_end": 79,
+      "clip_url": "/audio/lessons/lesson-12/s06.m4a",
+      "ja_text": "うーん……そうですか。 対応には、どの程度工数がかかる見込みですか。",
+      "whisper_text": "そうですか対応にはどの程度コースがかかる見込みですか"
+    },
+    {
+      "order_index": 6,
+      "audio_start": 79,
+      "audio_end": 109,
+      "clip_url": "/audio/lessons/lesson-12/s07.m4a",
+      "ja_text": "はい、対応工数を見積もった結果、少なくとも10人目かかる見込みです。そこで、ご相談ですが、今回のリリースは制限を設けたバージョンを納品し、次回のリリースの際に制限なしのバージョンを納品したいです。それで、ご了承いただけないでしょうか。",
+      "whisper_text": "はい 対応コースを見つもった結果少なくとも12日かかる見込みですそこでご相談ですが今回のリリースは正限を向けたバージョンを用品し次回のリリースの際に正限なしのバージョンを用品したいですそれでご利用症をいただけないでしょうか"
+    },
+    {
+      "order_index": 7,
+      "audio_start": 109,
+      "audio_end": 118,
+      "clip_url": "/audio/lessons/lesson-12/s08.m4a",
+      "ja_text": "1点確認しておきたいのですが、見積り工数は、テストも含めた工数ですか。",
+      "whisper_text": "1点確認しておきたいのですか3つもりコースはテストも含めたコースですか"
+    },
+    {
+      "order_index": 8,
+      "audio_start": 118,
+      "audio_end": 126,
+      "clip_url": "/audio/lessons/lesson-12/s09.m4a",
+      "ja_text": "はい、そうです。そのうち3人はテスト工数です。",
+      "whisper_text": "はいそうですそのうち3人に一はテストコースです"
+    },
+    {
+      "order_index": 9,
+      "audio_start": 126,
+      "audio_end": 142,
+      "clip_url": "/audio/lessons/lesson-12/s10.m4a",
+      "ja_text": "状況についてはわかりました。受け入れテストの日程も近いので、一旦、 担当者とも相談します。 回答は早いほうがいいですね。",
+      "whisper_text": "状況については分かりました受け入れてストの2点も近いので一旦担当者とも相談します回答は早い方がいいですね"
+    },
+    {
+      "order_index": 10,
+      "audio_start": 142,
+      "audio_end": 153,
+      "clip_url": "/audio/lessons/lesson-12/s11.m4a",
+      "ja_text": "はい、できれば、 明日中にご回答いただけないでしょうか。 どうぞよろしくお願いいたします。",
+      "whisper_text": "はいできれば秒日中に5回答をいただけないでしょうかどうぞよろしくお願いいたします"
+    }
+  ]
+}
