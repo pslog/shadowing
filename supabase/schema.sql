@@ -196,6 +196,9 @@ drop policy if exists "lessons update own" on public.lessons;
 drop policy if exists "lessons delete own" on public.lessons;
 drop policy if exists "sentences read" on public.lesson_sentences;
 drop policy if exists "sentences write own" on public.lesson_sentences;
+drop policy if exists "courses admin all" on public.courses;
+drop policy if exists "lessons admin all" on public.lessons;
+drop policy if exists "sentences admin all" on public.lesson_sentences;
 drop policy if exists "attempts self" on public.sentence_attempts;
 drop policy if exists "progress self" on public.lesson_progress;
 drop policy if exists "missions self" on public.daily_missions;
@@ -239,6 +242,18 @@ create policy "sentences write own" on public.lesson_sentences
   ) with check (
     exists (select 1 from public.lessons l where l.id = lesson_id and l.user_id = auth.uid())
   );
+
+-- Admin override: the fixed admin account may write public/system content
+-- (seed courses/lessons/sentences owned by null), e.g. fixing sentence timing.
+create policy "courses admin all" on public.courses
+  for all using ((auth.jwt() ->> 'email') = 'vovansinh1991@gmail.com')
+  with check ((auth.jwt() ->> 'email') = 'vovansinh1991@gmail.com');
+create policy "lessons admin all" on public.lessons
+  for all using ((auth.jwt() ->> 'email') = 'vovansinh1991@gmail.com')
+  with check ((auth.jwt() ->> 'email') = 'vovansinh1991@gmail.com');
+create policy "sentences admin all" on public.lesson_sentences
+  for all using ((auth.jwt() ->> 'email') = 'vovansinh1991@gmail.com')
+  with check ((auth.jwt() ->> 'email') = 'vovansinh1991@gmail.com');
 
 -- Per-user tables: full self access.
 create policy "attempts self" on public.sentence_attempts

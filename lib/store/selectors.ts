@@ -31,8 +31,12 @@ function isToday(iso: string): boolean {
 }
 
 function lessonNumber(title: string): number | null {
-  const match = title.match(/^第(\d+)課/u);
-  return match ? Number(match[1]) : null;
+  const dai = title.match(/^第(\d+)課/u);
+  if (dai) return Number(dai[1]);
+  // "Unit 1.1", "Unit 1.2" -> 101, 102 … (order within a course).
+  const unit = title.match(/Unit\s+(\d+)\.(\d+)/iu);
+  if (unit) return Number(unit[1]) * 100 + Number(unit[2]);
+  return null;
 }
 
 /** Lessons the current user can see: public samples + their own. */

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
 import { EditLessonForm } from "@/components/lesson/CreateLessonForm";
+import { SentenceTimingEditor } from "@/components/lesson/SentenceTimingEditor";
 import { FullScreenLoading } from "@/components/ui/loading";
 import { useData } from "@/lib/store/DataProvider";
 import { useRequireProfile } from "@/lib/store/useRequireProfile";
@@ -45,6 +46,10 @@ export default function EditLessonPage() {
         <p className="text-muted">タイトル、音声URL、スクリプト、メモを更新できます。</p>
       </div>
       <EditLessonForm lesson={{ ...lesson, sentences }} />
+
+      <div className="mt-6">
+        <SentenceTimingEditor lessonId={lesson.id} />
+      </div>
     </AppShell>
   );
 }

@@ -61,6 +61,17 @@ const COURSES = [
     image_url: "/course-covers/hanasou-mensetsu.jpg",
     order_index: 3,
   },
+  {
+    id: "00000000-0000-0000-0000-0000000c0005",
+    title: "シャドーイング もっと話せる日本語 中～上級編",
+    description:
+      "シャドーイングの練習方法を用いて、より長い会話、ワンランク上の会話力を身につける効果的な会話トレーニング本。日本や日本事情、対人関係をリアルに体感しながら、会話が長く円滑に続くことを目指す。",
+    topic: "会話",
+    level: "N2-N1",
+    accent: "#f43f5e",
+    image_url: "/course-covers/shadowing-motto-hanaseru.jpg",
+    order_index: 4,
+  },
 ];
 
 await client.connect();

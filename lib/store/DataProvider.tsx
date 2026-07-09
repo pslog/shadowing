@@ -70,6 +70,11 @@ interface DataContextValue {
   createCourse: (input: CreateCourseInput) => Course;
   createLesson: (input: CreateLessonInput) => Lesson;
   updateLesson: (input: UpdateLessonInput) => Lesson;
+  updateSentenceTiming: (
+    sentenceId: string,
+    audioStart: number | null,
+    audioEnd: number | null,
+  ) => void;
   recordAttempt: (input: RecordAttemptInput) => AttemptOutcome;
   reset: () => void;
 }
@@ -551,6 +556,28 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     [commit, persistSupabaseLesson],
   );
 
+  const updateSentenceTiming = useCallback(
+    (sentenceId: string, audioStart: number | null, audioEnd: number | null) => {
+      const prev = stateRef.current;
+      commit({
+        ...prev,
+        sentences: prev.sentences.map((s) =>
+          s.id === sentenceId
+            ? { ...s, audio_start: audioStart, audio_end: audioEnd }
+            : s,
+        ),
+      });
+      if (USING_SUPABASE) {
+        createSupabaseClient()
+          ?.from("lesson_sentences")
+          .update({ audio_start: audioStart, audio_end: audioEnd })
+          .eq("id", sentenceId)
+          .then(undefined, console.error);
+      }
+    },
+    [commit],
+  );
+
   const recordAttempt = useCallback(
     (input: RecordAttemptInput): AttemptOutcome => {
       const prev = stateRef.current;
@@ -579,6 +606,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       createCourse,
       createLesson,
       updateLesson,
+      updateSentenceTiming,
       recordAttempt,
       reset,
     }),
@@ -590,6 +618,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       createCourse,
       createLesson,
       updateLesson,
+      updateSentenceTiming,
       recordAttempt,
       reset,
     ],
