@@ -105,6 +105,22 @@ export function courseStats(state: AppState, courseId: string): CourseStats {
   return { total: lessons.length, completed, averageScore };
 }
 
+/** Lessons the user has attempted, most-recently-practiced first. */
+export function recentAttemptedLessons(state: AppState, n = 4): Lesson[] {
+  const uid = state.profile?.id;
+  const latest = new Map<string, string>();
+  for (const a of state.attempts) {
+    if (a.user_id !== uid) continue;
+    const prev = latest.get(a.lesson_id);
+    if (!prev || a.created_at > prev) latest.set(a.lesson_id, a.created_at);
+  }
+  return [...latest.entries()]
+    .sort((x, y) => y[1].localeCompare(x[1]))
+    .map(([id]) => lessonById(state, id))
+    .filter((l): l is Lesson => !!l)
+    .slice(0, n);
+}
+
 /** First not-yet-completed lesson in the course (for a "continue" button). */
 export function nextLessonInCourse(
   state: AppState,

@@ -59,7 +59,7 @@ export default function CoursesPage() {
         )}
       </div>
 
-      <div className="stagger grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="stagger grid gap-4 lg:grid-cols-2">
         {courses.map((c, i) => (
           <div key={c.id} style={{ ["--i" as string]: i }}>
             <CourseCard

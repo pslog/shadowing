@@ -166,8 +166,8 @@ button:disabled {
 .blob {
   position: absolute;
   border-radius: 9999px;
-  filter: blur(78px);
-  opacity: 0.46;
+  filter: blur(72px);
+  opacity: 0.24;
   will-change: transform;
 }
 .blob-1 {
@@ -192,7 +192,7 @@ button:disabled {
   bottom: -18rem;
   left: 30%;
   background: radial-gradient(circle, var(--accent), transparent 64%);
-  opacity: 0.22;
+  opacity: 0.14;
   animation: drift3 30s ease-in-out infinite;
 }
 @keyframes drift1 {
@@ -209,10 +209,10 @@ button:disabled {
 /*  Surfaces & effects                                                */
 /* ------------------------------------------------------------------ */
 .brand-gradient {
-  background-image: linear-gradient(135deg, var(--g1), var(--g2) 52%, var(--g3));
+  background-image: linear-gradient(135deg, var(--g1), var(--g2) 58%, var(--g3));
 }
 .text-gradient {
-  background-image: linear-gradient(135deg, var(--g1), var(--g2) 50%, var(--g3));
+  background-image: linear-gradient(135deg, var(--g1), var(--g2) 58%, var(--g3));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -226,9 +226,9 @@ button:disabled {
 }
 @supports (backdrop-filter: blur(1px)) {
   .glass {
-    background: color-mix(in srgb, var(--surface) 72%, transparent);
-    backdrop-filter: blur(14px) saturate(1.4);
-    border: 1px solid color-mix(in srgb, var(--fg) 8%, transparent);
+    background: color-mix(in srgb, var(--surface) 84%, transparent);
+    backdrop-filter: blur(12px) saturate(1.08);
+    border: 1px solid color-mix(in srgb, var(--fg) 7%, transparent);
   }
 }
 
@@ -237,9 +237,9 @@ button:disabled {
     border-color 0.22s ease;
 }
 .card-interactive:hover {
-  transform: translateY(-4px) scale(1.015);
+  transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
-  border-color: color-mix(in srgb, var(--g2) 45%, var(--border));
+  border-color: color-mix(in srgb, var(--g2) 32%, var(--border));
 }
 
 /* Gradient-ring wrapper: a thin animated gradient border around content */
@@ -254,7 +254,7 @@ button:disabled {
   inset: 0;
   padding: 1.5px;
   border-radius: inherit;
-  background: linear-gradient(135deg, var(--g1), var(--g3), var(--accent));
+  background: linear-gradient(135deg, var(--g1), var(--g2), var(--accent));
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
@@ -273,13 +273,13 @@ button:disabled {
   border-radius: var(--radius-2xl);
   border: 1px solid color-mix(in srgb, var(--tile-c) 24%, var(--border));
   background:
-    radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--tile-c) 20%, transparent), transparent 60%),
+    radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--tile-c) 12%, transparent), transparent 62%),
     var(--card);
   box-shadow: var(--shadow-md);
   transition: transform 0.22s cubic-bezier(0.34, 1.4, 0.64, 1), box-shadow 0.22s ease;
 }
 .tile:hover {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
 }
 .tile-icon {
@@ -288,7 +288,7 @@ button:disabled {
   border-radius: 0.9rem;
   color: #fff;
   background: linear-gradient(135deg, color-mix(in srgb, var(--tile-c) 100%, transparent), color-mix(in srgb, var(--tile-c) 62%, #000 4%));
-  box-shadow: 0 8px 20px -8px color-mix(in srgb, var(--tile-c) 80%, transparent);
+  box-shadow: 0 8px 18px -10px color-mix(in srgb, var(--tile-c) 58%, transparent);
 }
 
 /* Shine sweep for primary buttons */
@@ -302,7 +302,7 @@ button:disabled {
   position: absolute;
   inset: 0;
   z-index: 1;
-  background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.35) 50%, transparent 70%);
+  background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.18) 50%, transparent 70%);
   transform: translateX(-120%);
   transition: transform 0.6s ease;
 }
