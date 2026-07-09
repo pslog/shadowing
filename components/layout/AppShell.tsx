@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useData } from "@/lib/store/DataProvider";
@@ -16,15 +17,28 @@ const NAV: { href: string; label: string; icon: IconName; alt?: string[] }[] = [
   { href: "/progress", label: "進捗", icon: "trending" },
 ];
 
+function useActive() {
+  const pathname = usePathname();
+  return (item: (typeof NAV)[number]) =>
+    pathname === item.href ||
+    pathname.startsWith(item.href + "/") ||
+    (item.alt?.some((p) => pathname.startsWith(p)) ?? false);
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { state, logout } = useData();
   const pathname = usePathname();
   const router = useRouter();
   const profile = state.profile;
+  const isActive = useActive();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  // Close the account menu on navigation.
+  useEffect(() => setMenuOpen(false), [pathname]);
 
   return (
-    <div className="flex min-h-dvh flex-col">
-      <header className="glass sticky top-0 z-30">
+    <div className="flex min-h-dvh flex-col pb-16 md:pb-0">
+      <header className="glass sticky top-0 z-30 pt-[env(safe-area-inset-top)]">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4">
           <Link href="/dashboard" className="flex items-center gap-2.5 font-bold">
             <span className="grid h-9 w-9 place-items-center rounded-xl brand-gradient text-white shadow-[var(--shadow-glow)]">
@@ -33,25 +47,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <span className="hidden text-lg sm:inline text-gradient">Shadowing JP</span>
           </Link>
 
-          <nav className="ml-2 flex items-center gap-1">
+          {/* Desktop nav (mobile uses the bottom tab bar) */}
+          <nav className="ml-2 hidden items-center gap-1 md:flex">
             {NAV.map((item) => {
-              const active =
-                pathname === item.href ||
-                pathname.startsWith(item.href + "/") ||
-                (item.alt?.some((p) => pathname.startsWith(p)) ?? false);
+              const active = isActive(item);
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm transition-all",
+                    "flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm transition-all",
                     active
                       ? "brand-gradient text-white font-semibold shadow-[var(--shadow-glow)]"
                       : "text-muted hover:text-fg hover:bg-surface/70",
                   )}
                 >
                   <Icon name={item.icon} size={16} />
-                  <span className="hidden sm:inline">{item.label}</span>
+                  <span>{item.label}</span>
                 </Link>
               );
             })}
@@ -69,33 +81,53 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <span className="hidden sm:inline">
                   <XPBadge xp={profile.total_xp} />
                 </span>
-                <div className="group relative">
+                <div className="relative">
                   <button
-                    className="flex items-center gap-2 rounded-full border border-border bg-surface py-1 pl-1 pr-3 text-sm focus-ring"
+                    onClick={() => setMenuOpen((v) => !v)}
+                    aria-haspopup="menu"
+                    aria-expanded={menuOpen}
+                    className="focus-ring flex h-11 items-center gap-2 rounded-full border border-border bg-surface py-1 pl-1 pr-3 text-sm"
                     title={levelTitle(profile.current_level)}
                   >
-                    <span className="grid h-7 w-7 place-items-center rounded-full brand-gradient text-xs text-white">
+                    <span className="grid h-8 w-8 place-items-center rounded-full brand-gradient text-xs text-white">
                       {profile.display_name.slice(0, 1).toUpperCase()}
                     </span>
-                    <span className="hidden lg:inline max-w-[10rem] truncate">
+                    <span className="hidden max-w-[10rem] truncate lg:inline">
                       {profile.display_name}
                     </span>
+                    <Icon name="chevron-right" size={14} className="rotate-90 text-muted" />
                   </button>
-                  <div className="invisible absolute right-0 mt-1 w-44 rounded-xl border border-border bg-card p-1 opacity-0 shadow-lg transition-all group-hover:visible group-hover:opacity-100">
-                    <div className="px-3 py-2 text-xs text-muted">
-                      Lv.{profile.current_level} · {levelTitle(profile.current_level)}
-                    </div>
-                    <button
-                      onClick={() => {
-                        logout();
-                        router.replace("/login");
-                      }}
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-danger hover:bg-surface"
-                    >
-                      <Icon name="logout" size={15} />
-                      ログアウト
-                    </button>
-                  </div>
+                  {menuOpen && (
+                    <>
+                      <button
+                        aria-hidden
+                        tabIndex={-1}
+                        onClick={() => setMenuOpen(false)}
+                        className="fixed inset-0 z-40 cursor-default"
+                      />
+                      <div
+                        role="menu"
+                        className="absolute right-0 z-50 mt-1 w-52 rounded-xl border border-border bg-card p-1 shadow-lg"
+                      >
+                        <div className="px-3 py-2 text-xs text-muted">
+                          <p className="truncate font-semibold text-fg">
+                            {profile.display_name}
+                          </p>
+                          Lv.{profile.current_level} · {levelTitle(profile.current_level)}
+                        </div>
+                        <button
+                          onClick={() => {
+                            logout();
+                            router.replace("/login");
+                          }}
+                          className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-danger hover:bg-surface"
+                        >
+                          <Icon name="logout" size={15} />
+                          ログアウト
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               </>
             )}
@@ -108,7 +140,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:py-8">{children}</main>
 
       <footer className="mt-8 border-t border-border/70">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-4 py-8 text-center sm:flex-row sm:justify-between sm:text-left">
@@ -121,15 +153,34 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <p className="text-xs text-muted">Vì cộng đồng học tiếng Nhật 🇯🇵💻</p>
             </div>
           </div>
-
-          <p className="text-xs text-muted">
-            Phi lợi nhuận — 一緒に頑張りましょう！
-          </p>
+          <p className="text-xs text-muted">Phi lợi nhuận — 一緒に頑張りましょう！</p>
         </div>
         <div className="border-t border-border/50 px-4 py-3 text-center text-[11px] text-muted">
           © {new Date().getFullYear()} Shadowing JP
         </div>
       </footer>
+
+      {/* Mobile bottom tab bar */}
+      <nav className="glass fixed inset-x-0 bottom-0 z-40 border-t border-border/70 pb-[env(safe-area-inset-bottom)] md:hidden">
+        <div className="mx-auto flex max-w-md items-stretch">
+          {NAV.map((item) => {
+            const active = isActive(item);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex min-h-16 flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-semibold transition-colors",
+                  active ? "text-primary" : "text-muted",
+                )}
+              >
+                <Icon name={item.icon} size={22} filled={active} />
+                {item.label}
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
     </div>
   );
 }

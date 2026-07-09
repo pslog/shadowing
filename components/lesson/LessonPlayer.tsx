@@ -125,7 +125,7 @@ function DialogueScript({
                 type="button"
                 onClick={() => onPractice(i)}
                 className={[
-                  "focus-ring grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-extrabold tabular-nums transition-all",
+                  "focus-ring grid h-9 w-9 shrink-0 place-items-center rounded-full text-xs font-extrabold tabular-nums transition-all",
                   active
                     ? "bg-primary text-white shadow-[var(--shadow-glow)]"
                     : passed
@@ -201,7 +201,7 @@ function SentenceNumberNav({
               onClick={() => onSelect(i)}
               title={bestScore != null ? `${i + 1}: ${bestScore}点` : `${i + 1}`}
               className={[
-                "focus-ring grid h-8 min-w-8 place-items-center rounded-lg px-2 text-xs font-extrabold tabular-nums transition-all active:scale-95",
+                "focus-ring grid h-9 min-w-9 place-items-center rounded-lg px-2 text-xs font-extrabold tabular-nums transition-all active:scale-95",
                 active
                   ? "bg-primary text-white shadow-sm"
                   : passed

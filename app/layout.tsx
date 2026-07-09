@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans, Noto_Sans_JP } from "next/font/google";
 import "./globals.css";
 import { DataProvider } from "@/lib/store/DataProvider";
@@ -20,6 +20,13 @@ export const metadata: Metadata = {
   title: "Shadowing JP - IT日本語シャドーイング",
   description:
     "IT業務で使う日本語を一文ずつ発音練習。ストリーク、XP、レベル、デイリーミッションで継続できます。",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover", // enables env(safe-area-inset-*) on notch devices
+  themeColor: "#6360f2",
 };
 
 export default function RootLayout({
