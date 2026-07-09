@@ -25,7 +25,7 @@ export default function EditLessonPage() {
     return (
       <AppShell>
         <div className="space-y-3">
-          <Link href="/lessons" className="text-sm text-muted hover:text-fg">
+          <Link href="/courses" className="text-sm text-muted hover:text-fg">
             ← レッスン
           </Link>
           <h1 className="text-2xl font-bold">レッスンが見つかりません</h1>

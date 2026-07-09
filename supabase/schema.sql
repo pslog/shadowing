@@ -21,11 +21,33 @@ create table if not exists public.profiles (
 );
 
 -- ---------------------------------------------------------------------------
+--  courses  (a group of related lessons: book / project / series)
+-- ---------------------------------------------------------------------------
+create table if not exists public.courses (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references public.profiles(id) on delete cascade,
+  title text not null,
+  description text,
+  topic text,
+  level text,
+  accent text,
+  image_url text,
+  order_index int not null default 0,
+  is_public boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+-- Add image_url if upgrading an existing database.
+alter table public.courses
+  add column if not exists image_url text;
+
+-- ---------------------------------------------------------------------------
 --  lessons
 -- ---------------------------------------------------------------------------
 create table if not exists public.lessons (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references public.profiles(id) on delete cascade,
+  course_id uuid references public.courses(id) on delete set null,
   title text not null,
   topic text,
   level text,
@@ -36,6 +58,10 @@ create table if not exists public.lessons (
   is_public boolean not null default false,
   created_at timestamptz not null default now()
 );
+
+-- Add course_id if upgrading an existing database.
+alter table public.lessons
+  add column if not exists course_id uuid references public.courses(id) on delete set null;
 
 -- ---------------------------------------------------------------------------
 --  lesson_sentences
@@ -151,6 +177,7 @@ create trigger on_auth_user_created
 --  Row Level Security
 -- ============================================================================
 alter table public.profiles          enable row level security;
+alter table public.courses           enable row level security;
 alter table public.lessons           enable row level security;
 alter table public.lesson_sentences  enable row level security;
 alter table public.sentence_attempts enable row level security;
@@ -159,6 +186,10 @@ alter table public.daily_missions    enable row level security;
 alter table public.xp_events         enable row level security;
 
 drop policy if exists "profiles self" on public.profiles;
+drop policy if exists "courses read own or public" on public.courses;
+drop policy if exists "courses write own" on public.courses;
+drop policy if exists "courses update own" on public.courses;
+drop policy if exists "courses delete own" on public.courses;
 drop policy if exists "lessons read own or public" on public.lessons;
 drop policy if exists "lessons write own" on public.lessons;
 drop policy if exists "lessons update own" on public.lessons;
@@ -173,6 +204,16 @@ drop policy if exists "xp self" on public.xp_events;
 -- profiles: a user manages only their own row.
 create policy "profiles self" on public.profiles
   for all using (auth.uid() = id) with check (auth.uid() = id);
+
+-- courses: own rows are read/write; public courses are read-only for everyone.
+create policy "courses read own or public" on public.courses
+  for select using (auth.uid() = user_id or is_public = true);
+create policy "courses write own" on public.courses
+  for insert with check (auth.uid() = user_id);
+create policy "courses update own" on public.courses
+  for update using (auth.uid() = user_id);
+create policy "courses delete own" on public.courses
+  for delete using (auth.uid() = user_id);
 
 -- lessons: own rows are read/write; public lessons are read-only for everyone.
 create policy "lessons read own or public" on public.lessons

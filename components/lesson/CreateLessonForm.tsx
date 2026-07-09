@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useData, type CreateLessonInput } from "@/lib/store/DataProvider";
+import { visibleCourses } from "@/lib/store/selectors";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import type { LessonWithSentences } from "@/lib/types";
@@ -64,7 +65,10 @@ function LessonEditorForm({
   submitLabel: string;
   onSave: (input: CreateLessonInput) => void;
 }) {
+  const { state } = useData();
+  const courses = visibleCourses(state);
   const [title, setTitle] = useState(lesson?.title ?? "");
+  const [courseId, setCourseId] = useState<string>(lesson?.course_id ?? "");
   const [topic, setTopic] = useState(lesson?.topic ?? TOPICS[0]);
   const [level, setLevel] = useState(lesson?.level ?? "N3-N2");
   const [sourceUrl, setSourceUrl] = useState(lesson?.source_url ?? "");
@@ -117,6 +121,7 @@ function LessonEditorForm({
       title: title.trim(),
       topic,
       level,
+      course_id: courseId || null,
       source_url: sourceUrl.trim() || null,
       media_url: mediaUrl,
       duration_seconds: duration,
@@ -139,6 +144,21 @@ function LessonEditorForm({
             placeholder="例: APIレビュー会議"
             lang="ja"
           />
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium">コース</label>
+          <select
+            className={field}
+            value={courseId}
+            onChange={(e) => setCourseId(e.target.value)}
+          >
+            <option value="">コースなし（その他）</option>
+            {courses.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.title}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>

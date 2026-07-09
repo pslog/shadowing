@@ -10,9 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
 import { Icon, type IconName } from "@/components/ui/icon";
 
-const NAV: { href: string; label: string; icon: IconName }[] = [
+const NAV: { href: string; label: string; icon: IconName; alt?: string[] }[] = [
   { href: "/dashboard", label: "ホーム", icon: "home" },
-  { href: "/lessons", label: "レッスン", icon: "book" },
+  { href: "/courses", label: "コース", icon: "book", alt: ["/lessons"] },
   { href: "/progress", label: "進捗", icon: "trending" },
 ];
 
@@ -30,13 +30,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <span className="grid h-9 w-9 place-items-center rounded-xl brand-gradient text-white shadow-[var(--shadow-glow)]">
               話
             </span>
-            <span className="hidden text-lg sm:inline text-gradient">Shadow IT JP</span>
+            <span className="hidden text-lg sm:inline text-gradient">Shadowing JP</span>
           </Link>
 
           <nav className="ml-2 flex items-center gap-1">
             {NAV.map((item) => {
               const active =
-                pathname === item.href || pathname.startsWith(item.href + "/");
+                pathname === item.href ||
+                pathname.startsWith(item.href + "/") ||
+                (item.alt?.some((p) => pathname.startsWith(p)) ?? false);
               return (
                 <Link
                   key={item.href}
@@ -115,17 +117,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               話
             </span>
             <div>
-              <p className="text-sm font-bold text-gradient">Shadow IT JP</p>
-              <p className="text-xs text-muted">Vì cộng đồng học tiếng Nhật IT 🇯🇵💻</p>
+              <p className="text-sm font-bold text-gradient">Shadowing JP</p>
+              <p className="text-xs text-muted">Vì cộng đồng học tiếng Nhật 🇯🇵💻</p>
             </div>
           </div>
 
           <p className="text-xs text-muted">
-            Miễn phí · phi lợi nhuận — 一緒に頑張りましょう！
+            Phi lợi nhuận — 一緒に頑張りましょう！
           </p>
         </div>
         <div className="border-t border-border/50 px-4 py-3 text-center text-[11px] text-muted">
-          © {new Date().getFullYear()} Shadow IT JP
+          © {new Date().getFullYear()} Shadowing JP
         </div>
       </footer>
     </div>

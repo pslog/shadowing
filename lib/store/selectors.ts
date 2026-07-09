@@ -5,6 +5,7 @@ import { lastNDays, todayKey } from "@/lib/date";
 import { DAILY_TARGET } from "./engine";
 import type { AppState } from "./state";
 import type {
+  Course,
   Lesson,
   LessonSentence,
   LessonStatus,
@@ -53,6 +54,70 @@ export function lessonById(state: AppState, id: string): Lesson | undefined {
   return state.lessons.find((l) => l.id === id);
 }
 
+// ------------------------------------------------------------------ //
+//  Courses (a lesson group — book / project / series)                 //
+// ------------------------------------------------------------------ //
+
+/** Synthetic id for the "ungrouped" bucket of lessons with no course. */
+export const UNCATEGORIZED_COURSE_ID = "uncategorized";
+
+export function visibleCourses(state: AppState): Course[] {
+  const uid = state.profile?.id;
+  return (state.courses ?? [])
+    .filter((c) => c.is_public || c.user_id === uid)
+    .sort((a, b) => a.order_index - b.order_index);
+}
+
+export function courseById(state: AppState, id: string): Course | undefined {
+  return (state.courses ?? []).find((c) => c.id === id);
+}
+
+/** Visible lessons in a course (or the ungrouped bucket), lesson-sorted. */
+export function lessonsForCourse(state: AppState, courseId: string): Lesson[] {
+  return visibleLessons(state).filter((l) =>
+    courseId === UNCATEGORIZED_COURSE_ID ? l.course_id == null : l.course_id === courseId,
+  );
+}
+
+/** Visible lessons not assigned to any course. */
+export function uncategorizedLessons(state: AppState): Lesson[] {
+  return lessonsForCourse(state, UNCATEGORIZED_COURSE_ID);
+}
+
+export interface CourseStats {
+  total: number;
+  completed: number;
+  /** Average of each lesson's average score, over attempted lessons. null if none. */
+  averageScore: number | null;
+}
+
+export function courseStats(state: AppState, courseId: string): CourseStats {
+  const lessons = lessonsForCourse(state, courseId);
+  const completed = lessons.filter(
+    (l) => lessonStatus(state, l.id) === "completed",
+  ).length;
+  const scores = lessons
+    .map((l) => lessonAverageScore(state, l.id))
+    .filter((v): v is number => v != null);
+  const averageScore = scores.length
+    ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
+    : null;
+  return { total: lessons.length, completed, averageScore };
+}
+
+/** First not-yet-completed lesson in the course (for a "continue" button). */
+export function nextLessonInCourse(
+  state: AppState,
+  courseId: string,
+): Lesson | null {
+  const lessons = lessonsForCourse(state, courseId);
+  return (
+    lessons.find((l) => lessonStatus(state, l.id) !== "completed") ??
+    lessons[0] ??
+    null
+  );
+}
+
 export function sentencesForLesson(
   state: AppState,
   lessonId: string,
@@ -92,6 +157,21 @@ export function bestAttemptForSentence(
 
 export function isSentencePassed(state: AppState, sentenceId: string): boolean {
   return myAttemptsForSentence(state, sentenceId).some((a) => a.is_passed);
+}
+
+/**
+ * Average of the best score per sentence across a lesson (over sentences the
+ * user has actually attempted). null if none attempted yet.
+ */
+export function lessonAverageScore(
+  state: AppState,
+  lessonId: string,
+): number | null {
+  const bests = sentencesForLesson(state, lessonId)
+    .map((s) => bestAttemptForSentence(state, s.id)?.total_score)
+    .filter((v): v is number => v != null);
+  if (bests.length === 0) return null;
+  return Math.round(bests.reduce((a, b) => a + b, 0) / bests.length);
 }
 
 export function passedCountForLesson(

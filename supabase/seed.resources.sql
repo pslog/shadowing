@@ -9,25 +9,40 @@ begin;
 -- Replace old public starter/sample lessons with the real resource set.
 delete from public.lessons where user_id is null and is_public = true;
 
-insert into public.lessons
-  (id, user_id, title, topic, level, duration_seconds, source_type, source_url, media_url, is_public)
+-- Single official course that groups every resource lesson.
+insert into public.courses
+  (id, user_id, title, description, topic, level, accent, image_url, order_index, is_public)
 values
-  ('00000000-0000-0000-0000-0000000b0001', null, '第1課 – 初回訪問のあいさつ', '敬語', 'N3-N2', null, 'upload', null, '/audio/lessons/lesson-01.m4a', true),
-  ('00000000-0000-0000-0000-0000000b0002', null, '第2課 – キックオフミーティング　プロジェクトの目的と概要', 'キックオフ', 'N3-N2', null, 'upload', null, '/audio/lessons/lesson-02.m4a', true),
-  ('00000000-0000-0000-0000-0000000b0003', null, '第3課 – キックオフミーティング　スケジュールと進め方', 'キックオフ', 'N3-N2', null, 'upload', null, '/audio/lessons/lesson-03.m4a', true),
-  ('00000000-0000-0000-0000-0000000b0004', null, '第4課 – キックオフミーティング　プロジェクトの体制の説明', 'キックオフ', 'N3-N2', null, 'upload', null, '/audio/lessons/lesson-04.m4a', true),
-  ('00000000-0000-0000-0000-0000000b0005', null, '第5課 – オンサイト初日のあいさつ', '敬語', 'N3-N2', null, 'upload', null, '/audio/lessons/lesson-05.m4a', true),
-  ('00000000-0000-0000-0000-0000000b0006', null, '第6課 – お客様の会社のルール', '会話', 'N3-N2', null, 'upload', null, '/audio/lessons/lesson-06.m4a', true),
-  ('00000000-0000-0000-0000-0000000b0007', null, '第7課 – 要件の説明', '要件定義', 'N3-N2', null, 'upload', null, '/audio/lessons/lesson-07.m4a', true),
-  ('00000000-0000-0000-0000-0000000b0008', null, '第8課 – 進捗の報告', '進捗報告', 'N3-N2', null, 'upload', null, '/audio/lessons/lesson-08.m4a', true),
-  ('00000000-0000-0000-0000-0000000b0009', null, '第9課 – 課題の報告', '会話', 'N3-N2', null, 'upload', null, '/audio/lessons/lesson-09.m4a', true),
-  ('00000000-0000-0000-0000-0000000b0010', null, '第10課 – 定例会議：Q&Aの確認', '会話', 'N3-N2', null, 'upload', null, '/audio/lessons/lesson-10.m4a', true),
-  ('00000000-0000-0000-0000-0000000b0011', null, '第11課 – 製品デモ', '会話', 'N3-N2', null, 'upload', null, '/audio/lessons/lesson-11.m4a', true),
-  ('00000000-0000-0000-0000-0000000b0012', null, '第12課 – 課題解決の相談', '会話', 'N3-N2', null, 'upload', null, '/audio/lessons/lesson-12.m4a', true),
-  ('00000000-0000-0000-0000-0000000b0013', null, '第13課 – 製品とリリースノート', '会話', 'N3-N2', null, 'upload', null, '/audio/lessons/lesson-13.m4a', true),
-  ('00000000-0000-0000-0000-0000000b0014', null, '第14課 – UATサポートタスクの確認', '会話', 'N3-N2', null, 'upload', null, '/audio/lessons/lesson-14.m4a', true),
-  ('00000000-0000-0000-0000-0000000b0015', null, '第15課 – オンサイト終了のあいさつ', '敬語', 'N3-N2', null, 'upload', null, '/audio/lessons/lesson-15.m4a', true)
+  ('00000000-0000-0000-0000-0000000c0001', null, 'IT日本語 ソフトウェア開発プロジェクト', 'ソフトウェア開発プロジェクトの現場で使う日本語を、初回訪問・キックオフから進捗報告・UAT・オンサイト終了まで順番に学ぶコース。', 'IT日本語', 'N3-N2', '#6366f1', '/course-covers/it-nihongo.jpg', 0, true)
 on conflict (id) do update set
+  title = excluded.title,
+  description = excluded.description,
+  topic = excluded.topic,
+  level = excluded.level,
+  accent = excluded.accent,
+  image_url = excluded.image_url,
+  is_public = excluded.is_public;
+
+insert into public.lessons
+  (id, user_id, course_id, title, topic, level, duration_seconds, source_type, source_url, media_url, is_public)
+values
+  ('00000000-0000-0000-0000-0000000b0001', null, '00000000-0000-0000-0000-0000000c0001', '第1課 – 初回訪問のあいさつ', '敬語', 'N3-N2', null, 'upload', null, '/audio/lessons/lesson-01.m4a', true),
+  ('00000000-0000-0000-0000-0000000b0002', null, '00000000-0000-0000-0000-0000000c0001', '第2課 – キックオフミーティング　プロジェクトの目的と概要', 'キックオフ', 'N3-N2', null, 'upload', null, '/audio/lessons/lesson-02.m4a', true),
+  ('00000000-0000-0000-0000-0000000b0003', null, '00000000-0000-0000-0000-0000000c0001', '第3課 – キックオフミーティング　スケジュールと進め方', 'キックオフ', 'N3-N2', null, 'upload', null, '/audio/lessons/lesson-03.m4a', true),
+  ('00000000-0000-0000-0000-0000000b0004', null, '00000000-0000-0000-0000-0000000c0001', '第4課 – キックオフミーティング　プロジェクトの体制の説明', 'キックオフ', 'N3-N2', null, 'upload', null, '/audio/lessons/lesson-04.m4a', true),
+  ('00000000-0000-0000-0000-0000000b0005', null, '00000000-0000-0000-0000-0000000c0001', '第5課 – オンサイト初日のあいさつ', '敬語', 'N3-N2', null, 'upload', null, '/audio/lessons/lesson-05.m4a', true),
+  ('00000000-0000-0000-0000-0000000b0006', null, '00000000-0000-0000-0000-0000000c0001', '第6課 – お客様の会社のルール', '会話', 'N3-N2', null, 'upload', null, '/audio/lessons/lesson-06.m4a', true),
+  ('00000000-0000-0000-0000-0000000b0007', null, '00000000-0000-0000-0000-0000000c0001', '第7課 – 要件の説明', '要件定義', 'N3-N2', null, 'upload', null, '/audio/lessons/lesson-07.m4a', true),
+  ('00000000-0000-0000-0000-0000000b0008', null, '00000000-0000-0000-0000-0000000c0001', '第8課 – 進捗の報告', '進捗報告', 'N3-N2', null, 'upload', null, '/audio/lessons/lesson-08.m4a', true),
+  ('00000000-0000-0000-0000-0000000b0009', null, '00000000-0000-0000-0000-0000000c0001', '第9課 – 課題の報告', '会話', 'N3-N2', null, 'upload', null, '/audio/lessons/lesson-09.m4a', true),
+  ('00000000-0000-0000-0000-0000000b0010', null, '00000000-0000-0000-0000-0000000c0001', '第10課 – 定例会議：Q&Aの確認', '会話', 'N3-N2', null, 'upload', null, '/audio/lessons/lesson-10.m4a', true),
+  ('00000000-0000-0000-0000-0000000b0011', null, '00000000-0000-0000-0000-0000000c0001', '第11課 – 製品デモ', '会話', 'N3-N2', null, 'upload', null, '/audio/lessons/lesson-11.m4a', true),
+  ('00000000-0000-0000-0000-0000000b0012', null, '00000000-0000-0000-0000-0000000c0001', '第12課 – 課題解決の相談', '会話', 'N3-N2', null, 'upload', null, '/audio/lessons/lesson-12.m4a', true),
+  ('00000000-0000-0000-0000-0000000b0013', null, '00000000-0000-0000-0000-0000000c0001', '第13課 – 製品とリリースノート', '会話', 'N3-N2', null, 'upload', null, '/audio/lessons/lesson-13.m4a', true),
+  ('00000000-0000-0000-0000-0000000b0014', null, '00000000-0000-0000-0000-0000000c0001', '第14課 – UATサポートタスクの確認', '会話', 'N3-N2', null, 'upload', null, '/audio/lessons/lesson-14.m4a', true),
+  ('00000000-0000-0000-0000-0000000b0015', null, '00000000-0000-0000-0000-0000000c0001', '第15課 – オンサイト終了のあいさつ', '敬語', 'N3-N2', null, 'upload', null, '/audio/lessons/lesson-15.m4a', true)
+on conflict (id) do update set
+  course_id = excluded.course_id,
   title = excluded.title,
   topic = excluded.topic,
   level = excluded.level,

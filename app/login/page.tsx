@@ -52,7 +52,7 @@ export default function LoginPage() {
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-white/20 text-xl backdrop-blur">
             話
           </span>
-          <span className="text-lg font-bold">Shadow IT JP</span>
+          <span className="text-lg font-bold">Shadowing JP</span>
         </div>
 
         <div className="relative">

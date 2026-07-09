@@ -10,6 +10,7 @@ import {
   useState,
 } from "react";
 import type {
+  Course,
   Lesson,
   LessonSentence,
   Profile,
@@ -29,6 +30,7 @@ export interface CreateLessonInput {
   title: string;
   topic: string | null;
   level: string | null;
+  course_id: string | null;
   source_url: string | null;
   media_url: string | null;
   duration_seconds: number | null;
@@ -40,6 +42,15 @@ export interface CreateLessonInput {
 
 export interface UpdateLessonInput extends CreateLessonInput {
   id: string;
+}
+
+export interface CreateCourseInput {
+  title: string;
+  description: string | null;
+  topic: string | null;
+  level: string | null;
+  accent: string | null;
+  image_url: string | null;
 }
 
 export interface RecordAttemptInput {
@@ -56,6 +67,7 @@ interface DataContextValue {
   usingSupabase: boolean;
   login: (input: LoginInput) => Promise<Profile | null>;
   logout: () => void;
+  createCourse: (input: CreateCourseInput) => Course;
   createLesson: (input: CreateLessonInput) => Lesson;
   updateLesson: (input: UpdateLessonInput) => Lesson;
   recordAttempt: (input: RecordAttemptInput) => AttemptOutcome;
@@ -67,15 +79,30 @@ const USING_SUPABASE = hasSupabaseEnv();
 
 function migrateSeedContent(state: AppState): AppState {
   const seed = buildSeed(new Date().toISOString());
+  const seedCourseIds = new Set(seed.courses.map((course) => course.id));
   const seedLessonIds = new Set(seed.lessons.map((lesson) => lesson.id));
   const seedSentenceIds = new Set(seed.sentences.map((sentence) => sentence.id));
-  const customLessons = state.lessons.filter((lesson) => !seedLessonIds.has(lesson.id));
+
+  // Drop any seed course from old blobs (they're rebuilt fresh from buildSeed).
+  const customCourses = (state.courses ?? []).filter(
+    (course) => !seedCourseIds.has(course.id) && !course.id.startsWith("seed-course-"),
+  );
+  const customLessons = state.lessons
+    .filter((lesson) => !seedLessonIds.has(lesson.id))
+    // Backfill course_id; drop references to removed local seed courses.
+    .map((lesson) => ({
+      ...lesson,
+      course_id: lesson.course_id?.startsWith("seed-course-")
+        ? null
+        : lesson.course_id ?? null,
+    }));
   const customSentences = state.sentences.filter(
     (sentence) => !seedSentenceIds.has(sentence.id),
   );
 
   return {
     ...state,
+    courses: [...seed.courses, ...customCourses],
     lessons: [...seed.lessons, ...customLessons],
     sentences: [...seed.sentences, ...customSentences],
   };
@@ -166,6 +193,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
 
     const [
+      coursesResult,
       lessonsResult,
       sentencesResult,
       attemptsResult,
@@ -173,6 +201,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       missionsResult,
       xpEventsResult,
     ] = await Promise.all([
+      supabase
+        .from("courses")
+        .select("*")
+        .order("order_index", { ascending: true })
+        .then((r) => r, () => ({ data: [], error: null })),
       supabase.from("lessons").select("*").order("title", { ascending: true }),
       supabase
         .from("lesson_sentences")
@@ -206,6 +239,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     return {
       profile,
+      courses: (coursesResult.data ?? []) as Course[],
       lessons: (lessonsResult.data ?? []) as Lesson[],
       sentences: (sentencesResult.data ?? []) as LessonSentence[],
       attempts: (attemptsResult.data ?? []) as AppState["attempts"],
@@ -370,6 +404,36 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     commit({ ...stateRef.current, profile: null });
   }, [commit]);
 
+  const createCourse = useCallback(
+    (input: CreateCourseInput): Course => {
+      const prev = stateRef.current;
+      if (!prev.profile) throw new Error("Must be logged in to create a course");
+      const now = new Date().toISOString();
+      const course: Course = {
+        id: uid(),
+        user_id: prev.profile.id,
+        title: input.title,
+        description: input.description,
+        topic: input.topic,
+        level: input.level,
+        accent: input.accent,
+        image_url: input.image_url,
+        order_index: prev.courses.length,
+        is_public: false,
+        created_at: now,
+      };
+      commit({ ...prev, courses: [...prev.courses, course] });
+      if (USING_SUPABASE) {
+        createSupabaseClient()
+          ?.from("courses")
+          .upsert(course)
+          .then(undefined, console.error);
+      }
+      return course;
+    },
+    [commit],
+  );
+
   const createLesson = useCallback(
     (input: CreateLessonInput): Lesson => {
       const prev = stateRef.current;
@@ -378,6 +442,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       const lesson: Lesson = {
         id: uid(),
         user_id: prev.profile.id,
+        course_id: input.course_id,
         title: input.title,
         topic: input.topic,
         level: input.level,
@@ -422,6 +487,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       const now = new Date().toISOString();
       const lesson: Lesson = {
         ...existing,
+        course_id: input.course_id,
         title: input.title,
         topic: input.topic,
         level: input.level,
@@ -510,12 +576,23 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       usingSupabase: USING_SUPABASE,
       login,
       logout,
+      createCourse,
       createLesson,
       updateLesson,
       recordAttempt,
       reset,
     }),
-    [state, ready, login, logout, createLesson, updateLesson, recordAttempt, reset],
+    [
+      state,
+      ready,
+      login,
+      logout,
+      createCourse,
+      createLesson,
+      updateLesson,
+      recordAttempt,
+      reset,
+    ],
   );
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

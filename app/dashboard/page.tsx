@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { useData } from "@/lib/store/DataProvider";
 import {
+  courseStats,
   dailyPassStats,
   inProgressLesson,
   isAdmin,
   passedThisWeek,
   todayMission,
+  visibleCourses,
   visibleLessons,
-  lessonStatus,
   passedCountForLesson,
   sentencesForLesson,
 } from "@/lib/store/selectors";
@@ -21,7 +22,7 @@ import { DailyMissionCard } from "@/components/dashboard/DailyMissionCard";
 import { LevelCard } from "@/components/dashboard/LevelCard";
 import { WeekSummary } from "@/components/dashboard/WeekSummary";
 import { Icon } from "@/components/ui/icon";
-import { Badge } from "@/components/ui/badge";
+import { CourseCard } from "@/components/lesson/CourseCard";
 import { streakActiveToday } from "@/lib/gamification/streak";
 
 export default function DashboardPage() {
@@ -34,6 +35,7 @@ export default function DashboardPage() {
   const week = dailyPassStats(state, 7);
   const inProgress = inProgressLesson(state);
   const lessons = visibleLessons(state);
+  const courses = visibleCourses(state);
   const startTarget = inProgress ?? lessons[0];
   const keptToday = profile ? streakActiveToday(profile.last_completed_date) : false;
   const displayName = profile?.display_name ?? "ゲスト";
@@ -93,7 +95,7 @@ export default function DashboardPage() {
               </Link>
             ) : (
               <Link
-                href="/lessons"
+                href="/courses"
                 className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-3 font-bold text-[var(--primary)] shadow-lg"
               >
                 <Icon name="cap" size={18} />
@@ -127,43 +129,24 @@ export default function DashboardPage() {
 
         <div>
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-bold">あなたのレッスン</h2>
+            <h2 className="text-lg font-bold">コース</h2>
             <Link
-              href="/lessons"
+              href="/courses"
               className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
             >
               すべて見る <Icon name="chevron-right" size={15} />
             </Link>
           </div>
-          <div className="stagger grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {lessons.slice(0, 3).map((l, i) => {
-              const total = sentencesForLesson(state, l.id).length;
-              const passed = passedCountForLesson(state, l.id);
-              const status = lessonStatus(state, l.id);
-              return (
-                <Link
-                  key={l.id}
-                  href={`/lessons/${l.id}`}
-                  style={{ ["--i" as string]: i }}
-                  className="card card-interactive p-4"
-                >
-                  <p lang="ja" className="truncate font-semibold">
-                    {l.title}
-                  </p>
-                  <div className="mt-2 flex items-center gap-2">
-                    {l.topic && <Badge tone="primary">{l.topic}</Badge>}
-                    <span className="text-xs text-muted tabular-nums">
-                      {passed}/{total}文 ·{" "}
-                      {status === "completed"
-                        ? "完了"
-                        : status === "in_progress"
-                          ? "学習中"
-                          : "未学習"}
-                    </span>
-                  </div>
-                </Link>
-              );
-            })}
+          <div className="stagger grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {courses.slice(0, 3).map((c, i) => (
+              <div key={c.id} style={{ ["--i" as string]: i }}>
+                <CourseCard
+                  course={c}
+                  stats={courseStats(state, c.id)}
+                  href={`/courses/${c.id}`}
+                />
+              </div>
+            ))}
           </div>
         </div>
       </div>

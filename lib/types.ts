@@ -17,9 +17,28 @@ export interface Profile {
   created_at: string;
 }
 
+/** A group of related lessons — a "course" (コース): a book / project / series. */
+export interface Course {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string | null;
+  topic: string | null;
+  level: string | null;
+  /** Cover accent color (hex). Falls back to topic hue when null. */
+  accent: string | null;
+  /** Cover image URL (served from /public), or null for a color-only cover. */
+  image_url: string | null;
+  order_index: number;
+  is_public: boolean;
+  created_at: string;
+}
+
 export interface Lesson {
   id: string;
   user_id: string;
+  /** Parent course; null = ungrouped ("その他"). */
+  course_id: string | null;
   title: string;
   topic: string | null;
   level: string | null;

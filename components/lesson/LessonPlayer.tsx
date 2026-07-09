@@ -11,6 +11,7 @@ import {
   passedCountForLesson,
   sentencesForLesson,
   lessonById,
+  UNCATEGORIZED_COURSE_ID,
 } from "@/lib/store/selectors";
 import type { AttemptOutcome } from "@/lib/store/engine";
 import { scoreSentence, estimateDurationSeconds } from "@/lib/client/score";
@@ -24,6 +25,7 @@ import { ProgressBar } from "@/components/ui/progress";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { AudioRecorder } from "./AudioRecorder";
 import { ScoreResult } from "./ScoreResult";
+import { LessonReview } from "./LessonReview";
 
 function attemptToScore(a: SentenceAttempt): ScoreBreakdown {
   return {
@@ -279,7 +281,7 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
     return (
       <div className="card p-6 text-center text-muted">
         レッスンが見つかりません。{" "}
-        <Link href="/lessons" className="text-primary underline">
+        <Link href="/courses" className="text-primary underline">
           一覧へ戻る
         </Link>
       </div>
@@ -287,6 +289,7 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
   }
 
   const mediaUrl = lesson.media_url;
+  const courseHref = `/courses/${lesson.course_id ?? UNCATEGORIZED_COURSE_ID}`;
   const current = sentences[Math.min(index, sentences.length - 1)];
   const passed = passedCountForLesson(state, lessonId);
   const total = sentences.length;
@@ -643,6 +646,8 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
             </div>
           )}
 
+          {lessonDone && <LessonReview lessonId={lessonId} />}
+
           <div className="flex items-center justify-between gap-3">
             <Button variant="ghost" onClick={() => goTo(index)}>
               <Icon name="retry" size={16} />
@@ -654,7 +659,7 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
                 <Icon name="arrow-right" size={16} />
               </Button>
             ) : lessonDone ? (
-              <Link href="/lessons" className={buttonClasses("primary")}>
+              <Link href={courseHref} className={buttonClasses("primary")}>
                 <Icon name="trophy" size={16} />
                 完了 · 一覧へ戻る
               </Link>

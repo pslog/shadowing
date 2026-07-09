@@ -17,7 +17,7 @@ export function AdminOnlyNotice() {
         <p className="mt-2 text-sm text-muted">
           レッスンの作成・編集は管理者のみ行えます。
         </p>
-        <Link href="/lessons" className={buttonClasses("primary", "md", "mt-5")}>
+        <Link href="/courses" className={buttonClasses("primary", "md", "mt-5")}>
           レッスン一覧へ戻る
         </Link>
       </div>

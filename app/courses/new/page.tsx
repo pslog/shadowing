@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { useRequireProfile } from "@/lib/store/useRequireProfile";
+import { isAdminEmail } from "@/lib/store/selectors";
 import { AppShell } from "@/components/layout/AppShell";
 import { FullScreenLoading } from "@/components/ui/loading";
-import { CreateLessonForm } from "@/components/lesson/CreateLessonForm";
-import { isAdminEmail } from "@/lib/store/selectors";
 import { AdminOnlyNotice } from "@/components/lesson/AdminOnlyNotice";
+import { CreateCourseForm } from "@/components/lesson/CreateCourseForm";
 
-export default function NewLessonPage() {
+export default function NewCoursePage() {
   const { profile, ready } = useRequireProfile();
   if (!ready || !profile) return <FullScreenLoading />;
   if (!isAdminEmail(profile.email)) return <AdminOnlyNotice />;
@@ -17,14 +17,14 @@ export default function NewLessonPage() {
     <AppShell>
       <div className="mb-5">
         <Link href="/courses" className="text-sm text-muted hover:text-fg">
-          ← レッスン
+          ← コース一覧
         </Link>
-        <h1 className="mt-1 text-2xl font-bold">新しいレッスンを作成</h1>
+        <h1 className="mt-1 text-2xl font-bold">新しいコースを作成</h1>
         <p className="text-muted">
-          日本語スクリプトを入力してください。1行が1つの練習文になります。
+          関連するレッスンをまとめるコースを作ります。作成後、レッスン編集でこのコースに割り当てられます。
         </p>
       </div>
-      <CreateLessonForm />
+      <CreateCourseForm />
     </AppShell>
   );
 }

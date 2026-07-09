@@ -36,6 +36,18 @@ const lessons = files.map((file) =>
   JSON.parse(readFileSync(path.join(generatedDir, file), "utf8")),
 );
 
+// All resource lessons belong to this single official course.
+const COURSE = {
+  id: "00000000-0000-0000-0000-0000000c0001",
+  title: "IT日本語 ソフトウェア開発プロジェクト",
+  description:
+    "ソフトウェア開発プロジェクトの現場で使う日本語を、初回訪問・キックオフから進捗報告・UAT・オンサイト終了まで順番に学ぶコース。",
+  topic: "IT日本語",
+  level: "N3-N2",
+  accent: "#6366f1",
+  image_url: "/course-covers/it-nihongo.jpg",
+};
+
 const lines = [];
 lines.push("-- ============================================================================");
 lines.push("--  Official resource seed generated from resources/lesson.md + resources/*.m4a");
@@ -48,8 +60,35 @@ lines.push("");
 lines.push("-- Replace old public starter/sample lessons with the real resource set.");
 lines.push("delete from public.lessons where user_id is null and is_public = true;");
 lines.push("");
+lines.push("-- Single official course that groups every resource lesson.");
+lines.push("insert into public.courses");
+lines.push("  (id, user_id, title, description, topic, level, accent, image_url, order_index, is_public)");
+lines.push("values");
+lines.push(
+  `  (${[
+    sql(COURSE.id),
+    "null",
+    sql(COURSE.title),
+    sql(COURSE.description),
+    sql(COURSE.topic),
+    sql(COURSE.level),
+    sql(COURSE.accent),
+    sql(COURSE.image_url),
+    "0",
+    "true",
+  ].join(", ")})`,
+);
+lines.push("on conflict (id) do update set");
+lines.push("  title = excluded.title,");
+lines.push("  description = excluded.description,");
+lines.push("  topic = excluded.topic,");
+lines.push("  level = excluded.level,");
+lines.push("  accent = excluded.accent,");
+lines.push("  image_url = excluded.image_url,");
+lines.push("  is_public = excluded.is_public;");
+lines.push("");
 lines.push("insert into public.lessons");
-lines.push("  (id, user_id, title, topic, level, duration_seconds, source_type, source_url, media_url, is_public)");
+lines.push("  (id, user_id, course_id, title, topic, level, duration_seconds, source_type, source_url, media_url, is_public)");
 lines.push("values");
 lines.push(
   lessons
@@ -58,6 +97,7 @@ lines.push(
       return `  (${[
         sql(id),
         "null",
+        sql(COURSE.id),
         sql(lesson.title),
         sql(lesson.topic),
         sql(lesson.level),
@@ -71,6 +111,7 @@ lines.push(
     .join(",\n"),
 );
 lines.push("on conflict (id) do update set");
+lines.push("  course_id = excluded.course_id,");
 lines.push("  title = excluded.title,");
 lines.push("  topic = excluded.topic,");
 lines.push("  level = excluded.level,");
