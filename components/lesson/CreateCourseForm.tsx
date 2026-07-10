@@ -43,7 +43,7 @@ export function CreateCourseForm() {
       accent,
       image_url: imageUrl.trim() || null,
     });
-    router.push(`/courses/${course.id}`);
+    router.push(`/courses/${course.slug ?? course.id}`);
   }
 
   return (

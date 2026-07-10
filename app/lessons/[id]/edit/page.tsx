@@ -8,7 +8,12 @@ import { SentenceTimingEditor } from "@/components/lesson/SentenceTimingEditor";
 import { FullScreenLoading } from "@/components/ui/loading";
 import { useData } from "@/lib/store/DataProvider";
 import { useRequireProfile } from "@/lib/store/useRequireProfile";
-import { isAdmin, lessonById, sentencesForLesson } from "@/lib/store/selectors";
+import {
+  isAdmin,
+  lessonBySlug,
+  lessonHref,
+  sentencesForLesson,
+} from "@/lib/store/selectors";
 import { AdminOnlyNotice } from "@/components/lesson/AdminOnlyNotice";
 
 export default function EditLessonPage() {
@@ -19,8 +24,8 @@ export default function EditLessonPage() {
   if (!ready || !profile) return <FullScreenLoading />;
   if (!isAdmin(state)) return <AdminOnlyNotice />;
 
-  const lesson = lessonById(state, params.id);
-  const sentences = sentencesForLesson(state, params.id);
+  const lesson = lessonBySlug(state, params.id);
+  const sentences = lesson ? sentencesForLesson(state, lesson.id) : [];
 
   if (!lesson) {
     return (
@@ -39,7 +44,7 @@ export default function EditLessonPage() {
   return (
     <AppShell>
       <div className="mb-5">
-        <Link href={`/lessons/${lesson.id}`} className="text-sm text-muted hover:text-fg">
+        <Link href={lessonHref(lesson)} className="text-sm text-muted hover:text-fg">
           ← レッスン詳細
         </Link>
         <h1 className="mt-1 text-2xl font-bold">レッスンを編集</h1>

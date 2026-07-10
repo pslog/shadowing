@@ -21,6 +21,8 @@ export interface Profile {
 export interface Course {
   id: string;
   user_id: string;
+  /** URL-friendly slug for routing/SEO; null falls back to id. */
+  slug: string | null;
   title: string;
   description: string | null;
   topic: string | null;
@@ -37,6 +39,8 @@ export interface Course {
 export interface Lesson {
   id: string;
   user_id: string;
+  /** URL-friendly slug for routing/SEO; null falls back to id. */
+  slug: string | null;
   /** Parent course; null = ungrouped ("その他"). */
   course_id: string | null;
   title: string;

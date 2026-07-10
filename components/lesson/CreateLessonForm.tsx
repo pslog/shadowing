@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useData, type CreateLessonInput } from "@/lib/store/DataProvider";
-import { visibleCourses } from "@/lib/store/selectors";
+import { visibleCourses, lessonHref } from "@/lib/store/selectors";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import type { LessonWithSentences } from "@/lib/types";
@@ -34,7 +34,7 @@ export function CreateLessonForm() {
       submitLabel="レッスンを保存"
       onSave={(input) => {
         const lesson = createLesson(input);
-        router.push(`/lessons/${lesson.id}`);
+        router.push(lessonHref(lesson));
       }}
     />
   );
@@ -50,7 +50,7 @@ export function EditLessonForm({ lesson }: { lesson: LessonWithSentences }) {
       submitLabel="変更を保存"
       onSave={(input) => {
         const updated = updateLesson({ ...input, id: lesson.id });
-        router.push(`/lessons/${updated.id}`);
+        router.push(lessonHref(updated));
       }}
     />
   );

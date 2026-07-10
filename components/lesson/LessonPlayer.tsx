@@ -5,8 +5,11 @@ import Link from "next/link";
 import { useData } from "@/lib/store/DataProvider";
 import {
   bestAttemptForSentence,
+  courseById,
+  courseHref as courseHrefOf,
   isAdmin,
   isSentencePassed,
+  lessonHref,
   myAttemptsForSentence,
   passedCountForLesson,
   sentencesForLesson,
@@ -290,7 +293,12 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
   }
 
   const mediaUrl = lesson.media_url;
-  const courseHref = `/courses/${lesson.course_id ?? UNCATEGORIZED_COURSE_ID}`;
+  const parentCourse = lesson.course_id
+    ? courseById(state, lesson.course_id)
+    : undefined;
+  const courseHref = parentCourse
+    ? courseHrefOf(parentCourse)
+    : `/courses/${lesson.course_id ?? UNCATEGORIZED_COURSE_ID}`;
   const current = sentences[Math.min(index, sentences.length - 1)];
   const passed = passedCountForLesson(state, lessonId);
   const total = sentences.length;
@@ -463,7 +471,7 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
             </button>
             {isAdmin(state) && (
               <Link
-                href={`/lessons/${lesson.id}/edit`}
+                href={`${lessonHref(lesson)}/edit`}
                 className={`${buttonClasses("ghost")} mt-4 ml-2`}
               >
                 編集

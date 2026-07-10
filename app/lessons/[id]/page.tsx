@@ -3,22 +3,28 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useData } from "@/lib/store/DataProvider";
-import { lessonById, UNCATEGORIZED_COURSE_ID } from "@/lib/store/selectors";
+import {
+  courseById,
+  lessonBySlug,
+  UNCATEGORIZED_COURSE_ID,
+} from "@/lib/store/selectors";
 import { AppShell } from "@/components/layout/AppShell";
 import { FullScreenLoading } from "@/components/ui/loading";
 import { LessonPlayer } from "@/components/lesson/LessonPlayer";
 
 export default function LessonPlayerPage() {
+  // `id` param now holds a slug (falls back to UUID for old links).
   const params = useParams<{ id: string }>();
   const { state, ready } = useData();
 
   if (!ready) return <FullScreenLoading />;
 
   // Back to the lesson list of the course this lesson belongs to.
-  const lesson = lessonById(state, params.id);
+  const lesson = lessonBySlug(state, params.id);
+  const course = lesson?.course_id ? courseById(state, lesson.course_id) : undefined;
   const backHref = lesson
-    ? `/courses/${lesson.course_id ?? UNCATEGORIZED_COURSE_ID}`
-    : "/lessons";
+    ? `/courses/${course?.slug ?? lesson.course_id ?? UNCATEGORIZED_COURSE_ID}`
+    : "/courses";
 
   return (
     <AppShell>
@@ -27,7 +33,7 @@ export default function LessonPlayerPage() {
           ← レッスン一覧
         </Link>
       </div>
-      <LessonPlayer lessonId={params.id} />
+      <LessonPlayer lessonId={lesson?.id ?? params.id} />
     </AppShell>
   );
 }

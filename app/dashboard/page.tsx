@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { useData } from "@/lib/store/DataProvider";
 import {
+  courseHref,
   courseStats,
   dailyPassStats,
   inProgressLesson,
   isAdmin,
   lastAttemptAtForLesson,
+  lessonHref,
   lessonStatus,
   nextLessonInCourse,
   passedCountForLesson,
@@ -87,7 +89,7 @@ export default function DashboardPage() {
 
             {startTarget ? (
               <Link
-                href={`/lessons/${startTarget.id}`}
+                href={lessonHref(startTarget)}
                 className="shine mt-6 inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-3 font-bold text-[var(--primary)] shadow-lg transition-transform hover:-translate-y-0.5 active:scale-[0.97]"
               >
                 <Icon name="cap" size={18} />
@@ -166,7 +168,7 @@ export default function DashboardPage() {
                 return (
                   <Link
                     key={lesson.id}
-                    href={`/lessons/${lesson.id}`}
+                    href={lessonHref(lesson)}
                     style={{ ["--i" as string]: i }}
                     className="card card-interactive grid gap-3 p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
                   >
@@ -201,11 +203,11 @@ export default function DashboardPage() {
               <CourseCard
                 course={featuredCourse}
                 stats={courseStats(state, featuredCourse.id)}
-                href={`/courses/${featuredCourse.id}`}
+                href={courseHref(featuredCourse)}
               />
               {featuredLesson && (
                 <Link
-                  href={`/lessons/${featuredLesson.id}`}
+                  href={lessonHref(featuredLesson)}
                   className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-3 text-sm font-bold text-white shadow-[var(--shadow-glow)]"
                 >
                   最初のレッスンを始める
@@ -215,7 +217,7 @@ export default function DashboardPage() {
             </div>
           ) : featuredLesson ? (
             <Link
-              href={`/lessons/${featuredLesson.id}`}
+              href={lessonHref(featuredLesson)}
               className="card card-interactive flex items-center justify-between gap-3 p-4"
             >
               <span lang="ja" className="min-w-0 truncate font-extrabold">

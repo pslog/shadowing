@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useData } from "@/lib/store/DataProvider";
 import {
+  courseHref,
   courseStats,
   isAdmin,
   uncategorizedLessons,
@@ -30,6 +31,7 @@ export default function CoursesPage() {
       ? {
           id: UNCATEGORIZED_COURSE_ID,
           user_id: "",
+          slug: null,
           title: "その他のレッスン",
           description: "コースに属さないレッスン。",
           topic: null,
@@ -65,7 +67,7 @@ export default function CoursesPage() {
             <CourseCard
               course={c}
               stats={courseStats(state, c.id)}
-              href={`/courses/${c.id}`}
+              href={courseHref(c)}
             />
           </div>
         ))}

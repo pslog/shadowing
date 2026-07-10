@@ -417,6 +417,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       const course: Course = {
         id: uid(),
         user_id: prev.profile.id,
+        slug: null,
         title: input.title,
         description: input.description,
         topic: input.topic,
@@ -447,6 +448,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       const lesson: Lesson = {
         id: uid(),
         user_id: prev.profile.id,
+        slug: null,
         course_id: input.course_id,
         title: input.title,
         topic: input.topic,

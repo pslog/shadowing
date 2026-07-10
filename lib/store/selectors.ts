@@ -58,6 +58,24 @@ export function lessonById(state: AppState, id: string): Lesson | undefined {
   return state.lessons.find((l) => l.id === id);
 }
 
+/** Resolve a course by slug, falling back to id (keeps old UUID links working). */
+export function courseBySlug(state: AppState, key: string): Course | undefined {
+  return (state.courses ?? []).find((c) => c.slug === key) ?? courseById(state, key);
+}
+
+/** Resolve a lesson by slug, falling back to id. */
+export function lessonBySlug(state: AppState, key: string): Lesson | undefined {
+  return state.lessons.find((l) => l.slug === key) ?? lessonById(state, key);
+}
+
+/** Build the URL path for a course / lesson (slug preferred, id fallback). */
+export function courseHref(course: Pick<Course, "slug" | "id">): string {
+  return `/courses/${course.slug ?? course.id}`;
+}
+export function lessonHref(lesson: Pick<Lesson, "slug" | "id">): string {
+  return `/lessons/${lesson.slug ?? lesson.id}`;
+}
+
 // ------------------------------------------------------------------ //
 //  Courses (a lesson group — book / project / series)                 //
 // ------------------------------------------------------------------ //

@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { topicHue } from "@/lib/topic-style";
+import { lessonHref } from "@/lib/store/selectors";
 import type { Lesson, LessonStatus } from "@/lib/types";
 
 const STATUS: Record<
@@ -119,7 +120,7 @@ export function LessonCard({
         </div>
 
         <Link
-          href={`/lessons/${lesson.id}`}
+          href={lessonHref(lesson)}
           className={buttonClasses(
             status === "completed" ? "secondary" : "primary",
             "md",

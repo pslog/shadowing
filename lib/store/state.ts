@@ -83,6 +83,7 @@ export function buildSeed(nowIso: string): {
   const courses: Course[] = SEED_COURSES.map((c, i) => ({
     id: c.id,
     user_id: SYSTEM_USER,
+    slug: null,
     title: c.title,
     description: c.description,
     topic: c.topic,
@@ -100,6 +101,7 @@ export function buildSeed(nowIso: string): {
     lessons.push({
       id: s.id,
       user_id: SYSTEM_USER,
+      slug: null,
       course_id: s.course_id,
       title: s.title,
       topic: s.topic,

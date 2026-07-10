@@ -4,10 +4,11 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useData } from "@/lib/store/DataProvider";
 import {
-  courseById,
+  courseBySlug,
   courseStats,
   lastAttemptAtForLesson,
   lessonAverageScore,
+  lessonHref,
   lessonStatus,
   lessonsForCourse,
   nextLessonInCourse,
@@ -30,7 +31,9 @@ export default function CoursePage() {
   if (!ready) return <FullScreenLoading />;
 
   const isUncategorized = params.id === UNCATEGORIZED_COURSE_ID;
-  const course = courseById(state, params.id);
+  const course = courseBySlug(state, params.id);
+  // Internal key for lesson queries: the course's real id (or the uncategorized bucket).
+  const courseKey = isUncategorized ? UNCATEGORIZED_COURSE_ID : course?.id ?? params.id;
 
   if (!course && !isUncategorized) {
     return (
@@ -45,9 +48,9 @@ export default function CoursePage() {
     );
   }
 
-  const lessons = lessonsForCourse(state, params.id);
-  const stats = courseStats(state, params.id);
-  const next = nextLessonInCourse(state, params.id);
+  const lessons = lessonsForCourse(state, courseKey);
+  const stats = courseStats(state, courseKey);
+  const next = nextLessonInCourse(state, courseKey);
   const title = course?.title ?? "その他のレッスン";
   const description = course?.description ?? null;
   const hue = course?.accent ?? topicHue(course?.topic ?? null);
@@ -127,7 +130,7 @@ export default function CoursePage() {
 
             {next && (
               <Link
-                href={`/lessons/${next.id}`}
+                href={lessonHref(next)}
                 className={buttonClasses("primary", "md", "mt-4")}
               >
                 <Icon name={allDone ? "retry" : "arrow-right"} size={16} />
