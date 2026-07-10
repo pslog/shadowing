@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useData } from "@/lib/store/DataProvider";
-import { levelTitle } from "@/lib/gamification/level";
+import { levelProgress, levelTitle } from "@/lib/gamification/level";
 import { cn } from "@/lib/cn";
 import { XPBadge } from "@/components/ui/xp-badge";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +30,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const profile = state.profile;
+  const profileLevel = profile ? levelProgress(profile.total_xp).level : 1;
   const isActive = useActive();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -87,7 +88,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     aria-haspopup="menu"
                     aria-expanded={menuOpen}
                     className="focus-ring flex h-11 items-center gap-2 rounded-full border border-border bg-surface py-1 pl-1 pr-3 text-sm"
-                    title={levelTitle(profile.current_level)}
+                    title={levelTitle(profileLevel)}
                   >
                     <span className="grid h-8 w-8 place-items-center rounded-full brand-gradient text-xs text-white">
                       {profile.display_name.slice(0, 1).toUpperCase()}
@@ -113,7 +114,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                           <p className="truncate font-semibold text-fg">
                             {profile.display_name}
                           </p>
-                          Lv.{profile.current_level} · {levelTitle(profile.current_level)}
+                          Lv.{profileLevel} · {levelTitle(profileLevel)}
                         </div>
                         <button
                           onClick={() => {

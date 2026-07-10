@@ -18,7 +18,7 @@ import {
   visibleCourses,
   visibleLessons,
 } from "@/lib/store/selectors";
-import { levelTitle } from "@/lib/gamification/level";
+import { levelProgress, levelTitle } from "@/lib/gamification/level";
 import { AppShell } from "@/components/layout/AppShell";
 import { FullScreenLoading } from "@/components/ui/loading";
 import { StreakCard } from "@/components/dashboard/StreakCard";
@@ -48,8 +48,8 @@ export default function DashboardPage() {
   const startTarget = inProgress ?? recentLessons[0] ?? featuredLesson;
   const keptToday = profile ? streakActiveToday(profile.last_completed_date) : false;
   const displayName = profile?.display_name ?? "ゲスト";
-  const currentLevel = profile?.current_level ?? 1;
   const totalXp = profile?.total_xp ?? 0;
+  const currentLevel = levelProgress(totalXp).level;
 
   return (
     <AppShell>

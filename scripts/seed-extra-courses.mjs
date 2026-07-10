@@ -39,7 +39,7 @@ const COURSES = [
     level: "N3-N2",
     accent: "#0ea5e9",
     image_url: "/course-covers/shigoto-it-gyoumu.jpg",
-    order_index: 1,
+    order_index: 2,
   },
   {
     id: "00000000-0000-0000-0000-0000000c0003",
@@ -49,7 +49,7 @@ const COURSES = [
     level: "N3-N2",
     accent: "#f59e0b",
     image_url: "/course-covers/shigoto-denwa.jpg",
-    order_index: 2,
+    order_index: 3,
   },
   {
     id: "00000000-0000-0000-0000-0000000c0004",
@@ -59,7 +59,7 @@ const COURSES = [
     level: "N4-N3",
     accent: "#a855f7",
     image_url: "/course-covers/hanasou-mensetsu.jpg",
-    order_index: 3,
+    order_index: 4,
   },
   {
     id: "00000000-0000-0000-0000-0000000c0005",
@@ -70,7 +70,7 @@ const COURSES = [
     level: "N2-N1",
     accent: "#f43f5e",
     image_url: "/course-covers/shadowing-motto-hanaseru.jpg",
-    order_index: 4,
+    order_index: 1,
   },
 ];
 

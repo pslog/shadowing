@@ -29,7 +29,7 @@ export function LevelCard({ totalXp }: { totalXp: number }) {
           />
         </div>
         <p className="mt-2 text-xs text-muted tabular-nums">
-          {p.intoLevel}/{p.perLevel} XP · Lv.{p.level + 1}まであと{p.toNext}
+          あと{p.toNext.toLocaleString("ja-JP")} XPでLv.{p.level + 1}
         </p>
       </div>
     </div>
