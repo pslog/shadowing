@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans, Noto_Sans_JP } from "next/font/google";
 import "./globals.css";
 import { DataProvider } from "@/lib/store/DataProvider";
 import { Aurora } from "@/components/layout/Aurora";
+import { Analytics } from "@vercel/analytics/next";
 
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
@@ -37,6 +38,7 @@ export default function RootLayout({
       <body className="min-h-full">
         <Aurora />
         <DataProvider>{children}</DataProvider>
+        <Analytics />
       </body>
     </html>
   );
