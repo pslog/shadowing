@@ -71,6 +71,7 @@ create table if not exists public.lesson_sentences (
   lesson_id uuid not null references public.lessons(id) on delete cascade,
   order_index int not null,
   ja_text text not null,
+  furigana text,
   vi_translation text,
   audio_url text,
   audio_start numeric,
@@ -80,6 +81,9 @@ create table if not exists public.lesson_sentences (
 );
 alter table public.lesson_sentences
   add column if not exists audio_url text;
+-- Furigana (ruby): JSON array of [surface] / [surface, hiraganaReading].
+alter table public.lesson_sentences
+  add column if not exists furigana text;
 create index if not exists lesson_sentences_lesson_idx
   on public.lesson_sentences(lesson_id, order_index);
 

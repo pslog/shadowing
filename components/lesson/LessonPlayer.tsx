@@ -26,6 +26,7 @@ import { Icon, type IconName } from "@/components/ui/icon";
 import { AudioRecorder } from "./AudioRecorder";
 import { ScoreResult } from "./ScoreResult";
 import { LessonReview } from "./LessonReview";
+import { Furigana } from "./Furigana";
 
 function attemptToScore(a: SentenceAttempt): ScoreBreakdown {
   return {
@@ -161,8 +162,8 @@ function DialogueScript({
                   )}
                 </div>
 
-                <p lang="ja" className="text-[0.93rem] font-semibold leading-7 text-fg">
-                  {sentence.ja_text}
+                <p lang="ja" className="text-[0.93rem] font-semibold leading-[2] text-fg [&_rt]:text-[0.55em] [&_rt]:font-medium [&_rt]:text-muted">
+                  <Furigana sentence={sentence} />
                 </p>
               </div>
             </article>
@@ -555,8 +556,8 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
                     <Icon name={currentPassed ? "check" : "mic"} size={14} />
                     {currentPassed ? "Pass済み" : "この文をまねして話す"}
                   </span>
-                  <p lang="ja" className="mx-auto mt-2.5 max-w-2xl text-[0.92rem] font-bold leading-7 sm:text-base sm:leading-8 [&_rt]:text-[0.55em] [&_rt]:font-medium [&_rt]:text-muted">
-                    {current.ja_text}
+                  <p lang="ja" className="mx-auto mt-2.5 max-w-2xl text-[0.92rem] font-bold leading-[2.1] sm:text-base sm:leading-[2.2] [&_rt]:text-[0.55em] [&_rt]:font-medium [&_rt]:text-muted">
+                    <Furigana sentence={current} />
                   </p>
                   {current.vi_translation && (
                     <p className="mx-auto mt-1.5 max-w-xl rounded-lg bg-card px-2.5 py-1.5 text-[11px] leading-4 text-muted sm:text-xs sm:leading-5">

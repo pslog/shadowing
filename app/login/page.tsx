@@ -19,10 +19,30 @@ export default function LoginPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [inApp, setInApp] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (ready && state.profile) router.replace("/dashboard");
   }, [ready, state.profile, router]);
+
+  useEffect(() => {
+    // Google blocks OAuth inside embedded webviews (Zalo/Messenger/FB/IG/Line…).
+    const ua = navigator.userAgent || "";
+    setInApp(
+      /(FBAN|FBAV|FB_IAB|Messenger|Instagram|Zalo|Line\/|MicroMessenger|; wv\)|KAKAOTALK)/i.test(ua),
+    );
+  }, []);
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* ignore */
+    }
+  }
 
   if (!ready) return <FullScreenLoading />;
 
@@ -100,6 +120,32 @@ export default function LoginPage() {
             ログインして、今日のストリークを続けましょう。
           </p>
 
+          {inApp && (
+            <div className="mt-6 rounded-2xl border border-[var(--warning)]/40 bg-[var(--warning-soft)] p-4 text-left">
+              <p className="flex items-center gap-1.5 text-sm font-extrabold text-[var(--warning)]">
+                <Icon name="mic" size={15} />
+                アプリ内ブラウザでは Google ログインがブロックされます
+              </p>
+              <p className="mt-1.5 text-xs leading-5 text-fg">
+                Zalo / Messenger などのアプリ内ブラウザは Google がログインを許可していません。
+                <b>外部ブラウザ（Chrome / Safari）で開いてください：</b>
+                右上または下の「⋯」メニュー →「ブラウザで開く / Open in browser」。
+              </p>
+              <p className="mt-2 text-[11px] text-muted">
+                Tiếng Việt: Zalo/Messenger chặn đăng nhập Google. Mở bằng Chrome/Safari:
+                bấm menu «⋯» → «Mở bằng trình duyệt», hoặc sao chép link dưới đây rồi dán vào trình duyệt.
+              </p>
+              <button
+                type="button"
+                onClick={copyLink}
+                className="focus-ring mt-3 inline-flex h-10 items-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-bold"
+              >
+                <Icon name={copied ? "check" : "book"} size={15} />
+                {copied ? "コピーしました" : "リンクをコピー"}
+              </button>
+            </div>
+          )}
+
           <div className="card mt-8 space-y-4 p-6">
             <Button
               size="lg"
@@ -112,6 +158,9 @@ export default function LoginPage() {
               {submitting ? "ログイン中..." : "Googleでログイン"}
             </Button>
             {error && <p className="text-xs text-danger">{error}</p>}
+            <p className="text-xs text-muted">
+              ログインは会話の閲覧・再生には不要です。録音して採点するときだけ必要です。
+            </p>
             <p className="text-xs text-muted">
               {usingSupabase
                 ? "Supabase Authでログインします。学習データはクラウドに保存されます。"

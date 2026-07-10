@@ -117,6 +117,7 @@ export function buildSeed(nowIso: string): {
         lesson_id: s.id,
         order_index: i,
         ja_text: sent.ja,
+        furigana: null,
         vi_translation: sent.note,
         audio_url: null,
         audio_start: null,
