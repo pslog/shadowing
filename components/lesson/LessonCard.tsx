@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
-import { topicHue } from "@/lib/topic-style";
+import { lessonHue } from "@/lib/topic-style";
 import { lessonHref } from "@/lib/store/selectors";
 import type { Lesson, LessonStatus } from "@/lib/types";
 
@@ -32,7 +32,7 @@ export function LessonCard({
 }) {
   const s = STATUS[status];
   const pct = total > 0 ? (passed / total) * 100 : 0;
-  const hue = topicHue(lesson.topic);
+  const hue = lessonHue(lesson.topic, lesson.title);
   const completed = status === "completed";
   const d = lastAttemptAt ? new Date(lastAttemptAt) : null;
   const lastPracticed = d ? `${d.getMonth() + 1}月${d.getDate()}日` : null;

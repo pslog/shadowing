@@ -31,11 +31,28 @@ const MAP: Record<string, string> = {
   "敬語": "var(--c-rose)",
 };
 
+function hashHue(key: string): string {
+  let h = 0;
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) | 0;
+  return HUES[Math.abs(h) % HUES.length];
+}
+
 export function topicHue(topic: string | null | undefined): string {
   if (!topic) return HUES[0];
   if (MAP[topic]) return MAP[topic];
-  // stable fallback by hashing the topic name
-  let h = 0;
-  for (let i = 0; i < topic.length; i++) h = (h * 31 + topic.charCodeAt(i)) | 0;
-  return HUES[Math.abs(h) % HUES.length];
+  return hashHue(topic);
+}
+
+/**
+ * Hue for a lesson card. Keeps intentional per-topic colours (e.g. the IT
+ * course), but when the topic is generic/unmapped (many lessons share one
+ * topic like 会話), varies the colour per lesson using the title so a course's
+ * cards aren't all the same shade.
+ */
+export function lessonHue(
+  topic: string | null | undefined,
+  seed: string | null | undefined,
+): string {
+  if (topic && MAP[topic]) return MAP[topic];
+  return hashHue(seed || topic || "");
 }
