@@ -5,13 +5,13 @@ import { useRequireProfile } from "@/lib/store/useRequireProfile";
 import { AppShell } from "@/components/layout/AppShell";
 import { FullScreenLoading } from "@/components/ui/loading";
 import { CreateLessonForm } from "@/components/lesson/CreateLessonForm";
-import { isAdminEmail } from "@/lib/store/selectors";
+import { isAdminProfile } from "@/lib/store/selectors";
 import { AdminOnlyNotice } from "@/components/lesson/AdminOnlyNotice";
 
 export default function NewLessonPage() {
   const { profile, ready } = useRequireProfile();
   if (!ready || !profile) return <FullScreenLoading />;
-  if (!isAdminEmail(profile.email)) return <AdminOnlyNotice />;
+  if (!isAdminProfile(profile)) return <AdminOnlyNotice />;
 
   return (
     <AppShell>

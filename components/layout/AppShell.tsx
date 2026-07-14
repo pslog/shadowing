@@ -5,13 +5,16 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useData } from "@/lib/store/DataProvider";
 import { levelProgress, levelTitle } from "@/lib/gamification/level";
+import { isAdminProfile } from "@/lib/store/selectors";
 import { cn } from "@/lib/cn";
 import { XPBadge } from "@/components/ui/xp-badge";
 import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
 import { Icon, type IconName } from "@/components/ui/icon";
 
-const NAV: { href: string; label: string; icon: IconName; alt?: string[] }[] = [
+type NavItem = { href: string; label: string; icon: IconName; alt?: string[] };
+
+const NAV: NavItem[] = [
   { href: "/dashboard", label: "ホーム", icon: "home" },
   { href: "/courses", label: "コース", icon: "book", alt: ["/lessons"] },
   { href: "/progress", label: "進捗", icon: "trending" },
@@ -19,7 +22,7 @@ const NAV: { href: string; label: string; icon: IconName; alt?: string[] }[] = [
 
 function useActive() {
   const pathname = usePathname();
-  return (item: (typeof NAV)[number]) =>
+  return (item: NavItem) =>
     pathname === item.href ||
     pathname.startsWith(item.href + "/") ||
     (item.alt?.some((p) => pathname.startsWith(p)) ?? false);
@@ -31,6 +34,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const profile = state.profile;
   const profileLevel = profile ? levelProgress(profile.total_xp).level : 1;
+  const canAdmin = isAdminProfile(profile);
+  const navItems: NavItem[] = canAdmin
+    ? [...NAV, { href: "/admin/users", label: "ユーザー管理", icon: "cap" }]
+    : NAV;
   const isActive = useActive();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -50,7 +57,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
           {/* Desktop nav (mobile uses the bottom tab bar) */}
           <nav className="ml-2 hidden items-center gap-1 md:flex">
-            {NAV.map((item) => {
+            {navItems.map((item) => {
               const active = isActive(item);
               return (
                 <Link
@@ -164,7 +171,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Mobile bottom tab bar */}
       <nav className="glass fixed inset-x-0 bottom-0 z-40 border-t border-border/70 pb-[env(safe-area-inset-bottom)] md:hidden">
         <div className="mx-auto flex max-w-md items-stretch">
-          {NAV.map((item) => {
+          {navItems.map((item) => {
             const active = isActive(item);
             return (
               <Link

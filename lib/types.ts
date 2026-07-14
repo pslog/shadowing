@@ -3,10 +3,12 @@
 // to the UI layer.
 
 export type LessonStatus = "not_started" | "in_progress" | "completed";
+export type UserRole = "user" | "admin";
 
 export interface Profile {
   id: string;
   email: string;
+  role: UserRole;
   display_name: string;
   avatar_url: string | null;
   total_xp: number;

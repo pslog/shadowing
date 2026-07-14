@@ -6,6 +6,7 @@ import { useData } from "@/lib/store/DataProvider";
 import {
   courseBySlug,
   courseStats,
+  isAdmin,
   lastAttemptAtForLesson,
   lessonAverageScore,
   lessonHref,
@@ -139,6 +140,14 @@ export default function CoursePage() {
                   : stats.completed > 0
                     ? "続きから"
                     : "学習を始める"}
+                </Link>
+            )}
+            {course && isAdmin(state) && (
+              <Link
+                href={`/courses/${course.slug ?? course.id}/edit`}
+                className={buttonClasses("secondary", "md", next ? "ml-2 mt-4" : "mt-4")}
+              >
+                    コース編集
               </Link>
             )}
           </div>

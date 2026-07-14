@@ -18,6 +18,7 @@ import type {
 } from "@/lib/types";
 import { createClient as createSupabaseClient, hasSupabaseEnv } from "@/lib/supabase/client";
 import { applyAttempt, type AttemptOutcome } from "./engine";
+import { isSuperAdminEmail } from "./selectors";
 import { buildSeed, emptyState, STORAGE_KEY, uid, type AppState } from "./state";
 
 export interface LoginInput {
@@ -53,6 +54,10 @@ export interface CreateCourseInput {
   image_url: string | null;
 }
 
+export interface UpdateCourseInput extends CreateCourseInput {
+  id: string;
+}
+
 export interface RecordAttemptInput {
   sentenceId: string;
   score: ScoreBreakdown;
@@ -68,6 +73,7 @@ interface DataContextValue {
   login: (input: LoginInput) => Promise<Profile | null>;
   logout: () => void;
   createCourse: (input: CreateCourseInput) => Course;
+  updateCourse: (input: UpdateCourseInput) => Course;
   createLesson: (input: CreateLessonInput) => Lesson;
   updateLesson: (input: UpdateLessonInput) => Lesson;
   updateSentenceTiming: (
@@ -147,6 +153,9 @@ function profileFromUser(
   return {
     id: user.id,
     email: user.email ?? fallback?.email ?? "",
+    role: isSuperAdminEmail(user.email ?? fallback?.email)
+      ? "admin"
+      : fallback?.role ?? "user",
     display_name: displayName,
     avatar_url: avatarUrl,
     total_xp: fallback?.total_xp ?? 0,
@@ -406,6 +415,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       const profile: Profile = {
         id: existing?.id ?? uid(),
         email: input.email,
+        role: isSuperAdminEmail(input.email) ? "admin" : existing?.role ?? "user",
         display_name: input.display_name,
         avatar_url: input.avatar_url ?? null,
         total_xp: existing?.total_xp ?? 0,
@@ -452,6 +462,49 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           .upsert(course)
           .then(undefined, console.error);
       }
+      return course;
+    },
+    [commit],
+  );
+
+  const updateCourse = useCallback(
+    (input: UpdateCourseInput): Course => {
+      const prev = stateRef.current;
+      if (!prev.profile) throw new Error("Must be logged in to update a course");
+
+      const existing = prev.courses.find((course) => course.id === input.id);
+      if (!existing) throw new Error("Course not found");
+
+      const course: Course = {
+        ...existing,
+        title: input.title,
+        description: input.description,
+        topic: input.topic,
+        level: input.level,
+        accent: input.accent,
+        image_url: input.image_url,
+      };
+
+      commit({
+        ...prev,
+        courses: prev.courses.map((item) => (item.id === course.id ? course : item)),
+      });
+
+      if (USING_SUPABASE) {
+        createSupabaseClient()
+          ?.from("courses")
+          .update({
+            title: course.title,
+            description: course.description,
+            topic: course.topic,
+            level: course.level,
+            accent: course.accent,
+            image_url: course.image_url,
+          })
+          .eq("id", course.id)
+          .then(undefined, console.error);
+      }
+
       return course;
     },
     [commit],
@@ -625,6 +678,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       login,
       logout,
       createCourse,
+      updateCourse,
       createLesson,
       updateLesson,
       updateSentenceTiming,
@@ -637,6 +691,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       login,
       logout,
       createCourse,
+      updateCourse,
       createLesson,
       updateLesson,
       updateSentenceTiming,

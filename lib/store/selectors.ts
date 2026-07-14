@@ -10,6 +10,7 @@ import type {
   LessonSentence,
   LessonStatus,
   LessonWithSentences,
+  Profile,
   SentenceAttempt,
 } from "@/lib/types";
 
@@ -17,13 +18,21 @@ import type {
 export const ADMIN_EMAIL = "vovansinh1991@gmail.com";
 
 /** True when the given email is the fixed admin account. */
-export function isAdminEmail(email?: string | null): boolean {
+export function isSuperAdminEmail(email?: string | null): boolean {
   return !!email && email.trim().toLowerCase() === ADMIN_EMAIL;
+}
+
+export function isAdminProfile(profile?: Profile | null): boolean {
+  return !!profile && (profile.role === "admin" || isSuperAdminEmail(profile.email));
+}
+
+export function isSuperAdminProfile(profile?: Profile | null): boolean {
+  return isSuperAdminEmail(profile?.email);
 }
 
 /** True when the signed-in user is the admin. */
 export function isAdmin(state: AppState): boolean {
-  return isAdminEmail(state.profile?.email);
+  return isAdminProfile(state.profile);
 }
 
 function isToday(iso: string): boolean {

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRequireProfile } from "@/lib/store/useRequireProfile";
-import { isAdminEmail } from "@/lib/store/selectors";
+import { isAdminProfile } from "@/lib/store/selectors";
 import { AppShell } from "@/components/layout/AppShell";
 import { FullScreenLoading } from "@/components/ui/loading";
 import { AdminOnlyNotice } from "@/components/lesson/AdminOnlyNotice";
@@ -11,7 +11,7 @@ import { CreateCourseForm } from "@/components/lesson/CreateCourseForm";
 export default function NewCoursePage() {
   const { profile, ready } = useRequireProfile();
   if (!ready || !profile) return <FullScreenLoading />;
-  if (!isAdminEmail(profile.email)) return <AdminOnlyNotice />;
+  if (!isAdminProfile(profile)) return <AdminOnlyNotice />;
 
   return (
     <AppShell>
