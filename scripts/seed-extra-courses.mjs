@@ -33,9 +33,9 @@ const client = new pg.Client({
 const COURSES = [
   {
     id: "00000000-0000-0000-0000-0000000c0002",
-    title: "しごとの日本語 IT業務編",
-    description: "IT現場の業務でよく使う日本語表現を場面ごとに学ぶ教材。",
-    topic: "IT業務",
+    title: "しごとの日本語 業務会話編",
+    description: "仕事の場面でよく使う日本語表現を場面ごとに学ぶ教材。",
+    topic: "しごとの日本語",
     level: "N3-N2",
     accent: "#0ea5e9",
     image_url: "/course-covers/shigoto-it-gyoumu.jpg",

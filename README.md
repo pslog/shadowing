@@ -1,8 +1,8 @@
-# Shadow IT Japanese 🗣️
+# Shadowing JP
 
-Web app luyện **shadowing** tiếng Nhật chuyên ngành IT cho người Việt. Nói lại
-từng câu thoại → được chấm điểm (phát âm / tốc độ / ngữ điệu) → giữ **streak**,
-tích **XP**, lên **level**.
+Web app luyện **shadowing** tiếng Nhật cho người Việt. Nói lại từng câu thoại,
+được chấm điểm phát âm / tốc độ / ngữ điệu, giữ **streak**, tích **XP**, lên
+**level**.
 
 - **Speech-to-text thật**: dùng Web Speech API của trình duyệt (`ja-JP`) để lấy
   transcript, so khớp với câu mẫu bằng Levenshtein → điểm phát âm thật.

@@ -92,7 +92,7 @@ await getTokenizer();
 
 if (process.env.DRY) {
   for (const t of [
-    "IT日本語 ソフトウェア開発プロジェクト",
+    "しごとの日本語 ソフトウェア開発プロジェクト",
     "第1課 – 初回訪問のあいさつ",
     "Unit 1.1 ラーメンは日本食？",
     "Unit 1.2 旅につきもののお弁当",

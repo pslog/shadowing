@@ -24,7 +24,8 @@ export interface AppState {
   xpEvents: XpEvent[];
 }
 
-export const STORAGE_KEY = "shadow-it-jp/v1";
+export const STORAGE_KEY = "shadowing-jp/v1";
+export const LEGACY_STORAGE_KEYS = ["shadow-it-jp/v1"];
 export const SYSTEM_USER = "system";
 
 export function uid(): string {

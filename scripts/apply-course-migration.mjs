@@ -65,9 +65,9 @@ const statements = [
              is_public=excluded.is_public`,
     values: [
       COURSE_ID,
-      "IT日本語 ソフトウェア開発プロジェクト",
+      "しごとの日本語 ソフトウェア開発プロジェクト",
       "ソフトウェア開発プロジェクトの現場で使う日本語を、初回訪問・キックオフから進捗報告・UAT・オンサイト終了まで順番に学ぶコース。",
-      "IT日本語",
+      "しごとの日本語",
       "N3-N2",
       "#6366f1",
       "/course-covers/it-nihongo.jpg",

@@ -17,9 +17,9 @@ const notoJp = Noto_Sans_JP({
 });
 
 export const metadata: Metadata = {
-  title: "Shadowing JP - IT日本語シャドーイング",
+  title: "Shadowing JP - 日本語シャドーイング",
   description:
-    "IT業務で使う日本語を一文ずつ発音練習。ストリーク、XP、レベル、デイリーミッションで継続できます。",
+    "日本語の会話表現を一文ずつ発音練習。ストリーク、XP、レベル、デイリーミッションで継続できます。",
 };
 
 export const viewport: Viewport = {

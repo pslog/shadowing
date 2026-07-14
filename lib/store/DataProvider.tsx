@@ -19,7 +19,14 @@ import type {
 import { createClient as createSupabaseClient, hasSupabaseEnv } from "@/lib/supabase/client";
 import { applyAttempt, type AttemptOutcome } from "./engine";
 import { isSuperAdminEmail } from "./selectors";
-import { buildSeed, emptyState, STORAGE_KEY, uid, type AppState } from "./state";
+import {
+  buildSeed,
+  emptyState,
+  LEGACY_STORAGE_KEYS,
+  STORAGE_KEY,
+  uid,
+  type AppState,
+} from "./state";
 
 export interface LoginInput {
   email: string;
@@ -121,7 +128,12 @@ function migrateSeedContent(state: AppState): AppState {
 
 function loadLocalState(): AppState {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw =
+      localStorage.getItem(STORAGE_KEY) ??
+      LEGACY_STORAGE_KEYS.map((key) => localStorage.getItem(key)).find(Boolean);
+    if (raw && !localStorage.getItem(STORAGE_KEY)) {
+      localStorage.setItem(STORAGE_KEY, raw);
+    }
     return raw
       ? migrateSeedContent(JSON.parse(raw) as AppState)
       : emptyState(new Date().toISOString());

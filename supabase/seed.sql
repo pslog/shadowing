@@ -13,7 +13,7 @@ delete from public.lessons where user_id is null and is_public = true;
 insert into public.courses
   (id, user_id, title, description, topic, level, accent, image_url, order_index, is_public)
 values
-  ('00000000-0000-0000-0000-0000000c0001', null, 'IT日本語 ソフトウェア開発プロジェクト', 'ソフトウェア開発プロジェクトの現場で使う日本語を、初回訪問・キックオフから進捗報告・UAT・オンサイト終了まで順番に学ぶコース。', 'IT日本語', 'N3-N2', '#6366f1', '/course-covers/it-nihongo.jpg', 0, true)
+  ('00000000-0000-0000-0000-0000000c0001', null, 'しごとの日本語 ソフトウェア開発プロジェクト', 'ソフトウェア開発プロジェクトの現場で使う日本語を、初回訪問・キックオフから進捗報告・UAT・オンサイト終了まで順番に学ぶコース。', 'しごとの日本語', 'N3-N2', '#6366f1', '/course-covers/it-nihongo.jpg', 0, true)
 on conflict (id) do update set
   title = excluded.title,
   description = excluded.description,

@@ -39,10 +39,10 @@ const lessons = files.map((file) =>
 // All resource lessons belong to this single official course.
 const COURSE = {
   id: "00000000-0000-0000-0000-0000000c0001",
-  title: "IT日本語 ソフトウェア開発プロジェクト",
+  title: "しごとの日本語 ソフトウェア開発プロジェクト",
   description:
     "ソフトウェア開発プロジェクトの現場で使う日本語を、初回訪問・キックオフから進捗報告・UAT・オンサイト終了まで順番に学ぶコース。",
-  topic: "IT日本語",
+  topic: "しごとの日本語",
   level: "N3-N2",
   accent: "#6366f1",
   image_url: "/course-covers/it-nihongo.jpg",

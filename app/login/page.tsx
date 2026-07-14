@@ -11,7 +11,7 @@ import { FullScreenLoading } from "@/components/ui/loading";
 const FEATURES: { icon: IconName; text: string }[] = [
   { icon: "mic", text: "一文ずつ発話して、発音をすぐに採点" },
   { icon: "flame", text: "ストリーク、XP、レベルで毎日継続" },
-  { icon: "book", text: "スタンドアップ、コードレビュー、API、BrSEなどのITテーマ" },
+  { icon: "book", text: "日常会話、仕事、旅行など幅広いテーマ" },
 ];
 
 export default function LoginPage() {
@@ -51,7 +51,7 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       const profile = await login({
-        email: "you@shadow-it.jp",
+        email: "you@shadowing.jp",
         display_name: "学習者",
         avatar_url: null,
       });
@@ -77,7 +77,7 @@ export default function LoginPage() {
 
         <div className="relative">
           <h2 className="text-4xl font-extrabold leading-tight">
-            IT日本語の会話力を、
+            日本語の会話力を、
             <br />
             毎日の練習で伸ばす。
           </h2>
@@ -96,7 +96,7 @@ export default function LoginPage() {
         <div className="relative flex gap-3">
           {[
             { k: "ストリーク", v: "🔥" },
-            { k: "ITテーマ", v: "9+" },
+            { k: "テーマ", v: "9+" },
             { k: "採点", v: "AI-ready" },
           ].map((s) => (
             <div

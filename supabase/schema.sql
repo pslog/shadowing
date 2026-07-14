@@ -1,5 +1,5 @@
 -- ============================================================================
---  Shadow IT Japanese — Supabase schema
+--  Shadowing JP — Supabase schema
 --  Run in the Supabase SQL editor (or `supabase db push`). Mirrors lib/types.ts.
 --  Row Level Security: every user sees only their own rows (+ public lessons).
 -- ============================================================================
