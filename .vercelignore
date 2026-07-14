@@ -2,7 +2,7 @@
 # The app serves audio/images from public/ and data from Supabase.
 resources/
 scripts/
-supabase/
+/supabase/
 .agents/
 .claude/
 prompt.txt
