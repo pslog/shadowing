@@ -197,26 +197,41 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       profile = profileFromUser(user, data as Profile | null);
     }
 
+    // Supabase caps a single response at ~1000 rows (db-max-rows). Public
+    // content (lessons/sentences) exceeds that, so page through with .range.
+    const fetchAll = async (
+      table: string,
+      orderCols: [string, boolean][],
+    ): Promise<unknown[]> => {
+      const size = 1000;
+      let out: unknown[] = [];
+      let from = 0;
+      for (;;) {
+        let q = supabase.from(table).select("*");
+        for (const [col, asc] of orderCols) q = q.order(col, { ascending: asc });
+        const { data, error } = await q.range(from, from + size - 1);
+        if (error) throw error;
+        out = out.concat(data ?? []);
+        if (!data || data.length < size) break;
+        from += size;
+      }
+      return out;
+    };
+
     const [
       coursesResult,
-      lessonsResult,
-      sentencesResult,
       attemptsResult,
       progressResult,
       missionsResult,
       xpEventsResult,
+      lessonsAll,
+      sentencesAll,
     ] = await Promise.all([
       supabase
         .from("courses")
         .select("*")
         .order("order_index", { ascending: true })
         .then((r) => r, () => ({ data: [], error: null })),
-      supabase.from("lessons").select("*").order("title", { ascending: true }),
-      supabase
-        .from("lesson_sentences")
-        .select("*")
-        .order("lesson_id", { ascending: true })
-        .order("order_index", { ascending: true }),
       user
         ? supabase
             .from("sentence_attempts")
@@ -237,16 +252,18 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             .eq("user_id", user.id)
             .order("created_at", { ascending: true })
         : Promise.resolve({ data: [], error: null }),
+      fetchAll("lessons", [["title", true]]),
+      fetchAll("lesson_sentences", [
+        ["lesson_id", true],
+        ["order_index", true],
+      ]),
     ]);
-
-    if (lessonsResult.error) throw lessonsResult.error;
-    if (sentencesResult.error) throw sentencesResult.error;
 
     return {
       profile,
       courses: (coursesResult.data ?? []) as Course[],
-      lessons: (lessonsResult.data ?? []) as Lesson[],
-      sentences: (sentencesResult.data ?? []) as LessonSentence[],
+      lessons: lessonsAll as Lesson[],
+      sentences: sentencesAll as LessonSentence[],
       attempts: (attemptsResult.data ?? []) as AppState["attempts"],
       progress: (progressResult.data ?? []) as AppState["progress"],
       missions: (missionsResult.data ?? []) as AppState["missions"],

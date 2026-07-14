@@ -81,6 +81,11 @@ const COURSE_SLUGS = {
   "00000000-0000-0000-0000-0000000c0003": "shigoto-denwa-outai",
   "00000000-0000-0000-0000-0000000c0004": "hanasou-mensetsu",
   "00000000-0000-0000-0000-0000000c0005": "shadowing-motto-hanaseru",
+  "00000000-0000-0000-0000-0000000c0006": "jlpt-n2-mondai1-kadai-rikai",
+  "00000000-0000-0000-0000-0000000c0007": "jlpt-n2-mondai2-point-rikai",
+  "00000000-0000-0000-0000-0000000c0008": "jlpt-n2-mondai3-gaiyou-rikai",
+  "00000000-0000-0000-0000-0000000c0009": "jlpt-n2-mondai4-sokuji-outou",
+  "00000000-0000-0000-0000-0000000c000a": "jlpt-n2-mondai5-tougou-rikai",
 };
 
 await getTokenizer();

@@ -1,0 +1,9 @@
+# Local-only source & tooling — not needed to build/run the app on Vercel.
+# The app serves audio/images from public/ and data from Supabase.
+resources/
+scripts/
+supabase/
+.agents/
+.claude/
+prompt.txt
+output/

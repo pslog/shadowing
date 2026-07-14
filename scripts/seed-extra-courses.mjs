@@ -72,6 +72,62 @@ const COURSES = [
     image_url: "/course-covers/shadowing-motto-hanaseru.jpg",
     order_index: 1,
   },
+  // JLPT N2 聴解 — 5 大問 (mondai) tách riêng từng course.
+  {
+    id: "00000000-0000-0000-0000-0000000c0006",
+    title: "N2聴解 問題1 課題理解",
+    description:
+      "会話を聞いて、このあと何をすべきか（課題）を聞き取る練習。指示や手順を正確に理解します。",
+    topic: "聴解",
+    level: "N2",
+    accent: "#10b981",
+    image_url: "/course-covers/jlpt-n2-choukai.png",
+    order_index: 5,
+  },
+  {
+    id: "00000000-0000-0000-0000-0000000c0007",
+    title: "N2聴解 問題2 ポイント理解",
+    description:
+      "先に示された観点をもとに、会話のポイント（理由・原因など）を聞き取る練習。",
+    topic: "聴解",
+    level: "N2",
+    accent: "#14b8a6",
+    image_url: "/course-covers/jlpt-n2-choukai.png",
+    order_index: 6,
+  },
+  {
+    id: "00000000-0000-0000-0000-0000000c0008",
+    title: "N2聴解 問題3 概要理解",
+    description:
+      "話全体のテーマや話者の意図・主張など、概要を理解する練習。事前の設問はありません。",
+    topic: "聴解",
+    level: "N2",
+    accent: "#0ea5e9",
+    image_url: "/course-covers/jlpt-n2-choukai.png",
+    order_index: 7,
+  },
+  {
+    id: "00000000-0000-0000-0000-0000000c0009",
+    title: "N2聴解 問題4 即時応答",
+    description:
+      "短い発話を聞いて、適切な応答をその場で選ぶ練習。会話のテンポに慣れます。",
+    topic: "聴解",
+    level: "N2",
+    accent: "#6366f1",
+    image_url: "/course-covers/jlpt-n2-choukai.png",
+    order_index: 8,
+  },
+  {
+    id: "00000000-0000-0000-0000-0000000c000a",
+    title: "N2聴解 問題5 統合理解",
+    description:
+      "やや長めの話や複数の情報を聞いて、内容を比較・統合して理解する練習。",
+    topic: "聴解",
+    level: "N2",
+    accent: "#8b5cf6",
+    image_url: "/course-covers/jlpt-n2-choukai.png",
+    order_index: 9,
+  },
 ];
 
 await client.connect();
