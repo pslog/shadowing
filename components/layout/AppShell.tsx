@@ -18,6 +18,7 @@ const NAV: NavItem[] = [
   { href: "/dashboard", label: "ホーム", icon: "home" },
   { href: "/courses", label: "コース", icon: "book", alt: ["/lessons"] },
   { href: "/progress", label: "進捗", icon: "trending" },
+  { href: "/about", label: "紹介", icon: "sparkles" },
 ];
 
 function useActive() {
@@ -41,7 +42,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const isActive = useActive();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // Close the account menu on navigation.
   useEffect(() => setMenuOpen(false), [pathname]);
 
   return (
@@ -55,7 +55,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <span className="hidden text-lg sm:inline text-gradient">Shadowing JP</span>
           </Link>
 
-          {/* Desktop nav (mobile uses the bottom tab bar) */}
           <nav className="ml-2 hidden items-center gap-1 md:flex">
             {navItems.map((item) => {
               const active = isActive(item);
@@ -66,8 +65,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   className={cn(
                     "flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm transition-all",
                     active
-                      ? "brand-gradient text-white font-semibold shadow-[var(--shadow-glow)]"
-                      : "text-muted hover:text-fg hover:bg-surface/70",
+                      ? "brand-gradient font-semibold text-white shadow-[var(--shadow-glow)]"
+                      : "text-muted hover:bg-surface/70 hover:text-fg",
                   )}
                 >
                   <Icon name={item.icon} size={16} />
@@ -78,7 +77,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </nav>
 
           <div className="ml-auto flex items-center gap-2">
-            {profile && (
+            {profile ? (
               <>
                 <span className="hidden md:inline">
                   <Badge tone="warning">
@@ -91,7 +90,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </span>
                 <div className="relative">
                   <button
-                    onClick={() => setMenuOpen((v) => !v)}
+                    onClick={() => setMenuOpen((value) => !value)}
                     aria-haspopup="menu"
                     aria-expanded={menuOpen}
                     className="focus-ring flex h-11 items-center gap-2 rounded-full border border-border bg-surface py-1 pl-1 pr-3 text-sm"
@@ -138,8 +137,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   )}
                 </div>
               </>
-            )}
-            {!profile && (
+            ) : (
               <Link href="/login" className={buttonClasses("primary", "sm")}>
                 ログイン
               </Link>
@@ -158,17 +156,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </span>
             <div>
               <p className="text-sm font-bold text-gradient">Shadowing JP</p>
-              <p className="text-xs text-muted">Vì cộng đồng học tiếng Nhật 🇯🇵💻</p>
+              <p className="text-xs text-muted">Cùng luyện nói tiếng Nhật mỗi ngày</p>
             </div>
           </div>
-          <p className="text-xs text-muted">Phi lợi nhuận — 一緒に頑張りましょう！</p>
+          <p className="text-xs text-muted">Phi lợi nhuận · cùng nhau học, cùng nhau tiến bộ</p>
         </div>
         <div className="border-t border-border/50 px-4 py-3 text-center text-[11px] text-muted">
           © {new Date().getFullYear()} Shadowing JP
         </div>
       </footer>
 
-      {/* Mobile bottom tab bar */}
       <nav className="glass fixed inset-x-0 bottom-0 z-40 border-t border-border/70 pb-[env(safe-area-inset-bottom)] md:hidden">
         <div className="mx-auto flex max-w-md items-stretch">
           {navItems.map((item) => {
