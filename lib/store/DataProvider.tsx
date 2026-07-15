@@ -42,6 +42,8 @@ export interface CreateLessonInput {
   source_url: string | null;
   media_url: string | null;
   duration_seconds: number | null;
+  /** 公開（承認済み）フラグ。UIで管理者が切り替える。省略時は既存値を維持。 */
+  is_public?: boolean;
   sentences: {
     ja_text: string;
     vi_translation: string | null;
@@ -539,7 +541,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         source_type: input.source_url ? "youtube" : "upload",
         source_url: input.source_url,
         media_url: input.media_url,
-        is_public: false,
+        is_public: input.is_public ?? false,
         created_at: now,
       };
       const sentences: LessonSentence[] = input.sentences.map((s, i) => ({
@@ -585,6 +587,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         source_type: input.source_url ? "youtube" : "upload",
         source_url: input.source_url,
         media_url: input.media_url,
+        is_public: input.is_public ?? existing.is_public,
       };
       const existingSentences = prev.sentences
         .filter((sentence) => sentence.lesson_id === input.id)

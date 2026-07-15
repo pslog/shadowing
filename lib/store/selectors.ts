@@ -45,6 +45,13 @@ function lessonNumber(title: string): number | null {
   // "Unit 1.1", "Unit 1.2" -> 101, 102 … (order within a course).
   const unit = title.match(/Unit\s+(\d+)\.(\d+)/iu);
   if (unit) return Number(unit[1]) * 100 + Number(unit[2]);
+  // JLPT N2 聴解: "2010/7 問題1-3 …" -> chronological by exam date (year+month),
+  // then by question number within that exam. Keeps mondai courses in exam order.
+  const choukai = title.match(/^(\d{4})\/(\d{1,2})\s+問題\d+-(\d+)/u);
+  if (choukai) {
+    const [, year, month, q] = choukai;
+    return Number(year) * 10000 + Number(month) * 100 + Number(q);
+  }
   return null;
 }
 

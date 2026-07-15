@@ -84,6 +84,8 @@ function LessonEditorForm({
   const [duration, setDuration] = useState<number | null>(
     lesson?.duration_seconds ?? null,
   );
+  // 公開（承認済み）フラグ。既存レッスンは現在値、新規は既定で非公開。
+  const [isPublic, setIsPublic] = useState<boolean>(lesson?.is_public ?? false);
   const [error, setError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -125,6 +127,7 @@ function LessonEditorForm({
       source_url: sourceUrl.trim() || null,
       media_url: mediaUrl,
       duration_seconds: duration,
+      is_public: isPublic,
       sentences: lines.map((ja, i) => ({
         ja_text: ja,
         vi_translation: translation[i]?.trim() || null,
@@ -210,6 +213,22 @@ function LessonEditorForm({
           {duration != null && (
             <p className="mt-1 text-xs text-muted">長さ: 約{duration}秒</p>
           )}
+        </div>
+        <div className="rounded-xl border border-border p-3">
+          <label className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              className="mt-0.5 size-4 accent-[var(--accent)]"
+              checked={isPublic}
+              onChange={(e) => setIsPublic(e.target.checked)}
+            />
+            <span className="text-sm">
+              <span className="font-medium">公開する（承認済み）</span>
+              <span className="mt-0.5 block text-xs text-muted">
+                オンのときだけ学習者に表示されます。音声に問題があるレッスンはオフにして非公開にできます。
+              </span>
+            </span>
+          </label>
         </div>
       </Card>
 

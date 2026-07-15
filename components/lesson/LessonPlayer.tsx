@@ -55,6 +55,60 @@ interface FreshResult {
   transcript: string;
 }
 
+function MissionCompleteDialog({
+  outcome,
+  onClose,
+}: {
+  outcome: AttemptOutcome;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 grid place-items-center bg-black/45 px-4 py-6 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="mission-complete-title"
+    >
+      <div className="relative w-full max-w-sm overflow-hidden rounded-[1.75rem] border border-[var(--success)]/25 bg-card p-5 text-center shadow-[var(--shadow-lg)]">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-1 brand-gradient" />
+        <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-[var(--success-soft)] text-[var(--success)]">
+          <Icon name="flame" size={34} filled />
+        </div>
+        <p
+          id="mission-complete-title"
+          className="mt-4 text-2xl font-extrabold text-fg"
+        >
+          ミッション達成！
+        </p>
+        <p className="mt-2 text-sm leading-6 text-muted">
+          今日の学習リズムを守りました。明日も少しだけ声に出して、
+          ストリークをつなげましょう。
+        </p>
+        <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
+          <div className="rounded-xl bg-surface px-3 py-2">
+            <p className="text-xs font-bold text-muted">Streak</p>
+            <p className="mt-0.5 text-lg font-extrabold text-[var(--success)]">
+              {outcome.currentStreak}日
+            </p>
+          </div>
+          <div className="rounded-xl bg-surface px-3 py-2">
+            <p className="text-xs font-bold text-muted">Bonus</p>
+            <p className="mt-0.5 text-lg font-extrabold text-primary">+100 XP</p>
+          </div>
+        </div>
+        {outcome.leveledUp && (
+          <p className="mt-3 rounded-xl bg-primary/10 px-3 py-2 text-sm font-bold text-primary">
+            Level {outcome.newLevel}にアップ！
+          </p>
+        )}
+        <Button onClick={onClose} className="mt-5 w-full">
+          続ける
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 const TRANSCRIPT_TOKEN_STYLE: Record<ScoreAlignmentToken["status"], string> = {
   match: "bg-[var(--success-soft)] text-[var(--success)]",
   substitution: "bg-[var(--warning-soft)] text-[var(--warning)]",
@@ -335,6 +389,7 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
   const { state, recordAttempt } = useData();
   const [index, setIndex] = useState(0);
   const [fresh, setFresh] = useState<FreshResult | null>(null);
+  const [missionAlert, setMissionAlert] = useState<AttemptOutcome | null>(null);
   const [scoring, setScoring] = useState(false);
   const [recorderKey, setRecorderKey] = useState(0);
   const lessonAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -495,6 +550,9 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
       });
 
       setFresh({ score, outcome, audioUrl: r.audioUrl, transcript: r.transcript });
+      if (outcome.missionCompletedNow) {
+        setMissionAlert(outcome);
+      }
       requestAnimationFrame(() => {
         inlineScoreRef.current?.scrollIntoView({
           behavior: "smooth",
@@ -512,6 +570,12 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
 
   return (
     <div className="space-y-6">
+      {missionAlert && (
+        <MissionCompleteDialog
+          outcome={missionAlert}
+          onClose={() => setMissionAlert(null)}
+        />
+      )}
       <section className="relative overflow-hidden rounded-[2rem] border border-primary/15 bg-card p-5 shadow-[var(--shadow-md)] sm:p-6">
         <div className="pointer-events-none absolute -right-16 -top-24 h-56 w-56 rounded-full bg-primary/10 blur-3xl" />
         <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
