@@ -75,3 +75,20 @@ export const noIndexMetadata: Metadata = {
     },
   },
 };
+
+export function privatePageMetadata({
+  title,
+  description = SITE_DESCRIPTION,
+  path,
+}: {
+  title: string;
+  description?: string;
+  path: string;
+}): Metadata {
+  return pageMetadata({
+    title,
+    description,
+    path,
+    noIndex: true,
+  });
+}

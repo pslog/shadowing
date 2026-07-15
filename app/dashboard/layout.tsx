@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { noIndexMetadata } from "@/lib/seo";
+import { privatePageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = privatePageMetadata({
   title: "ダッシュボード",
-  ...noIndexMetadata,
-};
+  description: "Shadowing JPの学習ダッシュボード。",
+  path: "/dashboard",
+});
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return children;

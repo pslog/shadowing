@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { noIndexMetadata } from "@/lib/seo";
+import { privatePageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = privatePageMetadata({
   title: "レッスン",
   description: "日本語シャドーイングのレッスンページです。",
-  ...noIndexMetadata,
-};
+  path: "/lessons",
+});
 
 export default function LessonsLayout({ children }: { children: React.ReactNode }) {
   return children;

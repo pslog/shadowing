@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { noIndexMetadata } from "@/lib/seo";
+import { privatePageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = privatePageMetadata({
   title: "進捗",
-  ...noIndexMetadata,
-};
+  description: "Shadowing JPの学習進捗、ストリーク、XP、ランキング。",
+  path: "/progress",
+});
 
 export default function ProgressLayout({ children }: { children: React.ReactNode }) {
   return children;

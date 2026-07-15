@@ -1,11 +1,20 @@
 import type { Metadata } from "next";
-import { noIndexMetadata } from "@/lib/seo";
+import { privatePageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "コース編集",
-  ...noIndexMetadata,
+type Props = {
+  children: React.ReactNode;
+  params: Promise<{ id: string }>;
 };
 
-export default function EditCourseLayout({ children }: { children: React.ReactNode }) {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
+  return privatePageMetadata({
+    title: "コース編集",
+    description: "Shadowing JPのコース編集画面。",
+    path: `/courses/${id}/edit`,
+  });
+}
+
+export default function EditCourseLayout({ children }: Props) {
   return children;
 }
