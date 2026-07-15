@@ -81,6 +81,7 @@ export function applyAttempt(
     recording_url: input.recordingUrl,
     pronunciation_score: score.pronunciation,
     speed_score: score.speed,
+    coverage_score: score.coverage,
     intonation_score: score.intonation,
     total_score: score.total,
     transcript_text: input.transcript,

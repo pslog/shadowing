@@ -17,6 +17,11 @@ interface Tokenizer {
   tokenize(text: string): Array<{ surface_form: string; reading?: string }>;
 }
 
+export interface ReadingToken {
+  surface: string;
+  reading: string;
+}
+
 let tokenizerPromise: Promise<Tokenizer | null> | null = null;
 
 function dicPath(): string {
@@ -43,23 +48,54 @@ function getTokenizer(): Promise<Tokenizer | null> {
   return tokenizerPromise;
 }
 
+function prepareForReading(text: string): string {
+  return text
+    // Kuromoji can misread a kanji immediately followed by katakana as one
+    // compound token (e.g. 今アパート -> コンアパート). A soft script boundary
+    // keeps common mixed-script phrases phonetically correct.
+    .replace(/([\p{Script=Han}])(?=[\p{Script=Katakana}ー])/gu, "$1 ")
+    .replace(/([\p{Script=Katakana}ー])(?=[\p{Script=Han}])/gu, "$1 ");
+}
+
+function comparableReading(text: string): string {
+  return text
+    .replace(/[\s　]/g, "")
+    .replace(/[。、！？!?.,・「」『』（）()~〜－「」]/g, "")
+    .trim();
+}
+
 /**
  * Returns the katakana reading of `text`, or null if the tokenizer is
  * unavailable (caller should fall back to raw-character comparison).
  * Empty input returns "".
  */
 export async function toReading(text: string): Promise<string | null> {
+  const tokens = await toReadingTokens(text);
+  if (!tokens) return null;
+  return tokens.map((tok) => tok.reading).join("");
+}
+
+export async function toReadingTokens(text: string): Promise<ReadingToken[] | null> {
   const t = (text ?? "").trim();
-  if (!t) return "";
+  if (!t) return [];
+  const prepared = prepareForReading(t);
   const tokenizer = await getTokenizer();
   if (!tokenizer) return null;
   try {
     return tokenizer
-      .tokenize(t)
-      .map((tok) =>
-        tok.reading && tok.reading !== "*" ? tok.reading : tok.surface_form,
-      )
-      .join("");
+      .tokenize(prepared)
+      .map((tok) => {
+        const reading =
+          tok.reading && tok.reading !== "*" ? tok.reading : tok.surface_form;
+        return {
+          surface: tok.surface_form,
+          reading: comparableReading(reading),
+        };
+      })
+      .filter(
+        (tok) =>
+          tok.surface.trim().length > 0 && comparableReading(tok.reading).length > 0,
+      );
   } catch {
     return null;
   }

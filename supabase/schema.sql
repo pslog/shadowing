@@ -107,6 +107,7 @@ create table if not exists public.sentence_attempts (
   recording_url text,
   pronunciation_score int,
   speed_score int,
+  coverage_score int,
   intonation_score int,
   total_score int,
   transcript_text text,
@@ -115,6 +116,8 @@ create table if not exists public.sentence_attempts (
   feedback text,
   created_at timestamptz not null default now()
 );
+alter table public.sentence_attempts
+  add column if not exists coverage_score int;
 create index if not exists sentence_attempts_user_idx
   on public.sentence_attempts(user_id, created_at);
 

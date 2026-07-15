@@ -79,6 +79,7 @@ export interface SentenceAttempt {
   recording_url: string | null;
   pronunciation_score: number;
   speed_score: number;
+  coverage_score: number | null;
   intonation_score: number | null;
   total_score: number;
   transcript_text: string | null;
@@ -131,10 +132,24 @@ export interface LessonWithSentences extends Lesson {
   sentences: LessonSentence[];
 }
 
+export type ScoreAlignmentStatus = "match" | "substitution" | "missing" | "extra";
+
+export interface ScoreAlignmentToken {
+  target: string | null;
+  spoken: string | null;
+  status: ScoreAlignmentStatus;
+}
+
 /** Scores returned by the scoring engine / /api/score. */
 export interface ScoreBreakdown {
   pronunciation: number;
   speed: number;
+  /** How much of the target reading was covered; null for older saved attempts. */
+  coverage: number | null;
+  /** Mora-level comparison for the latest recognized utterance. */
+  alignment?: ScoreAlignmentToken[];
+  /** Text-level comparison for display; keeps kanji/kana from the transcript. */
+  textAlignment?: ScoreAlignmentToken[];
   /** null when intonation could not be measured (no reference audio). */
   intonation: number | null;
   total: number;

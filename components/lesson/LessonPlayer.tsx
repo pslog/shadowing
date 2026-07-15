@@ -21,7 +21,12 @@ import { scoreSentence, estimateDurationSeconds } from "@/lib/client/score";
 import { extractContourFromUrl, contourMetrics } from "@/lib/speech/pitch";
 import { speakJa, cancelSpeech } from "@/lib/speech/tts";
 import type { RecordResult } from "@/lib/speech/useRecorder";
-import type { LessonSentence, ScoreBreakdown, SentenceAttempt } from "@/lib/types";
+import type {
+  LessonSentence,
+  ScoreAlignmentToken,
+  ScoreBreakdown,
+  SentenceAttempt,
+} from "@/lib/types";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ProgressBar } from "@/components/ui/progress";
@@ -35,6 +40,7 @@ function attemptToScore(a: SentenceAttempt): ScoreBreakdown {
   return {
     pronunciation: a.pronunciation_score,
     speed: a.speed_score,
+    coverage: a.coverage_score,
     intonation: a.intonation_score,
     total: a.total_score,
     passed: a.is_passed,
@@ -47,6 +53,67 @@ interface FreshResult {
   outcome: AttemptOutcome;
   audioUrl: string | null;
   transcript: string;
+}
+
+const TRANSCRIPT_TOKEN_STYLE: Record<ScoreAlignmentToken["status"], string> = {
+  match: "bg-[var(--success-soft)] text-[var(--success)]",
+  substitution: "bg-[var(--warning-soft)] text-[var(--warning)]",
+  missing: "bg-[var(--danger-soft)] text-[var(--danger)] line-through",
+  extra: "bg-primary/10 text-primary",
+};
+
+function TranscriptComparison({
+  transcript,
+  textAlignment,
+}: {
+  transcript: string;
+  textAlignment?: ScoreAlignmentToken[];
+}) {
+  const hasTranscript = transcript.trim().length > 0;
+  const displayAlignment = textAlignment?.length ? textAlignment : undefined;
+
+  return (
+    <div className="mx-auto mt-3 max-w-2xl text-left">
+      <p className="text-xs font-extrabold text-muted">認識された発話</p>
+      <p
+        lang="ja"
+        className="mt-1.5 rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold leading-8 text-fg"
+      >
+        {!hasTranscript
+          ? "（認識できませんでした）"
+          : displayAlignment?.length
+            ? displayAlignment.map((token, i) => (
+                <TranscriptToken token={token} key={`${i}-${token.status}`} />
+              ))
+            : transcript}
+      </p>
+    </div>
+  );
+}
+
+function TranscriptToken({ token }: { token: ScoreAlignmentToken }) {
+  const visibleText = token.status === "missing" ? token.target : token.spoken;
+  if (!visibleText) return null;
+
+  return (
+    <span
+      className={[
+        "mr-1 inline rounded-md px-1 py-0.5",
+        TRANSCRIPT_TOKEN_STYLE[token.status],
+      ].join(" ")}
+      title={
+        token.status === "substitution" && token.target
+          ? `正: ${token.target}`
+          : token.status === "missing"
+            ? "抜け"
+            : token.status === "extra"
+              ? "余分"
+              : "一致"
+      }
+    >
+      {visibleText}
+    </span>
+  );
 }
 
 function DialogueScript({
@@ -255,6 +322,7 @@ function InlineScore({
         </div>
         <div className="flex gap-1.5 text-[11px] font-bold tabular-nums text-muted">
           <span>発音 {score.pronunciation}</span>
+          <span>網羅 {score.coverage ?? "—"}</span>
           <span>速度 {score.speed}</span>
           <span>抑揚 {score.intonation ?? "—"}</span>
         </div>
@@ -617,12 +685,10 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
                       </div>
                     )}
                     {fresh && (
-                      <p className="mx-auto mt-2 max-w-md text-center text-xs text-muted">
-                        認識された発話:{" "}
-                        <span lang="ja" className="text-fg">
-                          {fresh.transcript || "（認識できませんでした。推定で採点します）"}
-                        </span>
-                      </p>
+                      <TranscriptComparison
+                        transcript={fresh.transcript}
+                        textAlignment={fresh.score.textAlignment}
+                      />
                     )}
                     {displayScore && (
                       <div ref={inlineScoreRef}>

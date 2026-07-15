@@ -35,10 +35,11 @@ export function scoreSpeed({
     const edge = ratio < 0.85 ? (ratio - 0.7) / 0.15 : (1.3 - ratio) / 0.15;
     return Math.round(70 + edge * 19);
   }
-  // Off: 40..69, degrading as it gets further out.
+  // Off: 50..69, degrading as it gets further out. Speed is a supporting
+  // signal; a correct sentence should be coached as slow/fast, not crushed.
   const overflow = ratio < 0.7 ? 0.7 - ratio : ratio - 1.3;
-  const score = 69 - Math.min(overflow / 0.4, 1) * 29;
-  return Math.max(40, Math.round(score));
+  const score = 69 - Math.min(overflow / 0.5, 1) * 19;
+  return Math.max(50, Math.round(score));
 }
 
 /** How much faster/slower than reference, as a signed % (+ = too fast). */

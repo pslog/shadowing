@@ -118,7 +118,10 @@ export function ScoreResult({
 
       <div className="mt-5 grid grid-cols-3 gap-4">
         <Dim label="発音" value={score.pronunciation} hue="var(--c-indigo)" />
+        <Dim label="網羅" value={score.coverage} hue="var(--c-emerald)" />
         <Dim label="速度" value={score.speed} hue="var(--c-sky)" />
+      </div>
+      <div className="mt-4">
         <Dim
           label="イントネーション"
           value={score.intonation}

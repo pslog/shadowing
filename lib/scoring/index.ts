@@ -1,7 +1,7 @@
 // Scoring orchestrator. Pure + isomorphic so it can run in the /api/score
 // route today and be swapped for a real AI pronunciation API tomorrow.
 
-import { scorePronunciation } from "./pronunciation";
+import { scorePronunciationDetailed } from "./pronunciation";
 import { scoreSpeed } from "./speed";
 import { scoreIntonation } from "./intonation";
 import { scoreTotal } from "./total";
@@ -21,19 +21,21 @@ export interface ScoreRequest {
   passScore?: number;
 }
 
+const MIN_PRONUNCIATION_TO_PASS = 75;
+const MIN_COVERAGE_TO_PASS = 80;
+
 export function scoreAttempt(req: ScoreRequest): ScoreBreakdown {
   const passScore = req.passScore ?? 80;
 
-  // Independent seeds so mock fallbacks don't all move together.
-  const seedA = seedFrom(req.targetText, 1);
+  const hasTranscript = Boolean(req.spokenText?.trim());
+  // Seed is only used by speed when reference/user timing is missing.
   const seedB = seedFrom(req.targetText, 2);
 
-  const pronunciation = scorePronunciation({
+  const { pronunciation, coverage, alignment } = scorePronunciationDetailed({
     targetText: req.targetText,
     spokenText: req.spokenText,
     targetReading: req.targetReading,
     spokenReading: req.spokenReading,
-    seed: seedA,
   });
   const speed = scoreSpeed({
     originalDurationSeconds: req.originalDurationSeconds,
@@ -42,14 +44,28 @@ export function scoreAttempt(req: ScoreRequest): ScoreBreakdown {
   });
   const intonation = scoreIntonation({ similarity: req.intonationSimilarity });
   const total = scoreTotal(pronunciation, speed, intonation);
+  const passed =
+    hasTranscript &&
+    total >= passScore &&
+    pronunciation >= MIN_PRONUNCIATION_TO_PASS &&
+    coverage >= MIN_COVERAGE_TO_PASS;
 
   return {
     pronunciation,
     speed,
+    coverage,
+    alignment,
     intonation,
     total,
-    passed: total >= passScore,
-    feedback: generateFeedback({ pronunciation, speed, intonation, total }),
+    passed,
+    feedback: generateFeedback({
+      pronunciation,
+      speed,
+      coverage,
+      intonation,
+      total,
+      hasTranscript,
+    }),
   };
 }
 
