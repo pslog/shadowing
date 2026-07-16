@@ -238,80 +238,159 @@ function LeaderboardList({
   users: LeaderboardUser[];
   currentUserId: string | null;
 }) {
+  const podium = users.slice(0, 3);
+  const rest = users.slice(3);
+
   return (
     <Card>
-      <CardTitle>ランキング</CardTitle>
-      <div className="mt-3 space-y-1.5">
-        {users.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border bg-surface p-3">
-            <p className="text-sm font-bold">まだランキングデータがありません</p>
-            <p className="mt-1 text-xs leading-5 text-muted">
-              文をPassすると、XPランキングに反映されます。
-            </p>
-          </div>
-        ) : (
-          users.map((user, i) => {
-            const isMe = user.id === currentUserId;
-            const medal = MEDAL[i];
-            return (
-              <div
-                key={user.id}
-                className={[
-                  "flex items-center gap-3 rounded-2xl border px-3 py-2.5 transition-colors",
-                  isMe
-                    ? "border-primary/30 bg-primary/[0.05]"
-                    : "border-transparent bg-surface/60",
-                ].join(" ")}
-              >
-                {medal ? (
-                  <span
-                    className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm font-extrabold tabular-nums shadow-[var(--shadow-sm)]"
-                    style={{ background: medal.bg, color: medal.fg }}
-                  >
-                    {i === 0 ? <Icon name="trophy" size={16} filled /> : i + 1}
-                  </span>
-                ) : (
-                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-border bg-card text-sm font-extrabold tabular-nums text-muted">
-                    {i + 1}
-                  </span>
-                )}
-
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full brand-gradient text-xs font-bold text-white">
-                  {user.displayName.slice(0, 1).toUpperCase()}
-                </span>
-
-                <div className="min-w-0 flex-1">
-                  <p className="flex items-center gap-1.5 truncate text-sm font-bold">
-                    <span className="truncate">{user.displayName}</span>
-                    {isMe && (
-                      <span className="shrink-0 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-primary">
-                        あなた
-                      </span>
-                    )}
-                  </p>
-                  <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-muted">
-                    <span>Lv.{user.level}</span>
-                    <span aria-hidden>·</span>
-                    <span>{user.passed}文</span>
-                    <span className="inline-flex items-center gap-0.5 text-[var(--warning)]">
-                      <Icon name="flame" size={11} filled />
-                      {user.streak}
-                    </span>
-                  </p>
-                </div>
-
-                <div className="shrink-0 text-right leading-none">
-                  <span className="text-base font-extrabold tabular-nums text-fg">
-                    {user.totalXp.toLocaleString("ja-JP")}
-                  </span>
-                  <span className="ml-0.5 text-[10px] font-bold text-muted">XP</span>
-                </div>
-              </div>
-            );
-          })
-        )}
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <CardTitle>ランキング</CardTitle>
+        <span className="rounded-full bg-surface px-3 py-1 text-xs font-bold text-muted">
+          Top {users.length || "-"}
+        </span>
       </div>
+
+      {users.length === 0 ? (
+        <div className="mt-4 rounded-2xl border border-dashed border-border bg-surface p-4">
+          <p className="text-sm font-bold">まだランキングデータがありません</p>
+          <p className="mt-1 text-xs leading-5 text-muted">
+            文をPassすると、XPランキングに反映されます。
+          </p>
+        </div>
+      ) : (
+        <div className="mt-4 space-y-3">
+          <div className="grid gap-2.5">
+            {podium.map((user, i) => (
+              <PodiumUser
+                user={user}
+                rank={i + 1}
+                isMe={user.id === currentUserId}
+                key={user.id}
+              />
+            ))}
+          </div>
+
+          {rest.length > 0 && (
+            <div className="space-y-1.5">
+              {rest.map((user, i) => (
+                <LeaderboardRow
+                  user={user}
+                  rank={i + 4}
+                  isMe={user.id === currentUserId}
+                  key={user.id}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </Card>
+  );
+}
+
+function PodiumUser({
+  user,
+  rank,
+  isMe,
+}: {
+  user: LeaderboardUser;
+  rank: number;
+  isMe: boolean;
+}) {
+  const medal = MEDAL[rank - 1];
+  return (
+    <div
+      className={[
+        "relative overflow-hidden rounded-xl border px-3 py-2.5",
+        rank === 1
+          ? "border-[var(--c-amber)]/35 bg-[var(--c-amber)]/10"
+          : isMe
+            ? "border-primary/30 bg-primary/[0.06]"
+            : "border-border bg-surface/75",
+      ].join(" ")}
+    >
+      {rank === 1 && (
+        <div className="pointer-events-none absolute -right-8 -top-12 h-28 w-28 rounded-full bg-[var(--c-amber)]/15 blur-2xl" />
+      )}
+      <div className="relative flex items-center gap-3">
+        <span
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-sm font-black tabular-nums shadow-[var(--shadow-sm)]"
+          style={{ background: medal.bg, color: medal.fg }}
+        >
+          {rank}
+        </span>
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg brand-gradient text-sm font-black text-white">
+          {user.displayName.slice(0, 1).toUpperCase()}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="flex items-center gap-1.5 truncate text-sm font-extrabold">
+            <span className="truncate">{user.displayName}</span>
+            {isMe && (
+              <span className="shrink-0 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+                あなた
+              </span>
+            )}
+          </p>
+          <p className="mt-1 flex flex-wrap items-center gap-x-2 text-xs font-semibold text-muted">
+            <span>Lv.{user.level}</span>
+            <span>{user.passed}文Pass</span>
+            <span className="inline-flex items-center gap-0.5 text-[var(--warning)]">
+              <Icon name="flame" size={11} filled />
+              {user.streak}日
+            </span>
+          </p>
+        </div>
+        <div className="shrink-0 text-right">
+          <p className="text-base font-black leading-none tabular-nums text-fg">
+            {user.totalXp.toLocaleString("ja-JP")}
+          </p>
+          <p className="mt-0.5 text-[10px] font-bold text-muted">XP</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LeaderboardRow({
+  user,
+  rank,
+  isMe,
+}: {
+  user: LeaderboardUser;
+  rank: number;
+  isMe: boolean;
+}) {
+  return (
+    <div
+      className={[
+        "flex items-center gap-3 rounded-2xl border px-3 py-2.5 transition-colors",
+        isMe ? "border-primary/30 bg-primary/[0.06]" : "border-border bg-surface/60",
+      ].join(" ")}
+    >
+      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-card text-xs font-black tabular-nums text-muted">
+        {rank}
+      </span>
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-xs font-black text-primary">
+        {user.displayName.slice(0, 1).toUpperCase()}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="flex items-center gap-1.5 truncate text-sm font-bold">
+          <span className="truncate">{user.displayName}</span>
+          {isMe && (
+            <span className="shrink-0 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+              あなた
+            </span>
+          )}
+        </p>
+        <p className="mt-0.5 text-xs text-muted">
+          Lv.{user.level} · {user.passed}文Pass · {user.streak}日
+        </p>
+      </div>
+      <p className="shrink-0 text-sm font-black tabular-nums">
+        {user.totalXp.toLocaleString("ja-JP")}
+        <span className="ml-0.5 text-[10px] text-muted">XP</span>
+      </p>
+    </div>
   );
 }
 
