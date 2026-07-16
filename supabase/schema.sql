@@ -120,6 +120,20 @@ create table if not exists public.saved_vocab (
 create index if not exists saved_vocab_user_idx
   on public.saved_vocab(user_id, created_at);
 
+-- Aggregate popularity per word across ALL users (how many saved it / learned
+-- it). security_invoker=false so it runs as owner and bypasses saved_vocab RLS,
+-- exposing only counts (never who saved). Readable by everyone.
+create or replace view public.vocab_stats
+with (security_invoker = false) as
+select
+  word,
+  reading,
+  count(*)::int                        as saved_count,
+  count(*) filter (where learned)::int as learned_count
+from public.saved_vocab
+group by word, reading;
+grant select on public.vocab_stats to anon, authenticated;
+
 -- ---------------------------------------------------------------------------
 --  sentence_attempts
 -- ---------------------------------------------------------------------------

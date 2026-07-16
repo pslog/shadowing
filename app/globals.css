@@ -354,4 +354,32 @@ button:disabled {
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
+  /* Flashcard flip is user-initiated, single-shot, and core to the UI — keep it. */
+  .flashcard-flip {
+    transition-duration: 0.5s !important;
+  }
+  .card-enter {
+    animation-duration: 0.5s !important;
+  }
+}
+
+/* 3D flip for the review flashcard. */
+.flashcard-flip {
+  transition: transform 0.5s cubic-bezier(0.45, 0.05, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+/* Next flashcard slides in from the right. */
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateX(30px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+.card-enter {
+  animation: card-in 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 }

@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useData } from "@/lib/store/DataProvider";
-import { lessonById, lessonHref, savedVocabList } from "@/lib/store/selectors";
+import { lessonById, lessonHref, savedVocabList, vocabKey } from "@/lib/store/selectors";
+import { createClient } from "@/lib/supabase/client";
 import { speakJa } from "@/lib/speech/tts";
 import type { SavedVocab } from "@/lib/types";
 import { AppShell } from "@/components/layout/AppShell";
@@ -13,6 +14,11 @@ import { Icon } from "@/components/ui/icon";
 
 type Filter = "all" | "unlearned" | "learned";
 
+interface VocabStat {
+  saved_count: number;
+  learned_count: number;
+}
+
 export default function ReviewPage() {
   const { state, ready, setVocabLearned, removeSavedVocab } = useData();
   const [filter, setFilter] = useState<Filter>("all");
@@ -21,6 +27,35 @@ export default function ReviewPage() {
 
   const all = savedVocabList(state);
   const learnedCount = all.filter((v) => v.learned).length;
+
+  // Cross-user popularity per word (saved / learned counts).
+  const [stats, setStats] = useState<Map<string, VocabStat>>(new Map());
+  const wordsKey = all.map((v) => v.word).join("|");
+  useEffect(() => {
+    const client = createClient();
+    if (!client || all.length === 0) return;
+    let cancelled = false;
+    const words = [...new Set(all.map((v) => v.word))];
+    client
+      .from("vocab_stats")
+      .select("word,reading,saved_count,learned_count")
+      .in("word", words)
+      .then(({ data }) => {
+        if (cancelled || !data) return;
+        const map = new Map<string, VocabStat>();
+        for (const r of data as (VocabStat & { word: string; reading: string })[]) {
+          map.set(vocabKey(r.word, r.reading), {
+            saved_count: r.saved_count,
+            learned_count: r.learned_count,
+          });
+        }
+        setStats(map);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wordsKey]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -157,6 +192,7 @@ export default function ReviewPage() {
                 <VocabRow
                   key={v.id}
                   item={v}
+                  stat={stats.get(vocabKey(v.word, v.reading))}
                   lessonHrefFor={(id) => {
                     const lesson = id ? lessonById(state, id) : undefined;
                     return lesson ? lessonHref(lesson) : null;
@@ -180,11 +216,13 @@ export default function ReviewPage() {
 
 function VocabRow({
   item,
+  stat,
   lessonHrefFor,
   onToggleLearned,
   onRemove,
 }: {
   item: SavedVocab;
+  stat?: VocabStat;
   lessonHrefFor: (lessonId: string | null) => string | null;
   onToggleLearned: () => void;
   onRemove: () => void;
@@ -194,13 +232,33 @@ function VocabRow({
     <li className="flex items-start gap-3 px-4 py-2.5">
       <div className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-4">
         <div className="sm:w-[38%] sm:shrink-0">
-          <p className="flex flex-wrap items-baseline gap-x-2">
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span lang="ja" className="font-extrabold leading-tight text-fg">
               {item.word}
             </span>
             {item.learned && (
               <span className="rounded-full bg-[var(--success-soft)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--success)]">
                 習得済み
+              </span>
+            )}
+            {stat && stat.saved_count > 0 && (
+              <span className="inline-flex items-center gap-2 text-[11px] text-muted">
+                <span
+                  className="inline-flex items-center gap-1"
+                  title={`${stat.saved_count}人が単語帳に保存`}
+                >
+                  <Icon name="bookmark" size={11} />
+                  {stat.saved_count}
+                </span>
+                {stat.learned_count > 0 && (
+                  <span
+                    className="inline-flex items-center gap-1 text-[var(--success)]"
+                    title={`${stat.learned_count}人が習得`}
+                  >
+                    <Icon name="check" size={11} />
+                    {stat.learned_count}
+                  </span>
+                )}
               </span>
             )}
           </p>
@@ -311,17 +369,26 @@ function Flashcards({
       </div>
 
       <button
+        key={index}
         type="button"
         onClick={() => setFlipped((f) => !f)}
-        className="focus-ring relative min-h-[16rem] w-full overflow-hidden rounded-[1.75rem] border border-primary/20 bg-card p-6 text-center shadow-[var(--shadow-md)] transition-colors hover:border-primary/40"
+        aria-label={flipped ? "単語に戻す" : "意味を表示"}
+        className="card-enter focus-ring block w-full"
+        style={{ perspective: "1400px" }}
       >
-        <div className="pointer-events-none absolute inset-x-8 top-0 h-px brand-gradient" />
-        <span className="absolute right-4 top-3 text-[11px] font-bold uppercase tracking-widest text-muted">
-          {flipped ? "意味" : "単語"}
-        </span>
-
-        {!flipped ? (
-          <div className="flex min-h-[13rem] flex-col items-center justify-center gap-2">
+        <div
+          className="flashcard-flip relative h-72 w-full"
+          style={{ transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)" }}
+        >
+          {/* Front: the word */}
+          <div
+            className="absolute inset-0 flex flex-col items-center justify-center gap-2 overflow-hidden rounded-[1.75rem] border border-primary/20 bg-card p-6 text-center shadow-[var(--shadow-md)]"
+            style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}
+          >
+            <div className="pointer-events-none absolute inset-x-8 top-0 h-px brand-gradient" />
+            <span className="absolute right-4 top-3 text-[11px] font-bold uppercase tracking-widest text-muted">
+              単語
+            </span>
             <p lang="ja" className="text-4xl font-extrabold text-fg">
               {card.word}
             </p>
@@ -345,20 +412,31 @@ function Flashcards({
             </span>
             <p className="mt-3 text-xs text-muted">タップして意味を表示</p>
           </div>
-        ) : (
-          <div className="flex min-h-[13rem] flex-col items-center justify-center gap-2">
+
+          {/* Back: reading, meaning, example */}
+          <div
+            className="absolute inset-0 flex flex-col items-center justify-center gap-2 overflow-hidden rounded-[1.75rem] border border-primary/20 bg-card p-6 text-center shadow-[var(--shadow-md)]"
+            style={{
+              backfaceVisibility: "hidden",
+              WebkitBackfaceVisibility: "hidden",
+              transform: "rotateY(180deg)",
+            }}
+          >
+            <span className="absolute right-4 top-3 text-[11px] font-bold uppercase tracking-widest text-muted">
+              意味
+            </span>
             <p lang="ja" className="text-lg font-bold text-primary">
               {card.reading}
             </p>
             <p className="text-xl font-extrabold text-fg">{card.meaning}</p>
-            <div className="mt-3 rounded-xl border border-border bg-surface/70 px-3 py-2 text-left">
+            <div className="mt-1 rounded-xl border border-border bg-surface/70 px-3 py-2 text-left">
               <p lang="ja" className="text-sm font-semibold leading-6 text-fg">
                 {card.example_ja}
               </p>
               <p className="text-xs leading-5 text-muted">{card.example_vi}</p>
             </div>
           </div>
-        )}
+        </div>
       </button>
 
       <div className="flex items-center justify-between gap-3">
