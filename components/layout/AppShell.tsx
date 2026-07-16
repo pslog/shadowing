@@ -40,6 +40,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const navItems: NavItem[] = canAdmin
     ? [...NAV, { href: "/admin/users", label: "ユーザー管理", icon: "cap" }]
     : NAV;
+  // Mobile bottom bar: keep only the core daily-use tabs so it never crowds.
+  // 紹介 (static intro) and admin live in the desktop nav / footer only.
+  const mobileNavItems = navItems.filter(
+    (item) => item.href !== "/about" && item.href !== "/admin/users",
+  );
   const isActive = useActive();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -89,6 +94,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <span className="hidden sm:inline">
                   <XPBadge xp={profile.total_xp} />
                 </span>
+                <Link
+                  href="/about"
+                  aria-label="紹介"
+                  className="focus-ring grid h-11 w-11 place-items-center rounded-full border border-border bg-surface text-muted transition-colors hover:text-fg md:hidden"
+                >
+                  <Icon name="sparkles" size={18} />
+                </Link>
                 <div className="relative">
                   <button
                     onClick={() => setMenuOpen((value) => !value)}
@@ -139,9 +151,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </div>
               </>
             ) : (
-              <Link href="/login" className={buttonClasses("primary", "sm")}>
-                ログイン
-              </Link>
+              <>
+                <Link
+                  href="/about"
+                  className="text-sm font-semibold text-muted hover:text-fg md:hidden"
+                >
+                  紹介
+                </Link>
+                <Link href="/login" className={buttonClasses("primary", "sm")}>
+                  ログイン
+                </Link>
+              </>
             )}
           </div>
         </div>
@@ -169,7 +189,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <nav className="glass fixed inset-x-0 bottom-0 z-40 border-t border-border/70 pb-[env(safe-area-inset-bottom)] md:hidden">
         <div className="mx-auto flex max-w-md items-stretch">
-          {navItems.map((item) => {
+          {mobileNavItems.map((item) => {
             const active = isActive(item);
             return (
               <Link
