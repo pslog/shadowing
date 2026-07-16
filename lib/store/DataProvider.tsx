@@ -14,11 +14,13 @@ import type {
   Lesson,
   LessonSentence,
   Profile,
+  SavedVocab,
   ScoreBreakdown,
+  VocabEntry,
 } from "@/lib/types";
 import { createClient as createSupabaseClient, hasSupabaseEnv } from "@/lib/supabase/client";
 import { applyAttempt, type AttemptOutcome } from "./engine";
-import { isSuperAdminEmail } from "./selectors";
+import { isSuperAdminEmail, vocabKey } from "./selectors";
 import {
   buildSeed,
   emptyState,
@@ -79,6 +81,12 @@ interface DataContextValue {
   state: AppState;
   ready: boolean;
   usingSupabase: boolean;
+  /** Save a vocab entry to (or remove it from) the review notebook. Returns the new saved-state. */
+  toggleSavedVocab: (entry: VocabEntry, lessonId: string | null) => boolean;
+  /** Mark a saved word as learned / not learned during review. */
+  setVocabLearned: (savedId: string, learned: boolean) => void;
+  /** Remove a saved word from the notebook. */
+  removeSavedVocab: (savedId: string) => void;
   login: (input: LoginInput) => Promise<Profile | null>;
   logout: () => void;
   createCourse: (input: CreateCourseInput) => Course;
@@ -125,6 +133,7 @@ function migrateSeedContent(state: AppState): AppState {
     courses: [...seed.courses, ...customCourses],
     lessons: [...seed.lessons, ...customLessons],
     sentences: [...seed.sentences, ...customSentences],
+    savedVocab: state.savedVocab ?? [],
   };
 }
 
@@ -247,6 +256,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       progressResult,
       missionsResult,
       xpEventsResult,
+      savedVocabResult,
       lessonsAll,
       sentencesAll,
     ] = await Promise.all([
@@ -275,6 +285,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             .eq("user_id", user.id)
             .order("created_at", { ascending: true })
         : Promise.resolve({ data: [], error: null }),
+      user
+        ? supabase
+            .from("saved_vocab")
+            .select("*")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false })
+        : Promise.resolve({ data: [], error: null }),
       fetchAll("lessons", [["title", true]]),
       fetchAll("lesson_sentences", [
         ["lesson_id", true],
@@ -291,6 +308,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       progress: (progressResult.data ?? []) as AppState["progress"],
       missions: (missionsResult.data ?? []) as AppState["missions"],
       xpEvents: (xpEventsResult.data ?? []) as AppState["xpEvents"],
+      savedVocab: (savedVocabResult.data ?? []) as AppState["savedVocab"],
     };
   }, []);
 
@@ -542,6 +560,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         source_url: input.source_url,
         media_url: input.media_url,
         is_public: input.is_public ?? false,
+        vocabulary: null,
         created_at: now,
       };
       const sentences: LessonSentence[] = input.sentences.map((s, i) => ({
@@ -667,6 +686,93 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     [commit],
   );
 
+  const toggleSavedVocab = useCallback(
+    (entry: VocabEntry, lessonId: string | null): boolean => {
+      const prev = stateRef.current;
+      if (!prev.profile) return false;
+      const uid_ = prev.profile.id;
+      const key = vocabKey(entry.word, entry.reading);
+      const existing = prev.savedVocab.find(
+        (v) => v.user_id === uid_ && vocabKey(v.word, v.reading) === key,
+      );
+
+      if (existing) {
+        commit({
+          ...prev,
+          savedVocab: prev.savedVocab.filter((v) => v.id !== existing.id),
+        });
+        if (USING_SUPABASE) {
+          createSupabaseClient()
+            ?.from("saved_vocab")
+            .delete()
+            .eq("id", existing.id)
+            .then(undefined, console.error);
+        }
+        return false;
+      }
+
+      const saved: SavedVocab = {
+        id: uid(),
+        user_id: uid_,
+        lesson_id: lessonId,
+        word: entry.word,
+        reading: entry.reading,
+        meaning: entry.meaning,
+        example_ja: entry.example_ja,
+        example_vi: entry.example_vi,
+        learned: false,
+        created_at: new Date().toISOString(),
+      };
+      commit({ ...prev, savedVocab: [saved, ...prev.savedVocab] });
+      if (USING_SUPABASE) {
+        createSupabaseClient()
+          ?.from("saved_vocab")
+          .insert(saved)
+          .then(undefined, console.error);
+      }
+      return true;
+    },
+    [commit],
+  );
+
+  const setVocabLearned = useCallback(
+    (savedId: string, learned: boolean) => {
+      const prev = stateRef.current;
+      commit({
+        ...prev,
+        savedVocab: prev.savedVocab.map((v) =>
+          v.id === savedId ? { ...v, learned } : v,
+        ),
+      });
+      if (USING_SUPABASE) {
+        createSupabaseClient()
+          ?.from("saved_vocab")
+          .update({ learned })
+          .eq("id", savedId)
+          .then(undefined, console.error);
+      }
+    },
+    [commit],
+  );
+
+  const removeSavedVocab = useCallback(
+    (savedId: string) => {
+      const prev = stateRef.current;
+      commit({
+        ...prev,
+        savedVocab: prev.savedVocab.filter((v) => v.id !== savedId),
+      });
+      if (USING_SUPABASE) {
+        createSupabaseClient()
+          ?.from("saved_vocab")
+          .delete()
+          .eq("id", savedId)
+          .then(undefined, console.error);
+      }
+    },
+    [commit],
+  );
+
   const recordAttempt = useCallback(
     (input: RecordAttemptInput): AttemptOutcome => {
       const prev = stateRef.current;
@@ -690,6 +796,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       state,
       ready,
       usingSupabase: USING_SUPABASE,
+      toggleSavedVocab,
+      setVocabLearned,
+      removeSavedVocab,
       login,
       logout,
       createCourse,
@@ -703,6 +812,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     [
       state,
       ready,
+      toggleSavedVocab,
+      setVocabLearned,
+      removeSavedVocab,
       login,
       logout,
       createCourse,

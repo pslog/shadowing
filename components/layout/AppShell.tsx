@@ -17,6 +17,7 @@ type NavItem = { href: string; label: string; icon: IconName; alt?: string[] };
 const NAV: NavItem[] = [
   { href: "/dashboard", label: "ホーム", icon: "home" },
   { href: "/courses", label: "コース", icon: "book", alt: ["/lessons"] },
+  { href: "/review", label: "単語帳", icon: "bookmark" },
   { href: "/progress", label: "進捗", icon: "trending" },
   { href: "/about", label: "紹介", icon: "sparkles" },
 ];

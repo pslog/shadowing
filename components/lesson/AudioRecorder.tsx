@@ -12,12 +12,15 @@ export function AudioRecorder({
   compact = false,
   inline = false,
   className,
+  hideNotes = false,
 }: {
   disabled?: boolean;
   onResult: (r: RecordResult) => void;
   compact?: boolean;
   inline?: boolean;
   className?: string;
+  /** Inline mode: suppress the "browser unsupported" note so the parent can place it. */
+  hideNotes?: boolean;
 }) {
   const { status, interim, error, sttSupported, start, stop } = useRecorder();
   const [busy, setBusy] = useState(false);
@@ -63,7 +66,7 @@ export function AudioRecorder({
           </p>
         )}
         {error && <p className="basis-full text-center text-sm text-danger">{error}</p>}
-        {!sttSupported && (
+        {!sttSupported && !hideNotes && (
           <p className="basis-full text-center text-xs text-[var(--warning)]">
             このブラウザは音声認識に非対応です。ChromeまたはEdgeを推奨します。
           </p>

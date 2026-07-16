@@ -9,6 +9,7 @@ import type {
   LessonProgress,
   LessonSentence,
   Profile,
+  SavedVocab,
   SentenceAttempt,
   XpEvent,
 } from "@/lib/types";
@@ -22,6 +23,7 @@ export interface AppState {
   progress: LessonProgress[];
   missions: DailyMission[];
   xpEvents: XpEvent[];
+  savedVocab: SavedVocab[];
 }
 
 export const STORAGE_KEY = "shadowing-jp/v1";
@@ -112,6 +114,7 @@ export function buildSeed(nowIso: string): {
       source_url: s.source_url ?? null,
       media_url: s.media_url ?? null,
       is_public: true,
+      vocabulary: null,
       created_at: nowIso,
     });
     s.sentences.forEach((sent, i) => {
@@ -144,5 +147,6 @@ export function emptyState(nowIso: string): AppState {
     progress: [],
     missions: [],
     xpEvents: [],
+    savedVocab: [],
   };
 }

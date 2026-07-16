@@ -38,6 +38,37 @@ export interface Course {
   created_at: string;
 }
 
+/** A curated "difficult word" for a lesson — meaning + situational example. */
+export interface VocabEntry {
+  /** The word as it appears (kanji/kana). */
+  word: string;
+  /** Hiragana reading (phonetic). */
+  reading: string;
+  /** Vietnamese meaning. */
+  meaning: string;
+  /** A situational Japanese example sentence using the word. */
+  example_ja: string;
+  /** Vietnamese translation of the example. */
+  example_vi: string;
+}
+
+/** A vocabulary entry the user saved to their personal review notebook. */
+export interface SavedVocab {
+  id: string;
+  user_id: string;
+  /** Source lesson (null if that lesson was later deleted). */
+  lesson_id: string | null;
+  /** Snapshot of the vocab entry so the notebook is stable across lesson edits. */
+  word: string;
+  reading: string;
+  meaning: string;
+  example_ja: string;
+  example_vi: string;
+  /** Marked "đã thuộc" during flashcard review. */
+  learned: boolean;
+  created_at: string;
+}
+
 export interface Lesson {
   id: string;
   user_id: string;
@@ -53,6 +84,8 @@ export interface Lesson {
   source_url: string | null;
   media_url: string | null;
   is_public: boolean;
+  /** Curated difficult-vocabulary list (JSONB column); null/[] when not generated. */
+  vocabulary: VocabEntry[] | null;
   created_at: string;
 }
 

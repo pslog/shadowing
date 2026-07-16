@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useData } from "@/lib/store/DataProvider";
 import {
@@ -20,7 +20,7 @@ import type { AttemptOutcome } from "@/lib/store/engine";
 import { scoreSentence, estimateDurationSeconds } from "@/lib/client/score";
 import { extractContourFromUrl, contourMetrics } from "@/lib/speech/pitch";
 import { speakJa, cancelSpeech } from "@/lib/speech/tts";
-import type { RecordResult } from "@/lib/speech/useRecorder";
+import { isSpeechRecognitionSupported, type RecordResult } from "@/lib/speech/useRecorder";
 import type {
   LessonSentence,
   ScoreAlignmentToken,
@@ -34,6 +34,7 @@ import { Icon, type IconName } from "@/components/ui/icon";
 import { AudioRecorder } from "./AudioRecorder";
 import { ScoreResult } from "./ScoreResult";
 import { LessonReview } from "./LessonReview";
+import { LessonVocabulary } from "./LessonVocabulary";
 import { Furigana } from "./Furigana";
 
 function attemptToScore(a: SentenceAttempt): ScoreBreakdown {
@@ -397,6 +398,9 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
   const inlineScoreRef = useRef<HTMLDivElement | null>(null);
   const stopAtRef = useRef<number | null>(null);
   const canRecord = Boolean(state.profile);
+  // Feature-detect on the client only (default true to avoid an SSR flash).
+  const [sttSupported, setSttSupported] = useState(true);
+  useEffect(() => setSttSupported(isSpeechRecognitionSupported()), []);
 
   const lesson = lessonById(state, lessonId);
   const sentences = useMemo(
@@ -706,6 +710,15 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
                   )}
 
                   <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => goTo(index - 1)}
+                      disabled={index === 0}
+                      aria-label="前の文"
+                      className="focus-ring grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-border bg-card text-muted transition-colors enabled:hover:border-primary/40 enabled:hover:text-primary disabled:opacity-40"
+                    >
+                      <Icon name="arrow-left" size={18} />
+                    </button>
                     <Button
                       variant="secondary"
                       onClick={() => handleListen(1)}
@@ -717,6 +730,7 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
                     {canRecord ? (
                       <AudioRecorder
                         inline
+                        hideNotes
                         disabled={scoring}
                         onResult={handleResult}
                         key={recorderKey}
@@ -731,9 +745,23 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
                         ログインして録音
                       </Link>
                     )}
+                    <button
+                      type="button"
+                      onClick={() => goTo(index + 1)}
+                      disabled={!hasNext}
+                      aria-label="次の文"
+                      className="focus-ring grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-border bg-card text-muted transition-colors enabled:hover:border-primary/40 enabled:hover:text-primary disabled:opacity-40"
+                    >
+                      <Icon name="arrow-right" size={18} />
+                    </button>
                     <span className="basis-full text-center text-[11px] font-bold text-muted">
                       録音して採点 · 目標 {current.pass_score}点
                     </span>
+                    {!sttSupported && (
+                      <p className="basis-full text-center text-[11px] text-[var(--warning)]">
+                        このブラウザは音声認識に非対応です。ChromeまたはEdgeを推奨します。
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -787,29 +815,18 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
 
           {lessonDone && <LessonReview lessonId={lessonId} />}
 
-          <div className="flex items-center justify-between gap-3">
-            <Button variant="ghost" onClick={() => goTo(index)}>
-              <Icon name="retry" size={16} />
-              もう一度
-            </Button>
-            {hasNext ? (
-              <Button onClick={() => goTo(index + 1)}>
-                次の文
-                <Icon name="arrow-right" size={16} />
-              </Button>
-            ) : lessonDone ? (
+          {lessonDone && (
+            <div className="flex justify-end">
               <Link href={courseHref} className={buttonClasses("primary")}>
                 <Icon name="trophy" size={16} />
                 完了 · 一覧へ戻る
               </Link>
-            ) : (
-              <Button variant="secondary" onClick={() => goTo(0)}>
-                未Passの文へ戻る
-              </Button>
-            )}
-          </div>
+            </div>
+          )}
         </section>
       </div>
+
+      <LessonVocabulary vocabulary={lesson.vocabulary} lessonId={lesson.id} />
     </div>
   );
 }

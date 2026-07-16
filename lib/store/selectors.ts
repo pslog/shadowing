@@ -11,7 +11,9 @@ import type {
   LessonStatus,
   LessonWithSentences,
   Profile,
+  SavedVocab,
   SentenceAttempt,
+  VocabEntry,
 } from "@/lib/types";
 
 /** The single fixed admin — only this account may create/edit lessons. */
@@ -377,3 +379,29 @@ export const SKILL_LABEL: Record<Skill, string> = {
   speed: "速度",
   intonation: "イントネーション",
 };
+
+// --------------------------------------------------------------------------- //
+//  Saved vocabulary (personal review notebook)                                 //
+// --------------------------------------------------------------------------- //
+
+/** Stable identity for a vocab entry within a user's notebook. */
+export function vocabKey(word: string, reading: string): string {
+  return `${word}|${reading}`;
+}
+
+/** The current user's saved words, newest first. */
+export function savedVocabList(state: AppState): SavedVocab[] {
+  const uid = state.profile?.id;
+  return state.savedVocab
+    .filter((v) => v.user_id === uid)
+    .sort((a, b) => b.created_at.localeCompare(a.created_at));
+}
+
+/** Whether the given vocab entry is already in the user's notebook. */
+export function isVocabSaved(state: AppState, entry: VocabEntry): boolean {
+  const uid = state.profile?.id;
+  const key = vocabKey(entry.word, entry.reading);
+  return state.savedVocab.some(
+    (v) => v.user_id === uid && vocabKey(v.word, v.reading) === key,
+  );
+}

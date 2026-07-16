@@ -65,12 +65,17 @@ create table if not exists public.lessons (
   source_url text,
   media_url text,
   is_public boolean not null default false,
+  vocabulary jsonb not null default '[]'::jsonb,
   created_at timestamptz not null default now()
 );
 
 -- Add course_id if upgrading an existing database.
 alter table public.lessons
   add column if not exists course_id uuid references public.courses(id) on delete set null;
+
+-- Curated difficult-vocabulary list (word/reading/meaning/example) per lesson.
+alter table public.lessons
+  add column if not exists vocabulary jsonb not null default '[]'::jsonb;
 
 -- ---------------------------------------------------------------------------
 --  lesson_sentences
@@ -95,6 +100,25 @@ alter table public.lesson_sentences
   add column if not exists furigana text;
 create index if not exists lesson_sentences_lesson_idx
   on public.lesson_sentences(lesson_id, order_index);
+
+-- ---------------------------------------------------------------------------
+--  saved_vocab  (personal vocabulary notebook for review / flashcards)
+-- ---------------------------------------------------------------------------
+create table if not exists public.saved_vocab (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  lesson_id uuid references public.lessons(id) on delete set null,
+  word text not null,
+  reading text not null,
+  meaning text not null,
+  example_ja text not null,
+  example_vi text not null,
+  learned boolean not null default false,
+  created_at timestamptz not null default now(),
+  unique (user_id, word, reading)
+);
+create index if not exists saved_vocab_user_idx
+  on public.saved_vocab(user_id, created_at);
 
 -- ---------------------------------------------------------------------------
 --  sentence_attempts
@@ -275,6 +299,7 @@ alter table public.courses           enable row level security;
 alter table public.lessons           enable row level security;
 alter table public.lesson_sentences  enable row level security;
 alter table public.sentence_attempts enable row level security;
+alter table public.saved_vocab       enable row level security;
 alter table public.lesson_progress   enable row level security;
 alter table public.daily_missions    enable row level security;
 alter table public.xp_events         enable row level security;
@@ -298,6 +323,7 @@ drop policy if exists "courses admin all" on public.courses;
 drop policy if exists "lessons admin all" on public.lessons;
 drop policy if exists "sentences admin all" on public.lesson_sentences;
 drop policy if exists "attempts self" on public.sentence_attempts;
+drop policy if exists "saved_vocab self" on public.saved_vocab;
 drop policy if exists "progress self" on public.lesson_progress;
 drop policy if exists "missions self" on public.daily_missions;
 drop policy if exists "xp self" on public.xp_events;
@@ -363,6 +389,8 @@ create policy "sentences admin all" on public.lesson_sentences
 
 -- Per-user tables: full self access.
 create policy "attempts self" on public.sentence_attempts
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "saved_vocab self" on public.saved_vocab
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "progress self" on public.lesson_progress
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
