@@ -21,7 +21,7 @@ export interface ScoreRequest {
   passScore?: number;
 }
 
-const MIN_PRONUNCIATION_TO_PASS = 75;
+const MIN_PRONUNCIATION_TO_PASS = 91;
 const MIN_COVERAGE_TO_PASS = 80;
 
 export function scoreAttempt(req: ScoreRequest): ScoreBreakdown {
@@ -43,7 +43,11 @@ export function scoreAttempt(req: ScoreRequest): ScoreBreakdown {
     seed: seedB,
   });
   const intonation = scoreIntonation({ similarity: req.intonationSimilarity });
-  const total = scoreTotal(pronunciation, speed, intonation);
+  const rawTotal = scoreTotal(pronunciation, coverage, speed, intonation);
+  const total =
+    pronunciation >= MIN_PRONUNCIATION_TO_PASS
+      ? rawTotal
+      : Math.min(rawTotal, passScore - 1);
   const passed =
     hasTranscript &&
     total >= passScore &&

@@ -132,7 +132,7 @@ export function ScoreResult({
 
       {!passed && (
         <p className="mt-4 rounded-xl bg-[var(--warning-soft)] px-4 py-2.5 text-sm text-[var(--warning)]">
-          {almostFeedback(score.total, passScore)}
+          {almostFeedback(score.total, passScore, score.pronunciation)}
         </p>
       )}
     </div>

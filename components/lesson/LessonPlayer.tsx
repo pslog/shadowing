@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useData } from "@/lib/store/DataProvider";
 import {
@@ -63,14 +64,20 @@ function MissionCompleteDialog({
   outcome: AttemptOutcome;
   onClose: () => void;
 }) {
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-black/45 px-4 py-6 backdrop-blur-sm"
+      className="fixed inset-0 z-[60] grid place-items-center overflow-y-auto bg-black/60 px-4 py-6"
       role="dialog"
       aria-modal="true"
       aria-labelledby="mission-complete-title"
+      onClick={onClose}
     >
-      <div className="relative w-full max-w-sm overflow-hidden rounded-[1.75rem] border border-[var(--success)]/25 bg-card p-5 text-center shadow-[var(--shadow-lg)]">
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative m-auto w-full max-w-sm overflow-hidden rounded-[1.75rem] border border-[var(--success)]/25 bg-card p-5 text-center shadow-[var(--shadow-lg)]"
+      >
         <div className="pointer-events-none absolute inset-x-0 top-0 h-1 brand-gradient" />
         <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-[var(--success-soft)] text-[var(--success)]">
           <Icon name="flame" size={34} filled />
@@ -106,7 +113,8 @@ function MissionCompleteDialog({
           続ける
         </Button>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

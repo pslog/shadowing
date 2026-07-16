@@ -10,6 +10,8 @@ export interface FeedbackScores {
   hasTranscript?: boolean;
 }
 
+const MIN_PRONUNCIATION_FOR_PASS = 91;
+
 export function generateFeedback({
   pronunciation,
   speed,
@@ -22,8 +24,8 @@ export function generateFeedback({
     return "音声を認識できませんでした。静かな場所でもう一度録音してみましょう。";
   if (coverage < 80)
     return "文の一部が抜けています。短く区切って、最後まで声に出してみましょう。";
-  if (pronunciation < 75)
-    return "発音をもう少し原文に近づけましょう。音を聞いてから、同じ順番でまねてください。";
+  if (pronunciation < MIN_PRONUNCIATION_FOR_PASS)
+    return "発音がPass基準に届いていません。音を聞いてから、同じ順番でよりはっきりまねてください。";
   if (total >= 90) return "とても良いです。この文は自然に聞こえます。";
   if (total >= 80)
     return "Passです。もう少し練習すると、さらに自然に話せます。";
@@ -44,7 +46,17 @@ export function generateFeedback({
 }
 
 /** Extra nudge shown under the score when the user is close but failed. */
-export function almostFeedback(total: number, passScore: number): string {
+export function almostFeedback(
+  total: number,
+  passScore: number,
+  pronunciation?: number,
+): string {
+  if (
+    typeof pronunciation === "number" &&
+    pronunciation < MIN_PRONUNCIATION_FOR_PASS
+  ) {
+    return "発音が91点以上になるまで、もう一度試してみましょう。";
+  }
   const gap = passScore - total;
   return `Passまであと${gap}点です。もう一度試してみましょう。`;
 }

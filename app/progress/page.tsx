@@ -223,11 +223,25 @@ function MountainRoadmap({
   );
 }
 
-function LeaderboardList({ users }: { users: LeaderboardUser[] }) {
+// Soft metallic medallions for the podium. Dark, matching icon color so the
+// trophy/number stays legible instead of a glaring white-on-gold.
+const MEDAL: Record<number, { bg: string; fg: string }> = {
+  0: { bg: "linear-gradient(140deg, #fbe3a1 0%, #eab308 100%)", fg: "#7a4d05" },
+  1: { bg: "linear-gradient(140deg, #eef2f7 0%, #b6c0cd 100%)", fg: "#495768" },
+  2: { bg: "linear-gradient(140deg, #f0d0af 0%, #c9884f 100%)", fg: "#653414" },
+};
+
+function LeaderboardList({
+  users,
+  currentUserId,
+}: {
+  users: LeaderboardUser[];
+  currentUserId: string | null;
+}) {
   return (
     <Card>
       <CardTitle>ランキング</CardTitle>
-      <div className="mt-3 space-y-2">
+      <div className="mt-3 space-y-1.5">
         {users.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border bg-surface p-3">
             <p className="text-sm font-bold">まだランキングデータがありません</p>
@@ -236,32 +250,65 @@ function LeaderboardList({ users }: { users: LeaderboardUser[] }) {
             </p>
           </div>
         ) : (
-          users.map((user, i) => (
-            <div
-              key={user.id}
-              className="flex items-center gap-3 rounded-xl border border-border bg-surface/70 px-3 py-2"
-            >
-              <span
+          users.map((user, i) => {
+            const isMe = user.id === currentUserId;
+            const medal = MEDAL[i];
+            return (
+              <div
+                key={user.id}
                 className={[
-                  "grid h-8 w-8 place-items-center rounded-lg text-sm font-extrabold tabular-nums",
-                  i === 0
-                    ? "bg-[var(--warning-soft)] text-[var(--warning)]"
-                    : "bg-card text-muted",
+                  "flex items-center gap-3 rounded-2xl border px-3 py-2.5 transition-colors",
+                  isMe
+                    ? "border-primary/30 bg-primary/[0.05]"
+                    : "border-transparent bg-surface/60",
                 ].join(" ")}
               >
-                {i + 1}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-bold">{user.displayName}</p>
-                <p className="text-xs text-muted">
-                  Lv.{user.level} · {user.passed}文Pass · {user.streak}日
-                </p>
+                {medal ? (
+                  <span
+                    className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm font-extrabold tabular-nums shadow-[var(--shadow-sm)]"
+                    style={{ background: medal.bg, color: medal.fg }}
+                  >
+                    {i === 0 ? <Icon name="trophy" size={16} filled /> : i + 1}
+                  </span>
+                ) : (
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-border bg-card text-sm font-extrabold tabular-nums text-muted">
+                    {i + 1}
+                  </span>
+                )}
+
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full brand-gradient text-xs font-bold text-white">
+                  {user.displayName.slice(0, 1).toUpperCase()}
+                </span>
+
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-center gap-1.5 truncate text-sm font-bold">
+                    <span className="truncate">{user.displayName}</span>
+                    {isMe && (
+                      <span className="shrink-0 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+                        あなた
+                      </span>
+                    )}
+                  </p>
+                  <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-muted">
+                    <span>Lv.{user.level}</span>
+                    <span aria-hidden>·</span>
+                    <span>{user.passed}文</span>
+                    <span className="inline-flex items-center gap-0.5 text-[var(--warning)]">
+                      <Icon name="flame" size={11} filled />
+                      {user.streak}
+                    </span>
+                  </p>
+                </div>
+
+                <div className="shrink-0 text-right leading-none">
+                  <span className="text-base font-extrabold tabular-nums text-fg">
+                    {user.totalXp.toLocaleString("ja-JP")}
+                  </span>
+                  <span className="ml-0.5 text-[10px] font-bold text-muted">XP</span>
+                </div>
               </div>
-              <div className="text-right text-sm font-extrabold tabular-nums">
-                {user.totalXp.toLocaleString("ja-JP")} XP
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </Card>
@@ -422,7 +469,10 @@ export default function ProgressPage() {
       <section className="mt-6">
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(300px,0.75fr)]">
           <MountainRoadmap levels={roadmap} currentLevel={lp.level} totalXp={totalXp} />
-          <LeaderboardList users={leaderboard?.topXp ?? []} />
+          <LeaderboardList
+            users={leaderboard?.topXp ?? []}
+            currentUserId={profile?.id ?? null}
+          />
         </div>
       </section>
     </AppShell>
