@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { ImageResponse } from "next/og";
 import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/seo";
 
@@ -8,7 +10,10 @@ export const size = {
 };
 export const contentType = "image/png";
 
-export default function Image() {
+export default async function Image() {
+  const logo = await readFile(path.join(process.cwd(), "public/logo-mark.png"));
+  const logoSrc = `data:image/png;base64,${logo.toString("base64")}`;
+
   return new ImageResponse(
     (
       <div
@@ -38,22 +43,8 @@ export default function Image() {
           }}
         >
           <div style={{ alignItems: "center", display: "flex", gap: 18 }}>
-            <div
-              style={{
-                alignItems: "center",
-                background: "#6b5cf6",
-                borderRadius: 22,
-                color: "white",
-                display: "flex",
-                fontSize: 34,
-                fontWeight: 900,
-                height: 72,
-                justifyContent: "center",
-                width: 72,
-              }}
-            >
-              話
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={logoSrc} width={72} height={72} style={{ borderRadius: 18 }} alt="" />
             <div style={{ color: "#6b5cf6", fontSize: 34, fontWeight: 900 }}>
               {SITE_NAME}
             </div>

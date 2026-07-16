@@ -55,9 +55,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <header className="glass sticky top-0 z-30 pt-[env(safe-area-inset-top)]">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4">
           <Link href="/dashboard" className="flex items-center gap-2.5 font-bold">
-            <span className="grid h-9 w-9 place-items-center rounded-xl brand-gradient text-white shadow-[var(--shadow-glow)]">
-              話
-            </span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo-mark.png"
+              alt="Shadowing JP"
+              width={40}
+              height={40}
+              className="h-10 w-10 object-contain"
+            />
             <span className="hidden text-lg sm:inline text-gradient">Shadowing JP</span>
           </Link>
 
@@ -172,9 +177,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <footer className="mt-8 border-t border-border/70">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-4 py-8 text-center sm:flex-row sm:justify-between sm:text-left">
           <div className="flex items-center gap-2.5">
-            <span className="grid h-8 w-8 place-items-center rounded-lg brand-gradient text-sm text-white shadow-[var(--shadow-glow)]">
-              話
-            </span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo-mark.png"
+              alt="Shadowing JP"
+              width={36}
+              height={36}
+              className="h-9 w-9 object-contain"
+            />
             <div>
               <p className="text-sm font-bold text-gradient">Shadowing JP</p>
               <p className="text-xs text-muted">Cùng cộng đồng luyện nói tiếng Nhật mỗi ngày</p>
