@@ -156,10 +156,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </span>
             <div>
               <p className="text-sm font-bold text-gradient">Shadowing JP</p>
-              <p className="text-xs text-muted">Cùng luyện nói tiếng Nhật mỗi ngày</p>
+              <p className="text-xs text-muted">Cùng cộng đồng luyện nói tiếng Nhật mỗi ngày</p>
             </div>
           </div>
-          <p className="text-xs text-muted">Phi lợi nhuận · cùng nhau học, cùng nhau tiến bộ</p>
+          <p className="text-xs text-muted">Phi lợi nhuận · 一緒に頑張りましょう</p>
         </div>
         <div className="border-t border-border/50 px-4 py-3 text-center text-[11px] text-muted">
           © {new Date().getFullYear()} Shadowing JP

@@ -68,8 +68,8 @@ export default function Image() {
               lineHeight: 1.02,
             }}
           >
-            <span>Shadowing để nói được,</span>
-            <span>không chỉ nghe hiểu.</span>
+            <span>Cùng luyện nói tiếng Nhật,</span>
+            <span>mỗi ngày một chút.</span>
           </div>
           <div style={{ color: "#666b8d", fontSize: 28, fontWeight: 700, lineHeight: 1.45, maxWidth: 860 }}>
             {SITE_DESCRIPTION}

@@ -11,7 +11,7 @@ import { FullScreenLoading } from "@/components/ui/loading";
 const FEATURES: { icon: IconName; text: string }[] = [
   { icon: "mic", text: "一文ずつ発話して、発音をすぐに採点" },
   { icon: "flame", text: "ストリーク、XP、レベルで毎日継続" },
-  { icon: "book", text: "日常会話、仕事、旅行など幅広いテーマ" },
+  { icon: "book", text: "日本語学習コミュニティのための非営利スペース" },
 ];
 
 export default function LoginPage() {
@@ -79,7 +79,7 @@ export default function LoginPage() {
           <h2 className="text-4xl font-extrabold leading-tight">
             日本語の会話力を、
             <br />
-            毎日の練習で伸ばす。
+            みんなで少しずつ伸ばす。
           </h2>
           <ul className="mt-8 space-y-3">
             {FEATURES.map((f) => (

@@ -11,29 +11,29 @@ export default function AboutPage() {
           <div className="max-w-4xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-sm font-bold text-primary">
               <Icon name="mic" size={15} />
-              Luyện hội thoại bằng cách bắt chước
+              Một góc học chung cho cộng đồng
             </div>
 
             <h1 className="mt-6 text-4xl font-black leading-[1.05] sm:text-6xl">
               Shadowing để{" "}
-              <span className="text-primary">nói được</span>, không chỉ nghe hiểu.
+              <span className="text-primary">cùng nói tốt hơn</span>, không chỉ nghe hiểu.
             </h1>
 
             <p className="mt-5 max-w-2xl text-lg font-semibold leading-8 text-muted">
-              Muốn giao tiếp tốt, mình cần quen tai, quen miệng và quen cả cách người
-              Nhật nối ý. Vì vậy mỗi bài học nên bắt đầu từ âm thanh thật, câu thật,
-              tình huống thật.
+              Shadowing JP được làm cho những người đang học tiếng Nhật cùng có một
+              nơi luyện nói nhẹ nhàng mỗi ngày. Không bán khóa học, không đặt lợi ích
+              cá nhân lên trước, chỉ cùng nhau nghe, nói lại và tiến bộ từng chút.
             </p>
           </div>
 
           <div className="mt-8 border-l-4 border-primary pl-4">
             <p className="text-sm font-black uppercase text-primary">
-              Mục tiêu là phản xạ, không phải học thuộc lòng máy móc
+              Mục tiêu là tạo thói quen nói, không phải chạy theo thành tích
             </p>
             <p className="mt-2 max-w-3xl text-sm font-semibold leading-7 text-muted">
-              Khi một mẫu câu đã đủ quen, mình không còn dịch trong đầu quá lâu.
-              Cách học chỉ cần gọn: nghe câu thật, nhại lại thành tiếng, rồi dùng
-              được khi gặp đúng tình huống.
+              Mỗi người chỉ cần góp một nhịp nhỏ: nghe câu thật, nói lại thành tiếng,
+              giữ streak hôm nay, rồi quay lại ngày mai. Khi nhiều người cùng giữ nhịp,
+              việc học bớt cô đơn và dễ đi xa hơn.
             </p>
           </div>
         </section>
@@ -56,14 +56,15 @@ export default function AboutPage() {
               </p>
               <p className="mt-5 max-w-2xl text-sm leading-7 text-muted">
                 Nhật Hà là cô sinh viên Đại học Ngoại ngữ - Đại học Đà Nẵng, cũng đang
-                học tiếng Nhật từng ngày như mọi người. Hà tạo góc học này để tự nhắc
-                mình luyện nói đều hơn, và để có thêm bạn đồng hành trên cùng hành
-                trình.
+                học tiếng Nhật từng ngày như mọi người. Hà tạo góc học này như một
+                đóng góp nhỏ cho cộng đồng học tiếng Nhật, để ai cần một nơi luyện nói
+                đều có thể vào học cùng.
               </p>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-muted">
                 Streak ở đây chỉ là một nhịp nhỏ mỗi ngày: mở bài lên, nghe một câu,
                 nói theo một câu, rồi giữ thói quen đó lâu hơn một chút. Không thi đua,
-                không áp lực, chỉ cùng nhau luyện kaiwa theo cách nhẹ nhàng và bền bỉ.
+                không áp lực, không vì lợi ích cá nhân; chỉ cùng nhau luyện kaiwa theo
+                cách nhẹ nhàng và bền bỉ.
               </p>
             </div>
           </div>

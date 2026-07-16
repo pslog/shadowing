@@ -4,7 +4,7 @@ import { pageMetadata } from "@/lib/seo";
 export const metadata: Metadata = pageMetadata({
   title: "紹介",
   description:
-    "Shadowing JPの学習方針と作者紹介。音声を聞き、声に出し、毎日の小さな習慣で日本語を話せる状態に近づけます。",
+    "Shadowing JPの学習方針と作者紹介。日本語を学ぶコミュニティのために、非営利で毎日の小さな発話練習を支えます。",
   path: "/about",
 });
 

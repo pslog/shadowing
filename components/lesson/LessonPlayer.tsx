@@ -82,7 +82,7 @@ function MissionCompleteDialog({
         </p>
         <p className="mt-2 text-sm leading-6 text-muted">
           今日の学習リズムを守りました。明日も少しだけ声に出して、
-          ストリークをつなげましょう。
+          みんなと一緒にストリークをつなげましょう。
         </p>
         <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
           <div className="rounded-xl bg-surface px-3 py-2">
