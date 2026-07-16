@@ -7,23 +7,37 @@ export default function AboutPage() {
   return (
     <AppShell>
       <div className="mx-auto max-w-6xl space-y-6">
-        <section className="overflow-hidden rounded-[2rem] border border-border bg-card p-6 shadow-[var(--shadow-md)] sm:p-8 lg:p-10">
-          <div className="max-w-4xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-sm font-bold text-primary">
-              <Icon name="mic" size={15} />
-              Một góc học chung cho cộng đồng
+        <section className="relative overflow-hidden rounded-[2rem] border border-border bg-card p-6 shadow-[var(--shadow-md)] sm:p-8 lg:p-10">
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+            <div className="max-w-2xl">
+              <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-sm font-bold text-primary">
+                <Icon name="mic" size={15} />
+                Một góc học chung cho cộng đồng
+              </div>
+
+              <h1 className="mt-6 text-2xl font-black leading-[1.15] sm:text-4xl">
+                Shadowing để{" "}
+                <span className="text-primary">cùng nói tốt hơn</span>, không chỉ nghe hiểu.
+              </h1>
+
+              <p className="mt-5 max-w-2xl text-lg font-semibold leading-8 text-muted">
+                Shadowing JP được làm cho những người đang học tiếng Nhật cùng có một
+                nơi luyện nói nhẹ nhàng mỗi ngày. Không bán khóa học, không đặt lợi ích
+                cá nhân lên trước, chỉ cùng nhau nghe, nói lại và tiến bộ từng chút.
+              </p>
             </div>
 
-            <h1 className="mt-6 text-4xl font-black leading-[1.05] sm:text-6xl">
-              Shadowing để{" "}
-              <span className="text-primary">cùng nói tốt hơn</span>, không chỉ nghe hiểu.
-            </h1>
-
-            <p className="mt-5 max-w-2xl text-lg font-semibold leading-8 text-muted">
-              Shadowing JP được làm cho những người đang học tiếng Nhật cùng có một
-              nơi luyện nói nhẹ nhàng mỗi ngày. Không bán khóa học, không đặt lợi ích
-              cá nhân lên trước, chỉ cùng nhau nghe, nói lại và tiến bộ từng chút.
-            </p>
+            <div className="relative hidden shrink-0 self-center lg:block">
+              <div className="pointer-events-none absolute inset-4 -z-10 rounded-full bg-primary/15 blur-3xl" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/logo-mark.png"
+                alt="Shadowing JP"
+                width={240}
+                height={240}
+                className="h-52 w-52 object-contain drop-shadow-[0_16px_40px_rgba(99,96,242,0.25)] xl:h-60 xl:w-60"
+              />
+            </div>
           </div>
 
           <div className="mt-8 border-l-4 border-primary pl-4">
