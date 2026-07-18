@@ -57,11 +57,13 @@ function lessonNumber(title: string): number | null {
   return null;
 }
 
-/** Lessons the current user can see: public samples + their own. */
+/** Lessons the current user can see: public samples + their own (admins see all,
+ *  incl. private/未公開 lessons like freshly-seeded exams). */
 export function visibleLessons(state: AppState): Lesson[] {
   const uid = state.profile?.id;
+  const admin = isAdmin(state);
   return state.lessons
-    .filter((l) => l.is_public || l.user_id === uid)
+    .filter((l) => admin || l.is_public || l.user_id === uid)
     .sort((a, b) => {
       const aNo = lessonNumber(a.title);
       const bNo = lessonNumber(b.title);
@@ -103,8 +105,9 @@ export const UNCATEGORIZED_COURSE_ID = "uncategorized";
 
 export function visibleCourses(state: AppState): Course[] {
   const uid = state.profile?.id;
+  const admin = isAdmin(state);
   return (state.courses ?? [])
-    .filter((c) => c.is_public || c.user_id === uid)
+    .filter((c) => admin || c.is_public || c.user_id === uid)
     .sort((a, b) => a.order_index - b.order_index);
 }
 

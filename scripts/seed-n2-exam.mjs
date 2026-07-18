@@ -30,6 +30,8 @@
 // 0.6s before the first line with a 0.4s pre-roll on sentence 0.
 //
 // Env: EXAM=2010-07  [MONDAI=all|<n>]  WHISPER=<path>  [WHISPER_OFFSET=0] [DRY=1]
+//      [PUBLIC=1]  — lessons are is_public=false by default (admin publishes later);
+//      set PUBLIC=1 to seed them public.
 import { readFileSync, mkdirSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
@@ -41,6 +43,8 @@ const EXAM = process.env.EXAM || "2010-07";
 const MONDAI_ENV = process.env.MONDAI || "all";
 const WHISPER = process.env.WHISPER;
 if (!WHISPER) throw new Error("set WHISPER=<whisper json path>");
+// New exams default to PRIVATE (admin reviews then publishes); PUBLIC=1 overrides.
+const IS_PUBLIC = process.env.PUBLIC === "1" || process.env.PUBLIC === "true";
 
 const exam = JSON.parse(readFileSync(path.join("resources", "n2", "exams", `${EXAM}.json`), "utf8"));
 const mondaiNos =
@@ -224,7 +228,9 @@ for (const mno of mondaiNos) {
     q.dia = q.items.filter((it) => it.kind === "dia");
     cursor = Math.max(cursor, q.dia[q.dia.length - 1].span.end);
     q.segStart = Math.max(0, q.dia[0].span.start - 0.4);
-    q.segEnd = q.dia[q.dia.length - 1].span.end + 0.25;
+    // Generous tail pad: Whisper underestimates the last word's end, so +0.25
+    // often clips the final phrase. +1.2 keeps it whole (trailing silence is fine).
+    q.segEnd = q.dia[q.dia.length - 1].span.end + 1.2;
     jobs.push({ mno, courseId: mondai.courseId, q });
   }
 }
@@ -259,9 +265,9 @@ try {
     const title = `${exam.examLabel} 問題${mno}-${q.num} ${q.theme}`;
     await client.query(
       `insert into public.lessons (id,user_id,course_id,title,topic,level,source_type,media_url,is_public)
-       values ($1,null,$2,$3,'聴解','N2','upload',$4,true)
+       values ($1,null,$2,$3,'聴解','N2','upload',$4,$5)
        on conflict (id) do update set course_id=excluded.course_id, title=excluded.title, media_url=excluded.media_url, is_public=excluded.is_public`,
-      [lid, courseId, title, mediaUrl(mno, q.num)],
+      [lid, courseId, title, mediaUrl(mno, q.num), IS_PUBLIC],
     );
     await client.query("delete from public.lesson_sentences where lesson_id=$1", [lid]);
     for (let i = 0; i < q.dia.length; i++) {
