@@ -63,6 +63,8 @@ export interface CreateCourseInput {
   level: string | null;
   accent: string | null;
   image_url: string | null;
+  /** 公開フラグ。省略時は非公開（既存値を維持 for update）。 */
+  is_public?: boolean;
 }
 
 export interface UpdateCourseInput extends CreateCourseInput {
@@ -484,7 +486,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         accent: input.accent,
         image_url: input.image_url,
         order_index: prev.courses.length,
-        is_public: false,
+        is_public: input.is_public ?? false,
         created_at: now,
       };
       commit({ ...prev, courses: [...prev.courses, course] });
@@ -515,6 +517,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         level: input.level,
         accent: input.accent,
         image_url: input.image_url,
+        is_public: input.is_public ?? existing.is_public,
       };
 
       commit({
@@ -532,6 +535,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             level: course.level,
             accent: course.accent,
             image_url: course.image_url,
+            is_public: course.is_public,
           })
           .eq("id", course.id)
           .then(undefined, console.error);

@@ -30,6 +30,7 @@ export function CreateCourseForm({ course }: { course?: Course }) {
   const [level, setLevel] = useState(course?.level ?? "N3-N2");
   const [accent, setAccent] = useState(course?.accent ?? ACCENTS[0]);
   const [imageUrl, setImageUrl] = useState(course?.image_url ?? "");
+  const [isPublic, setIsPublic] = useState<boolean>(course?.is_public ?? false);
   const [error, setError] = useState<string | null>(null);
 
   function submit(e: React.FormEvent) {
@@ -44,6 +45,7 @@ export function CreateCourseForm({ course }: { course?: Course }) {
       level: level || null,
       accent,
       image_url: imageUrl.trim() || null,
+      is_public: isPublic,
     };
     const saved = course ? updateCourse({ ...payload, id: course.id }) : createCourse(payload);
     router.push(`/courses/${saved.slug ?? saved.id}`);
@@ -129,6 +131,23 @@ export function CreateCourseForm({ course }: { course?: Course }) {
               />
             ))}
           </div>
+        </div>
+
+        <div className="rounded-xl border border-border p-3">
+          <label className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              className="mt-0.5 size-4 accent-[var(--accent)]"
+              checked={isPublic}
+              onChange={(e) => setIsPublic(e.target.checked)}
+            />
+            <span className="text-sm">
+              <span className="font-medium">公開する</span>
+              <span className="mt-0.5 block text-xs text-muted">
+                オンのときだけ学習者に表示されます。準備中のコースはオフにして非公開にできます。
+              </span>
+            </span>
+          </label>
         </div>
       </Card>
 
