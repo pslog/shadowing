@@ -14,25 +14,44 @@ const FEATURES: { icon: IconName; text: string }[] = [
   { icon: "book", text: "日本語学習コミュニティのための非営利スペース" },
 ];
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function LoginPage() {
-  const { state, ready, usingSupabase, login } = useData();
+  const { state, ready, usingSupabase, login, sendEmailOtp, verifyEmailOtp } =
+    useData();
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [inApp, setInApp] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // Email OTP flow
+  const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpBusy, setOtpBusy] = useState(false);
+  const [resendIn, setResendIn] = useState(0);
+
   useEffect(() => {
     if (ready && state.profile) router.replace("/dashboard");
   }, [ready, state.profile, router]);
 
   useEffect(() => {
-    // Google blocks OAuth inside embedded webviews (Zalo/Messenger/FB/IG/Line…).
+    // Google chặn OAuth trong webview nhúng (Zalo/Messenger/FB/IG/Line…).
+    // Trong các app này, Email OTP là đường đăng nhập chạy được.
     const ua = navigator.userAgent || "";
     setInApp(
-      /(FBAN|FBAV|FB_IAB|Messenger|Instagram|Zalo|Line\/|MicroMessenger|; wv\)|KAKAOTALK)/i.test(ua),
+      /(FBAN|FBAV|FB_IAB|Messenger|Instagram|Zalo|Line\/|MicroMessenger|; wv\)|KAKAOTALK)/i.test(
+        ua,
+      ),
     );
   }, []);
+
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const t = setTimeout(() => setResendIn((n) => n - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendIn]);
 
   async function copyLink() {
     try {
@@ -62,6 +81,49 @@ export default function LoginPage() {
     }
   }
 
+  async function handleSendCode() {
+    const value = email.trim();
+    if (!EMAIL_RE.test(value)) {
+      setError("メールアドレスの形式が正しくありません。");
+      return;
+    }
+    setError(null);
+    setOtpBusy(true);
+    try {
+      await sendEmailOtp(value);
+      setOtpSent(true);
+      setResendIn(45);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "コードの送信に失敗しました。",
+      );
+    } finally {
+      setOtpBusy(false);
+    }
+  }
+
+  async function handleVerifyCode() {
+    const code = otp.trim();
+    if (code.length < 6) {
+      setError("6桁のコードを入力してください。");
+      return;
+    }
+    setError(null);
+    setOtpBusy(true);
+    try {
+      const profile = await verifyEmailOtp(email.trim(), code);
+      // Supabase: profile は onAuthStateChange 経由で反映され、上の useEffect が遷移する。
+      if (profile) router.replace("/dashboard");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "コードが正しくないか、期限切れです。",
+      );
+      setOtpBusy(false);
+    }
+  }
+
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
       <section className="relative hidden overflow-hidden brand-gradient p-12 text-white lg:flex lg:flex-col lg:justify-between">
@@ -69,9 +131,14 @@ export default function LoginPage() {
         <div className="pointer-events-none absolute -left-16 bottom-0 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
 
         <div className="flex items-center gap-2.5">
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-white/20 text-xl backdrop-blur">
-            話
-          </span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo-mark.png"
+            alt="Shadowing JP"
+            width={40}
+            height={40}
+            className="h-10 w-10 rounded-xl object-contain"
+          />
           <span className="text-lg font-bold">Shadowing JP</span>
         </div>
 
@@ -112,59 +179,184 @@ export default function LoginPage() {
 
       <section className="grid place-items-center px-6 py-12">
         <div className="w-full max-w-sm text-center animate-in">
-          <div className="animate-pop mx-auto mb-5 grid h-16 w-16 place-items-center rounded-2xl brand-gradient text-2xl text-white shadow-[var(--shadow-glow)] lg:hidden">
-            話
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo-mark.png"
+            alt="Shadowing JP"
+            width={64}
+            height={64}
+            className="animate-pop mx-auto mb-5 h-16 w-16 rounded-2xl object-contain shadow-[var(--shadow-glow)] lg:hidden"
+          />
           <h1 className="text-3xl font-extrabold">おかえりなさい</h1>
           <p className="mt-2 text-muted">
             ログインして、今日のストリークを続けましょう。
           </p>
 
           {inApp && (
-            <div className="mt-6 rounded-2xl border border-[var(--warning)]/40 bg-[var(--warning-soft)] p-4 text-left">
-              <p className="flex items-center gap-1.5 text-sm font-extrabold text-[var(--warning)]">
+            <div className="mt-6 rounded-2xl border border-[var(--primary)]/40 bg-[var(--primary)]/10 p-4 text-left">
+              <p className="flex items-center gap-1.5 text-sm font-extrabold text-[var(--primary)]">
                 <Icon name="mic" size={15} />
-                アプリ内ブラウザでは Google ログインがブロックされます
+                アプリ内ブラウザでも、メールコードでログインできます
               </p>
               <p className="mt-1.5 text-xs leading-5 text-fg">
-                Zalo / Messenger などのアプリ内ブラウザは Google がログインを許可していません。
-                <b>外部ブラウザ（Chrome / Safari）で開いてください：</b>
-                右上または下の「⋯」メニュー →「ブラウザで開く / Open in browser」。
+                Zalo / Messenger などのアプリ内ブラウザではGoogleログインがブロックされます。
+                下の<b>メールコード</b>なら、アプリを離れずにそのままログインできます。
               </p>
-              <p className="mt-2 text-[11px] text-muted">
-                Tiếng Việt: Zalo/Messenger chặn đăng nhập Google. Mở bằng Chrome/Safari:
-                bấm menu «⋯» → «Mở bằng trình duyệt», hoặc sao chép link dưới đây rồi dán vào trình duyệt.
-              </p>
-              <button
-                type="button"
-                onClick={copyLink}
-                className="focus-ring mt-3 inline-flex h-10 items-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-bold"
-              >
-                <Icon name={copied ? "check" : "book"} size={15} />
-                {copied ? "コピーしました" : "リンクをコピー"}
-              </button>
             </div>
           )}
 
-          <div className="card mt-8 space-y-4 p-6">
-            <Button
-              size="lg"
-              variant="secondary"
-              className="w-full"
-              onClick={signInWithGoogle}
-              disabled={submitting}
-            >
-              <GoogleIcon />
-              {submitting ? "ログイン中..." : "Googleでログイン"}
-            </Button>
+          <div className="card mt-6 space-y-4 p-6 text-left">
+            {/* --- Email OTP: đường chính, chạy trong mọi webview --- */}
+            {!otpSent ? (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSendCode();
+                }}
+                className="space-y-3"
+              >
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-bold text-fg"
+                >
+                  メールでログイン
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="focus-ring h-11 w-full rounded-xl border border-border bg-card px-3 text-sm"
+                />
+                <Button
+                  type="submit"
+                  size="lg"
+                  className="w-full"
+                  disabled={otpBusy}
+                >
+                  {otpBusy ? "送信中..." : "ログインコードを送信"}
+                </Button>
+                <p className="text-[11px] text-muted">
+                  メールに届く6桁のコードでログインします。
+                </p>
+              </form>
+            ) : (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleVerifyCode();
+                }}
+                className="space-y-3"
+              >
+                <p className="text-sm font-bold text-fg">
+                  コードを入力
+                </p>
+                <p className="text-xs text-muted">
+                  <b>{email}</b> に送ったコードを確認してください。
+                </p>
+                <input
+                  id="otp"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={6}
+                  placeholder="123456"
+                  value={otp}
+                  onChange={(e) =>
+                    setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
+                  }
+                  className="focus-ring h-12 w-full rounded-xl border border-border bg-card px-3 text-center text-lg font-bold tracking-[0.4em]"
+                />
+                <Button
+                  type="submit"
+                  size="lg"
+                  className="w-full"
+                  disabled={otpBusy}
+                >
+                  {otpBusy ? "確認中..." : "ログイン"}
+                </Button>
+                <div className="flex items-center justify-between text-xs">
+                  <button
+                    type="button"
+                    className="focus-ring rounded font-bold text-[var(--primary)] disabled:opacity-50"
+                    onClick={handleSendCode}
+                    disabled={otpBusy || resendIn > 0}
+                  >
+                    {resendIn > 0 ? `再送 (${resendIn}s)` : "コードを再送"}
+                  </button>
+                  <button
+                    type="button"
+                    className="focus-ring rounded text-muted"
+                    onClick={() => {
+                      setOtpSent(false);
+                      setOtp("");
+                      setError(null);
+                    }}
+                  >
+                    メールを変更
+                  </button>
+                </div>
+              </form>
+            )}
+
             {error && <p className="text-xs text-danger">{error}</p>}
+
+            {/* --- Google: ẩn trong webview vì chắc chắn bị chặn --- */}
+            {!inApp && (
+              <>
+                <div className="flex items-center gap-3">
+                  <span className="h-px flex-1 bg-border" />
+                  <span className="text-[11px] text-muted">または</span>
+                  <span className="h-px flex-1 bg-border" />
+                </div>
+                <Button
+                  size="lg"
+                  variant="secondary"
+                  className="w-full"
+                  onClick={signInWithGoogle}
+                  disabled={submitting}
+                >
+                  <GoogleIcon />
+                  {submitting ? "ログイン中..." : "Googleでログイン"}
+                </Button>
+              </>
+            )}
+
+            {/* --- Webview: nút mở trình duyệt ngoài để dùng được Google --- */}
+            {inApp && (
+              <>
+                <div className="flex items-center gap-3">
+                  <span className="h-px flex-1 bg-border" />
+                  <span className="text-[11px] text-muted">
+                    Googleを使う場合
+                  </span>
+                  <span className="h-px flex-1 bg-border" />
+                </div>
+                <p className="text-[11px] leading-5 text-muted">
+                  外部ブラウザ（Chrome / Safari）で開いてください：右上または下の
+                  「⋯」メニュー →「ブラウザで開く」。
+                </p>
+                <button
+                  type="button"
+                  onClick={copyLink}
+                  className="focus-ring inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-bold"
+                >
+                  <Icon name={copied ? "check" : "book"} size={15} />
+                  {copied ? "コピーしました" : "リンクをコピー"}
+                </button>
+              </>
+            )}
+
             <p className="text-xs text-muted">
               ログインは会話の閲覧・再生には不要です。録音して採点するときだけ必要です。
             </p>
             <p className="text-xs text-muted">
               {usingSupabase
                 ? "Supabase Authでログインします。学習データはクラウドに保存されます。"
-                : "現在はローカルデモです。データはブラウザに保存されます。"}
+                : "現在はローカルデモです。データはブラウザに保存されます（コードは任意の6桁でOK）。"}
             </p>
           </div>
         </div>

@@ -90,6 +90,13 @@ interface DataContextValue {
   /** Remove a saved word from the notebook. */
   removeSavedVocab: (savedId: string) => void;
   login: (input: LoginInput) => Promise<Profile | null>;
+  /**
+   * Gửi mã OTP 6 số tới email. Chạy được trong mọi webview (Zalo/Messenger…)
+   * vì không đụng Google OAuth. Ở chế độ local demo là no-op (mã nào cũng hợp lệ).
+   */
+  sendEmailOtp: (email: string) => Promise<void>;
+  /** Xác minh mã OTP, thiết lập session. Profile tự hydrate qua onAuthStateChange. */
+  verifyEmailOtp: (email: string, token: string) => Promise<Profile | null>;
   logout: () => void;
   createCourse: (input: CreateCourseInput) => Course;
   updateCourse: (input: UpdateCourseInput) => Course;
@@ -429,18 +436,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   }, [state]);
 
-  const login = useCallback(
-    async (input: LoginInput): Promise<Profile | null> => {
-      const supabase = createSupabaseClient();
-      if (supabase) {
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: "google",
-          options: { redirectTo: `${window.location.origin}/dashboard` },
-        });
-        if (error) throw error;
-        return null;
-      }
-
+  // Tạo profile ở chế độ local demo (không có Supabase env). Dùng chung cho
+  // login giả và verifyEmailOtp demo.
+  const loginLocal = useCallback(
+    (input: LoginInput): Profile => {
       const prev = stateRef.current;
       const existing = prev.profile;
       if (existing && existing.email === input.email) return existing;
@@ -463,6 +462,57 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       return profile;
     },
     [commit],
+  );
+
+  const login = useCallback(
+    async (input: LoginInput): Promise<Profile | null> => {
+      const supabase = createSupabaseClient();
+      if (supabase) {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: { redirectTo: `${window.location.origin}/dashboard` },
+        });
+        if (error) throw error;
+        return null;
+      }
+      return loginLocal(input);
+    },
+    [loginLocal],
+  );
+
+  const sendEmailOtp = useCallback(async (email: string): Promise<void> => {
+    const supabase = createSupabaseClient();
+    if (!supabase) return; // local demo: bỏ qua, verify chấp nhận mọi mã
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      // shouldCreateUser: tự tạo tài khoản nếu email chưa tồn tại (đăng ký + đăng nhập gộp).
+      // emailRedirectTo bỏ trống để Supabase gửi MÃ 6 SỐ thay vì magic link.
+      options: { shouldCreateUser: true },
+    });
+    if (error) throw error;
+  }, []);
+
+  const verifyEmailOtp = useCallback(
+    async (email: string, token: string): Promise<Profile | null> => {
+      const supabase = createSupabaseClient();
+      if (supabase) {
+        const { error } = await supabase.auth.verifyOtp({
+          email,
+          token,
+          type: "email",
+        });
+        if (error) throw error;
+        // Session đã set → onAuthStateChange sẽ tự dựng lại profile.
+        return null;
+      }
+      // Local demo: chấp nhận mọi mã, dựng profile cục bộ.
+      return loginLocal({
+        email,
+        display_name: email.split("@")[0] || "学習者",
+        avatar_url: null,
+      });
+    },
+    [loginLocal],
   );
 
   const logout = useCallback(() => {
@@ -804,6 +854,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       setVocabLearned,
       removeSavedVocab,
       login,
+      sendEmailOtp,
+      verifyEmailOtp,
       logout,
       createCourse,
       updateCourse,
@@ -820,6 +872,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       setVocabLearned,
       removeSavedVocab,
       login,
+      sendEmailOtp,
+      verifyEmailOtp,
       logout,
       createCourse,
       updateCourse,

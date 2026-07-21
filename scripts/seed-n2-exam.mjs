@@ -71,6 +71,19 @@ function reading(text) {
     .map((t) => (t.reading && t.reading !== "*" ? t.reading : t.surface_form)).join("");
   return toKatakana(r).replace(/[\s　、。！？!?「」『』（）()・･…‥,.\-ー]/gu, "");
 }
+// Ruby furigana JSON: array of [surface] or [surface, hiraganaReading].
+const kataToHira = (s) => s.replace(/[ァ-ヶ]/gu, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60));
+const hasKanji = (s) => /[㐀-䶿一-龯々]/u.test(s);
+function furigana(text) {
+  return JSON.stringify(tokenizer.tokenize(text).map((t) => {
+    const s = t.surface_form;
+    if (hasKanji(s) && t.reading && t.reading !== "*") {
+      const r = kataToHira(t.reading);
+      if (r && r !== s) return [s, r];
+    }
+    return [s];
+  }));
+}
 function splitSentences(text) {
   const out = []; let cur = ""; let depth = 0;
   for (const ch of text) {
@@ -278,9 +291,9 @@ try {
       const rel = s.span.start - q.segStart;
       const audioStart = i === 0 ? Math.max(0, rel - 0.4) : rel;
       await client.query(
-        `insert into public.lesson_sentences (id,lesson_id,order_index,ja_text,vi_translation,audio_start,audio_end,pass_score)
-         values ($1,$2,$3,$4,$5,$6,$7,80)`,
-        [sid, lid, i, s.ja, s.sp, audioStart, s.span.end - q.segStart],
+        `insert into public.lesson_sentences (id,lesson_id,order_index,ja_text,furigana,vi_translation,audio_start,audio_end,pass_score)
+         values ($1,$2,$3,$4,$5,$6,$7,$8,80)`,
+        [sid, lid, i, s.ja, furigana(s.ja), s.sp, audioStart, s.span.end - q.segStart],
       );
     }
     console.log(`問題${mno}-${q.num}: ${q.dia.length} câu, seg ${q.segStart.toFixed(1)}-${q.segEnd.toFixed(1)}s → ${mediaUrl(mno, q.num)}`);
