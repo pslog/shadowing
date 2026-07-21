@@ -21,11 +21,13 @@ import { AppShell } from "@/components/layout/AppShell";
 import { FullScreenLoading } from "@/components/ui/loading";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Icon, type IconName } from "@/components/ui/icon";
+import { Avatar } from "@/components/ui/avatar";
 import { CalendarHeatmap } from "@/components/progress/CalendarHeatmap";
 
 interface LeaderboardUser {
   id: string;
   displayName: string;
+  avatarUrl: string | null;
   totalXp: number;
   level: number;
   streak: number;
@@ -319,9 +321,11 @@ function PodiumUser({
         >
           {rank}
         </span>
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg brand-gradient text-sm font-black text-white">
-          {user.displayName.slice(0, 1).toUpperCase()}
-        </span>
+        <Avatar
+          src={user.avatarUrl}
+          name={user.displayName}
+          className="h-9 w-9 rounded-lg text-sm"
+        />
         <div className="min-w-0 flex-1">
           <p className="flex items-center gap-1.5 truncate text-sm font-extrabold">
             <span className="truncate">{user.displayName}</span>
@@ -370,9 +374,12 @@ function LeaderboardRow({
       <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-card text-xs font-black tabular-nums text-muted">
         {rank}
       </span>
-      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-xs font-black text-primary">
-        {user.displayName.slice(0, 1).toUpperCase()}
-      </span>
+      <Avatar
+        src={user.avatarUrl}
+        name={user.displayName}
+        className="h-9 w-9 rounded-xl text-xs"
+        fallbackClassName="bg-primary/10 text-primary"
+      />
       <div className="min-w-0 flex-1">
         <p className="flex items-center gap-1.5 truncate text-sm font-bold">
           <span className="truncate">{user.displayName}</span>

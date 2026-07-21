@@ -11,6 +11,7 @@ import { XPBadge } from "@/components/ui/xp-badge";
 import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
 import { Icon, type IconName } from "@/components/ui/icon";
+import { Avatar } from "@/components/ui/avatar";
 
 type NavItem = { href: string; label: string; icon: IconName; alt?: string[] };
 
@@ -114,9 +115,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     className="focus-ring flex h-11 items-center gap-2 rounded-full border border-border bg-surface py-1 pl-1 pr-3 text-sm"
                     title={levelTitle(profileLevel)}
                   >
-                    <span className="grid h-8 w-8 place-items-center rounded-full brand-gradient text-xs text-white">
-                      {profile.display_name.slice(0, 1).toUpperCase()}
-                    </span>
+                    <Avatar
+                      src={profile.avatar_url}
+                      name={profile.display_name}
+                      className="h-8 w-8 rounded-full text-xs"
+                    />
                     <span className="hidden max-w-[10rem] truncate lg:inline">
                       {profile.display_name}
                     </span>

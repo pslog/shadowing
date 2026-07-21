@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { FullScreenLoading } from "@/components/ui/loading";
+import { Avatar } from "@/components/ui/avatar";
 import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 import { useData } from "@/lib/store/DataProvider";
 import { useRequireProfile } from "@/lib/store/useRequireProfile";
@@ -181,9 +182,12 @@ export default function AdminUsersPage() {
                     <tr key={user.id} className="align-middle">
                       <td className="px-5 py-4">
                         <div className="flex min-w-0 items-center gap-3">
-                          <span className="grid h-10 w-10 place-items-center rounded-full bg-surface font-bold text-primary">
-                            {(user.display_name || user.email || "?").slice(0, 1).toUpperCase()}
-                          </span>
+                          <Avatar
+                            src={user.avatar_url}
+                            name={user.display_name || user.email}
+                            className="h-10 w-10 rounded-full font-bold"
+                            fallbackClassName="bg-surface text-primary"
+                          />
                           <div className="min-w-0">
                             <p className="truncate font-semibold">
                               {user.display_name || user.email || "名前なし"}
