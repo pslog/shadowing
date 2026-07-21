@@ -8,10 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { FullScreenLoading } from "@/components/ui/loading";
 
+// プロダクトの3本柱:
+// ① 話せる会話力はシャドーイングから（反射を鍛える）
+// ② 毎日少しずつ→習慣化→実際の場面へ
+// ③ 仲間と高め合うコミュニティ
 const FEATURES: { icon: IconName; text: string }[] = [
-  { icon: "mic", text: "一文ずつ発話して、発音をすぐに採点" },
-  { icon: "flame", text: "ストリーク、XP、レベルで毎日継続" },
-  { icon: "book", text: "日本語学習コミュニティのための非営利スペース" },
+  { icon: "mic", text: "一文ずつ声に出し、会話の反射を鍛える。発音は即採点。" },
+  { icon: "flame", text: "毎日少しずつ。ストリークで習慣にし、実際の場面で使える力へ。" },
+  { icon: "book", text: "仲間と高め合う非営利コミュニティ。学びも仕事もスムーズに。" },
 ];
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -148,10 +152,13 @@ export default function LoginPage() {
 
         <div className="relative">
           <h2 className="text-4xl font-extrabold leading-tight">
-            日本語の会話力を、
+            話せる日本語は、
             <br />
-            みんなで少しずつ伸ばす。
+            シャドーイングから。
           </h2>
+          <p className="mt-4 max-w-md text-white/85">
+            毎日少しずつ、仲間と一緒に。会話の反射を身につけて、実際の場面で話せる自分へ。
+          </p>
           <ul className="mt-8 space-y-3">
             {FEATURES.map((f) => (
               <li key={f.text} className="flex items-center gap-3">

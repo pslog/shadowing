@@ -246,11 +246,14 @@ function LeaderboardList({
   return (
     <Card>
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <CardTitle>ランキング</CardTitle>
+        <CardTitle>仲間のランキング</CardTitle>
         <span className="rounded-full bg-surface px-3 py-1 text-xs font-bold text-muted">
           Top {users.length || "-"}
         </span>
       </div>
+      <p className="mt-1 text-xs leading-5 text-muted">
+        競争ではなく、一緒に続ける仲間。みんなの積み重ねが励みになります。
+      </p>
 
       {users.length === 0 ? (
         <div className="mt-4 rounded-2xl border border-dashed border-border bg-surface p-4">
@@ -446,6 +449,9 @@ export default function ProgressPage() {
         <h1 className="mt-1 text-2xl font-bold">
           {profile ? `${levelTitle(lp.level)} · Lv.${lp.level}` : "ゲスト閲覧中"}
         </h1>
+        <p className="mt-1.5 max-w-xl text-sm text-muted">
+          大事なのは点数より習慣。毎日少しずつPassを積み重ね、身につけた反射を実際の場面で使える力に変えていきましょう。
+        </p>
       </div>
 
       <section className="mt-4">
@@ -548,7 +554,11 @@ export default function ProgressPage() {
             <MiniMetric label="平均スコア" value={avg ?? "-"} icon="gauge" />
             <MiniMetric label="次レベル進捗" value={`${lp.pct}%`} icon="sparkles" />
           </div>
-          <CalendarHeatmap stats={dailyPassStats(state, 30)} />
+          <CalendarHeatmap
+            stats={dailyPassStats(state, 30)}
+            currentStreak={profile?.current_streak ?? 0}
+            longestStreak={profile?.longest_streak ?? 0}
+          />
         </div>
       </section>
 

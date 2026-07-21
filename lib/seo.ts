@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const SITE_NAME = "Shadowing JP";
 export const SITE_DESCRIPTION =
-  "日本語を学ぶコミュニティのための非営利シャドーイング学習アプリ。一文ずつ聞いて声に出し、毎日の小さな練習をみんなで続けます。";
+  "シャドーイングで「話せる」日本語へ。一文ずつ声に出して会話の反射を鍛え、毎日少しずつ習慣に。仲間と高め合う非営利の日本語学習コミュニティです。";
 
 export function getSiteUrl(): string {
   const raw =

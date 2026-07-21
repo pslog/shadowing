@@ -190,7 +190,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             />
             <div>
               <p className="text-sm font-bold text-gradient">Shadowing JP</p>
-              <p className="text-xs text-muted">Cùng cộng đồng luyện nói tiếng Nhật mỗi ngày</p>
+              <p className="text-xs text-muted">Shadowing mỗi ngày — cùng cộng đồng nói tiếng Nhật tự tin hơn</p>
             </div>
           </div>
           <p className="text-xs text-muted">Phi lợi nhuận · 一緒に頑張りましょう</p>
