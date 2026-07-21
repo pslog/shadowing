@@ -486,7 +486,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       // shouldCreateUser: tự tạo tài khoản nếu email chưa tồn tại (đăng ký + đăng nhập gộp).
-      // emailRedirectTo bỏ trống để Supabase gửi MÃ 6 SỐ thay vì magic link.
+      // emailRedirectTo bỏ trống để Supabase gửi MÃ (OTP code) thay vì magic link.
+      // Độ dài mã do setting "Email OTP Length" của Supabase quyết định (6–10).
       options: { shouldCreateUser: true },
     });
     if (error) throw error;
@@ -496,12 +497,18 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     async (email: string, token: string): Promise<Profile | null> => {
       const supabase = createSupabaseClient();
       if (supabase) {
-        const { error } = await supabase.auth.verifyOtp({
-          email,
-          token,
-          type: "email",
-        });
-        if (error) throw error;
+        // User đã tồn tại → type "email". User lần đầu (signInWithOtp vừa tạo
+        // tài khoản) → token thuộc luồng "signup". Client không biết trước là
+        // loại nào nên thử "email" trước, fail thì thử lại "signup".
+        const first = await supabase.auth.verifyOtp({ email, token, type: "email" });
+        if (first.error) {
+          const second = await supabase.auth.verifyOtp({
+            email,
+            token,
+            type: "signup",
+          });
+          if (second.error) throw first.error; // giữ lỗi gốc cho dễ đọc
+        }
         // Session đã set → onAuthStateChange sẽ tự dựng lại profile.
         return null;
       }

@@ -15,6 +15,10 @@ const FEATURES: { icon: IconName; text: string }[] = [
 ];
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Supabase の「Email OTP Length」設定に合わせる（既定6、範囲6〜10）。
+// 入力欄は最大長まで受け付け、最小6桁で送信可能にする。
+const OTP_MIN = 6;
+const OTP_MAX = 8;
 
 export default function LoginPage() {
   const { state, ready, usingSupabase, login, sendEmailOtp, verifyEmailOtp } =
@@ -104,8 +108,8 @@ export default function LoginPage() {
 
   async function handleVerifyCode() {
     const code = otp.trim();
-    if (code.length < 6) {
-      setError("6桁のコードを入力してください。");
+    if (code.length < OTP_MIN) {
+      setError("メールに届いたコードを入力してください。");
       return;
     }
     setError(null);
@@ -240,7 +244,7 @@ export default function LoginPage() {
                   {otpBusy ? "送信中..." : "ログインコードを送信"}
                 </Button>
                 <p className="text-[11px] text-muted">
-                  メールに届く6桁のコードでログインします。
+                  メールに届くコードでログインします。
                 </p>
               </form>
             ) : (
@@ -262,13 +266,13 @@ export default function LoginPage() {
                   type="text"
                   inputMode="numeric"
                   autoComplete="one-time-code"
-                  maxLength={6}
-                  placeholder="123456"
+                  maxLength={OTP_MAX}
+                  placeholder={"".padStart(OTP_MAX, "•")}
                   value={otp}
                   onChange={(e) =>
-                    setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
+                    setOtp(e.target.value.replace(/\D/g, "").slice(0, OTP_MAX))
                   }
-                  className="focus-ring h-12 w-full rounded-xl border border-border bg-card px-3 text-center text-lg font-bold tracking-[0.4em]"
+                  className="focus-ring h-12 w-full rounded-xl border border-border bg-card px-3 text-center text-lg font-bold tracking-[0.3em]"
                 />
                 <Button
                   type="submit"
