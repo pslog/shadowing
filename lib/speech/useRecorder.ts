@@ -129,7 +129,7 @@ export function useRecorder() {
           if (res.isFinal) finalTranscriptRef.current += text;
           else live += text;
         }
-        setInterim(live);
+        setInterim(`${finalTranscriptRef.current}${live}`.trim());
       };
       recog.onerror = () => {
         // Non-fatal: fall back to no-transcript scoring.
