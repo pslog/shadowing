@@ -168,8 +168,48 @@ function swRegion(Qc, Rc) {
     [prevOrig, curOrig] = [curOrig, prevOrig];
     cur.fill(0); curOrig.fill(0);
   }
-  return { start: bestStart, end: bestEnd };
+  return { start: bestStart, end: bestEnd, best };
 }
+// Anchor-free onset/offset of ONE sentence: SW-locate its reading inside the
+// question window and read the true start/end straight off the word timestamps.
+// The joint NW aligns the setup/問い anchors together with the dialogue, and a
+// generic anchor (e.g. a 問い that also says 「明日」) can eat the first/last
+// dialogue line's boundary word — pushing dia[0].start late (front gets clipped)
+// or dia[last].end early (tail gets clipped). Locating the boundary line on its
+// own, free of anchors, recovers the honest boundary.
+const STRIP = /[\s　、。！？!?「」『』（）()・･…‥,.\-ー~〜]/gu;
+// SW-locate `sentence` inside `words` using ONE char projection (surface text or
+// kuromoji reading) and return {start,end,score,max}. Whisper fragments kanji
+// into one-char tokens, so per-word reading is unreliable at boundaries (lone
+// 「明」→メイ≠アシタ) — surface matches when Whisper kept the kanji; reading
+// matches when it wrote kana. We try both and let the caller pick.
+function locateBy(sentence, words, project) {
+  const Rc = [], Rs = [], Re = [];
+  for (const w of words) {
+    const t = project(w.word ?? ""); if (!t) continue;
+    for (let k = 0; k < t.length; k++) { Rc.push(t[k]); Rs.push(w.start + (k / t.length) * (w.end - w.start)); Re.push(w.start + ((k + 1) / t.length) * (w.end - w.start)); }
+  }
+  const Qc = project(sentence).split("");
+  if (Qc.length < 5 || Rc.length < Qc.length) return null;
+  const { start, end, best } = swRegion(Qc, Rc);
+  if (!(end > start)) return null;
+  // Coverage = matched score / perfect score (2·qlen). A genuine onset match
+  // covers the WHOLE sentence (cov≈1); a spurious match to a shared fragment
+  // (e.g. the 問い's 「いくらですか」) covers only a slice → low cov → rejected.
+  const cov = best / (2 * Qc.length);
+  return { start: Rs[Math.max(0, start - 1)], end: Re[Math.min(Re.length - 1, end - 1)], cov };
+}
+const MIN_COV = 0.7;
+function locateSentence(sentence, words) {
+  const cands = [
+    locateBy(sentence, words, (s) => s.replace(STRIP, "")),
+    locateBy(sentence, words, (s) => reading(s)),
+  ].filter((c) => c && c.cov >= MIN_COV);
+  if (!cands.length) return null;
+  // Earliest plausible onset, latest plausible end among strong matches.
+  return { start: Math.min(...cands.map((c) => c.start)), end: Math.max(...cands.map((c) => c.end)) };
+}
+
 // Time bounds of the region best matching `sentences` (readings) within `words`.
 function regionTimes(sentences, words) {
   const Rc = [], Rt = [];
@@ -239,6 +279,23 @@ for (const mno of mondaiNos) {
     const qSpans = alignSpans(qItems, qWords);
     q.items.forEach((it, i) => (it.span = qSpans[i]));
     q.dia = q.items.filter((it) => it.kind === "dia");
+    // Refine the two clip-defining boundaries with anchor-free SW-location so the
+    // setup/問い anchors can't clip the first line's onset or the last line's end.
+    // Only ever move the onset EARLIER and the end LATER (the bug's direction),
+    // and only when the correction is within 6s of the NW estimate (else the SW
+    // matched a wrong occurrence — keep NW).
+    const d0 = q.dia[0], dL = q.dia[q.dia.length - 1];
+    // Cap the correction at 2.5s: a real anchor-eaten boundary is off by ~1-2s;
+    // a larger "fix" is a spurious SW match to a repeated phrase — under-correct
+    // (safe, re-audit catches it) rather than pull the clip into wrong audio.
+    const MAX_FIX = 2.5;
+    const loc0 = locateSentence(d0.ja, qWords);
+    if (loc0 && loc0.start < d0.span.start && d0.span.start - loc0.start <= MAX_FIX) {
+      d0.span.start = loc0.start;
+      if (d0.span.end <= d0.span.start) d0.span.end = d0.span.start + 0.3;
+    }
+    const locL = locateSentence(dL.ja, qWords);
+    if (locL && locL.end > dL.span.end && locL.end - dL.span.end <= MAX_FIX) dL.span.end = locL.end;
     cursor = Math.max(cursor, q.dia[q.dia.length - 1].span.end);
     q.segStart = Math.max(0, q.dia[0].span.start - 0.4);
     // Generous tail pad: Whisper underestimates the last word's end, so +0.25
@@ -246,6 +303,38 @@ for (const mno of mondaiNos) {
     q.segEnd = q.dia[q.dia.length - 1].span.end + 1.2;
     jobs.push({ mno, courseId: mondai.courseId, q });
   }
+}
+
+// EMIT=<path>: dump per-clip alignment metadata (source coords, dia0 onset,
+// narration-end) as JSON without touching DB or ffmpeg. Used by the head/tail
+// audit to know exactly where each clip was cut from the source — reliably,
+// without the dangerous SW-locate-in-source shortcut.
+if (process.env.EMIT) {
+  const out = jobs.map(({ mno, q }) => {
+    const firstDiaIdx = q.items.findIndex((it) => it.kind === "dia");
+    const narrationEnd = q.items
+      .slice(0, firstDiaIdx)
+      .reduce((mx, it) => Math.max(mx, it.span?.end ?? 0), 0);
+    return {
+      mno, num: q.num, theme: q.theme,
+      mediaUrl: mediaUrl(mno, q.num),
+      mp3: path.join(outDir, `m${mno}-q${q.num}.mp3`),
+      hasNarration: q.hasNarration,
+      segStart: q.segStart, segEnd: q.segEnd,
+      dia0Start: q.dia[0].span.start,
+      diaLastEnd: q.dia[q.dia.length - 1].span.end,
+      narrationEnd,
+      firstJa: q.dia[0].ja,
+      lastJa: q.dia[q.dia.length - 1].ja,
+      // Per-sentence dialogue spans in ABSOLUTE source time (for re-cutting a
+      // single lesson and recomputing all its sentence timings consistently).
+      dia: q.dia.map((it) => ({ sp: it.sp, ja: it.ja, start: it.span.start, end: it.span.end })),
+    };
+  });
+  mkdirSync(path.dirname(process.env.EMIT), { recursive: true });
+  (await import("node:fs")).writeFileSync(process.env.EMIT, JSON.stringify(out, null, 1));
+  console.log("emitted", out.length, "jobs ->", process.env.EMIT);
+  process.exit(0);
 }
 
 if (process.env.DRY) {

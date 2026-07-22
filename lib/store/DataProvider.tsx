@@ -329,16 +329,23 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       const { error: lessonError } = await supabase.from("lessons").upsert(lesson);
       if (lessonError) throw lessonError;
 
-      const { error: deleteError } = await supabase
-        .from("lesson_sentences")
-        .delete()
-        .eq("lesson_id", lesson.id);
-      if (deleteError) throw deleteError;
-
+      // Upsert sentences BY ID instead of delete-all + re-insert. sentence_attempts
+      // FK-cascades on lesson_sentences delete, so a blanket delete wiped every
+      // user's practice history for the lesson on each edit. updateLesson reuses
+      // the existing sentence ids (by index), so upsert keeps those rows — and
+      // their attempts — intact, updating text/timing in place.
       if (sentences.length > 0) {
-        const { error } = await supabase.from("lesson_sentences").insert(sentences);
+        const { error } = await supabase.from("lesson_sentences").upsert(sentences);
         if (error) throw error;
       }
+
+      // Remove only sentences that no longer exist (e.g. the lesson was shortened);
+      // their attempts are meant to go. Keep everything still present.
+      const keepIds = sentences.map((s) => s.id);
+      let del = supabase.from("lesson_sentences").delete().eq("lesson_id", lesson.id);
+      if (keepIds.length > 0) del = del.not("id", "in", `(${keepIds.map((id) => `"${id}"`).join(",")})`);
+      const { error: deleteError } = await del;
+      if (deleteError) throw deleteError;
     },
     [],
   );
