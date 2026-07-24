@@ -8,7 +8,8 @@
     "start": "next start -p 3335",
     "extract:resources": "node scripts/extract-resources.mjs",
     "align:audio": "node scripts/align-lesson-audio.mjs",
-    "build:resource-seed": "node scripts/build-resource-seed-sql.mjs"
+    "build:resource-seed": "node scripts/build-resource-seed-sql.mjs",
+    "seed:minna": "node scripts/seed-minna.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
