@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { privatePageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = privatePageMetadata({
-  title: "Tường xem trước video",
+  title: "Tool kiểm tra video channel",
   description:
-    "Trang admin để hiển thị một link video thành nhiều cửa sổ dọc.",
+    "Trang admin để tải danh sách video public từ một channel YouTube và kiểm tra player trực tiếp.",
   path: "/tool",
 });
 

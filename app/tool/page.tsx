@@ -12,15 +12,16 @@ import { Icon } from "@/components/ui/icon";
 import { useRequireProfile } from "@/lib/store/useRequireProfile";
 import { isAdminProfile } from "@/lib/store/selectors";
 
-type Platform = "youtube" | "facebook" | "tiktok" | "unknown";
-type LayoutMode = "grid" | "cinema" | "mosaic";
+interface ChannelVideo {
+  id: string;
+  title: string;
+  url: string;
+  thumbnailUrl: string;
+  publishedAt: string | null;
+}
 
-const platformLabel: Record<Platform, string> = {
-  youtube: "YouTube",
-  facebook: "Facebook",
-  tiktok: "TikTok",
-  unknown: "Link",
-};
+type LayoutMode = "compact" | "wide";
+type LoadState = "idle" | "loading" | "loaded" | "error";
 
 function normalizeUrl(raw: string) {
   const trimmed = raw.trim();
@@ -28,111 +29,96 @@ function normalizeUrl(raw: string) {
   return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
 }
 
-function detectPlatform(rawUrl: string): Platform {
-  try {
-    const host = new URL(rawUrl).hostname.replace(/^www\./, "");
-    if (host.includes("youtube.com") || host.includes("youtu.be")) return "youtube";
-    if (host.includes("facebook.com") || host.includes("fb.watch")) return "facebook";
-    if (host.includes("tiktok.com")) return "tiktok";
-  } catch {
-    return "unknown";
-  }
-  return "unknown";
+function youtubeEmbedUrl(videoId: string) {
+  return `https://www.youtube-nocookie.com/embed/${videoId}?playsinline=1&rel=0`;
 }
 
-function youtubeEmbedUrl(rawUrl: string) {
-  const url = new URL(rawUrl);
-  let videoId = "";
+function formatPublished(value: string | null) {
+  if (!value) return "Chưa có ngày";
 
-  if (url.hostname.includes("youtu.be")) {
-    videoId = url.pathname.split("/").filter(Boolean)[0] ?? "";
-  } else if (url.pathname.startsWith("/shorts/")) {
-    videoId = url.pathname.split("/").filter(Boolean)[1] ?? "";
-  } else {
-    videoId = url.searchParams.get("v") ?? "";
-  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
 
-  return videoId ? `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=0&playsinline=1` : null;
-}
-
-function tiktokEmbedUrl(rawUrl: string) {
-  const match = rawUrl.match(/\/video\/(\d+)/);
-  return match?.[1]
-    ? `https://www.tiktok.com/player/v1/${match[1]}?autoplay=1`
-    : null;
-}
-
-function facebookEmbedUrl(rawUrl: string) {
-  return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(
-    rawUrl,
-  )}&show_text=false&autoplay=true&mute=false`;
-}
-
-function embedUrlFor(rawUrl: string, platform: Platform) {
-  try {
-    if (platform === "youtube") return youtubeEmbedUrl(rawUrl);
-    if (platform === "tiktok") return tiktokEmbedUrl(rawUrl);
-    if (platform === "facebook") return facebookEmbedUrl(rawUrl);
-  } catch {
-    return null;
-  }
-  return null;
+  return new Intl.DateTimeFormat("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(date);
 }
 
 function wallClasses(mode: LayoutMode) {
-  if (mode === "cinema") return "grid justify-items-center gap-4 sm:grid-cols-2 xl:grid-cols-4";
-  if (mode === "mosaic") return "grid justify-items-center gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5";
-  return "grid justify-items-center gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
-}
-
-function windowClasses(mode: LayoutMode, index: number) {
-  if (mode === "cinema" && index === 0) return "w-full max-w-[360px] sm:col-span-2";
-  if (mode === "mosaic" && index % 5 === 0) return "w-full max-w-[320px]";
-  return "w-full max-w-[260px]";
+  if (mode === "wide") return "grid gap-4 lg:grid-cols-2";
+  return "grid gap-4 sm:grid-cols-2 xl:grid-cols-3";
 }
 
 export default function ToolPage() {
   const { profile, ready } = useRequireProfile();
   const [rawUrl, setRawUrl] = useState("");
   const [submittedUrl, setSubmittedUrl] = useState("");
-  const [windowCount, setWindowCount] = useState(6);
-  const [layoutMode, setLayoutMode] = useState<LayoutMode>("grid");
-  const [loadedWindows, setLoadedWindows] = useState<number[]>([]);
+  const [videos, setVideos] = useState<ChannelVideo[]>([]);
+  const [loadedVideoIds, setLoadedVideoIds] = useState<string[]>([]);
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>("compact");
+  const [loadState, setLoadState] = useState<LoadState>("idle");
   const [error, setError] = useState<string | null>(null);
 
-  const normalizedUrl = useMemo(() => normalizeUrl(submittedUrl), [submittedUrl]);
-  const platform = useMemo(() => detectPlatform(normalizedUrl), [normalizedUrl]);
-  const embedUrl = useMemo(
-    () => (normalizedUrl ? embedUrlFor(normalizedUrl, platform) : null),
-    [normalizedUrl, platform],
-  );
-  const windows = useMemo(
-    () => Array.from({ length: windowCount }, (_, index) => index),
-    [windowCount],
+  const loadedCount = useMemo(
+    () => videos.filter((video) => loadedVideoIds.includes(video.id)).length,
+    [loadedVideoIds, videos],
   );
 
   if (!ready || !profile) return <FullScreenLoading />;
   if (!isAdminProfile(profile)) return <AdminOnlyNotice />;
 
-  function renderWall() {
+  async function loadChannelVideos() {
     const nextUrl = normalizeUrl(rawUrl);
     if (!nextUrl) {
-      setError("Nhập một link video trước.");
+      setError("Nhập link channel YouTube trước.");
       return;
     }
+
     setSubmittedUrl(nextUrl);
-    setLoadedWindows([]);
+    setVideos([]);
+    setLoadedVideoIds([]);
     setError(null);
+    setLoadState("loading");
+
+    try {
+      const response = await fetch(
+        `/api/tool/channel-videos?url=${encodeURIComponent(nextUrl)}`,
+      );
+      const payload = (await response.json()) as {
+        videos?: ChannelVideo[];
+        error?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Không tải được danh sách video.");
+      }
+
+      const nextVideos = payload.videos ?? [];
+      setVideos(nextVideos);
+      setLoadState("loaded");
+      if (nextVideos.length === 0) {
+        setError("Không tìm thấy video public nào trong channel này.");
+      }
+    } catch (loadError) {
+      setLoadState("error");
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : "Không tải được danh sách video.",
+      );
+    }
   }
 
-  function loadWindow(index: number) {
-    setLoadedWindows((current) =>
-      current.includes(index) ? current : [...current, index],
+  function loadPlayer(videoId: string) {
+    setLoadedVideoIds((current) =>
+      current.includes(videoId) ? current : [...current, videoId],
     );
   }
 
-  function loadAllWindows() {
-    setLoadedWindows(windows);
+  function loadAllPlayers() {
+    setLoadedVideoIds(videos.map((video) => video.id));
   }
 
   return (
@@ -142,33 +128,37 @@ export default function ToolPage() {
           <Link href="/dashboard" className="text-sm text-muted hover:text-fg">
             Về dashboard
           </Link>
-          <h1 className="mt-1 text-2xl font-bold">Tường xem trước video</h1>
+          <h1 className="mt-1 text-2xl font-bold">Tool kiểm tra video channel</h1>
           <p className="max-w-3xl text-muted">
-            Nhập một link video và hiển thị thành nhiều cửa sổ dọc kiểu TikTok.
-            Không autoplay, mỗi player chỉ tải khi bấm nút trong từng khung.
+            Dán link channel YouTube, tool sẽ tải danh sách video public và cho mở
+            player ngay trên page để kiểm tra nhanh.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Badge tone="primary">{windowCount} cửa sổ</Badge>
-          <Badge tone="neutral">{platformLabel[platform]}</Badge>
+          <Badge tone="primary">{videos.length} video</Badge>
+          <Badge tone="neutral">{loadedCount} player đã tải</Badge>
         </div>
       </div>
 
       <Card className="mb-5">
-        <CardTitle>Link video</CardTitle>
+        <CardTitle>Link channel</CardTitle>
         <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_auto]">
           <input
             value={rawUrl}
             onChange={(event) => setRawUrl(event.target.value)}
             onKeyDown={(event) => {
-              if (event.key === "Enter") renderWall();
+              if (event.key === "Enter") void loadChannelVideos();
             }}
-            placeholder="https://www.youtube.com/watch?v=... | facebook video | tiktok video"
+            placeholder="https://www.youtube.com/@channel | https://www.youtube.com/channel/UC..."
             className="focus-ring h-11 w-full rounded-xl border border-border bg-surface px-3 font-mono text-sm outline-none"
           />
-          <Button type="button" onClick={renderWall}>
+          <Button
+            type="button"
+            onClick={() => void loadChannelVideos()}
+            disabled={loadState === "loading"}
+          >
             <Icon name="play" size={16} />
-            Tạo tường preview
+            {loadState === "loading" ? "Đang tải..." : "Tải video"}
           </Button>
         </div>
         {error && (
@@ -177,139 +167,144 @@ export default function ToolPage() {
           </div>
         )}
 
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <div>
-            <label className="text-sm font-semibold" htmlFor="window-count">
-              Số cửa sổ
-            </label>
-            <input
-              id="window-count"
-              type="range"
-              min={2}
-              max={12}
-              value={windowCount}
-              onChange={(event) => {
-                setWindowCount(Number(event.target.value));
-                setLoadedWindows([]);
-              }}
-              className="mt-3 w-full accent-[var(--primary)]"
-            />
-            <div className="mt-2 flex justify-between text-xs text-muted">
-              <span>2</span>
-              <span>{windowCount}</span>
-              <span>12</span>
-            </div>
-          </div>
-          <div>
-            <p className="text-sm font-semibold">Kiểu hiển thị</p>
-            <div className="mt-3 grid grid-cols-3 gap-2">
-              {(["grid", "cinema", "mosaic"] as const).map((mode) => (
-                <Button
-                  key={mode}
-                  type="button"
-                  variant={layoutMode === mode ? "primary" : "outline"}
-                  onClick={() => setLayoutMode(mode)}
-                >
-                  {mode === "grid" ? "Lưới" : mode === "cinema" ? "Sân khấu" : "Mosaic"}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </div>
-
         <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-4">
           <Button
             type="button"
             variant="secondary"
-            onClick={loadAllWindows}
-            disabled={!submittedUrl || !embedUrl || loadedWindows.length === windows.length}
+            onClick={loadAllPlayers}
+            disabled={videos.length === 0 || loadedCount === videos.length}
           >
             <Icon name="play" size={16} />
             Tải toàn bộ player
           </Button>
+          <div className="grid grid-cols-2 gap-2">
+            {(["compact", "wide"] as const).map((mode) => (
+              <Button
+                key={mode}
+                type="button"
+                variant={layoutMode === mode ? "primary" : "outline"}
+                onClick={() => setLayoutMode(mode)}
+              >
+                {mode === "compact" ? "Lưới" : "Rộng"}
+              </Button>
+            ))}
+          </div>
           <p className="text-sm text-muted">
-            Trình duyệt và nền tảng video yêu cầu người dùng tự bấm phát trong player.
+            Player được lazy-load để page nhẹ hơn; bấm từng video hoặc tải tất cả
+            khi cần check đồng loạt.
           </p>
         </div>
       </Card>
 
-      {!submittedUrl ? (
+      {loadState === "idle" ? (
         <Card>
-          <CardTitle>Tường preview</CardTitle>
+          <CardTitle>Danh sách video</CardTitle>
           <div className="mt-4 grid min-h-[28rem] place-items-center rounded-xl border border-dashed border-border bg-surface/60 p-8 text-center">
             <div>
               <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-primary/10 text-primary">
                 <Icon name="play" size={20} />
               </div>
-              <p className="font-semibold">Nhập một link để tạo nhiều cửa sổ dọc.</p>
+              <p className="font-semibold">Nhập link channel để tải video.</p>
               <p className="mt-1 text-sm text-muted">
-                Page này không tự động phát video và không lặp view.
+                Hỗ trợ dạng @handle và /channel/UC...
               </p>
             </div>
           </div>
         </Card>
-      ) : (
+      ) : loadState === "loading" ? (
+        <Card>
+          <CardTitle>Đang tải</CardTitle>
+          <div className="mt-4 grid min-h-[28rem] place-items-center rounded-xl border border-border bg-surface/60 p-8 text-center">
+            <div>
+              <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              <p className="font-semibold">Đang đọc video từ channel...</p>
+              <p className="mt-1 max-w-md break-all text-sm text-muted">
+                {submittedUrl}
+              </p>
+            </div>
+          </div>
+        </Card>
+      ) : videos.length > 0 ? (
         <div className={wallClasses(layoutMode)}>
-          {windows.map((index) => {
-            const loaded = loadedWindows.includes(index);
+          {videos.map((video, index) => {
+            const loaded = loadedVideoIds.includes(video.id);
             return (
               <div
-                key={index}
-                className={`overflow-hidden rounded-xl border border-border bg-card shadow-[var(--shadow-md)] ${windowClasses(
-                  layoutMode,
-                  index,
-                )}`}
+                key={video.id}
+                className="overflow-hidden rounded-xl border border-border bg-card shadow-[var(--shadow-md)]"
               >
-                <div className="flex h-10 items-center gap-2 border-b border-border bg-surface/80 px-3">
-                  <span className="h-2.5 w-2.5 rounded-full bg-rose" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-amber" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-emerald" />
-                  <span className="ml-2 min-w-0 truncate text-xs font-semibold text-muted">
-                    Cửa sổ {index + 1} - {platformLabel[platform]}
-                  </span>
+                <div className="flex min-h-14 items-center gap-3 border-b border-border bg-surface/80 px-3 py-2">
+                  <Badge tone="neutral">#{index + 1}</Badge>
+                  <div className="min-w-0">
+                    <p className="line-clamp-1 text-sm font-semibold">{video.title}</p>
+                    <p className="text-xs text-muted">{formatPublished(video.publishedAt)}</p>
+                  </div>
                 </div>
-                <div className="relative aspect-[9/16] bg-black">
-                  {loaded && embedUrl ? (
+                <div className="relative aspect-video bg-black">
+                  {loaded ? (
                     <iframe
-                      src={embedUrl}
-                      title={`Cửa sổ xem trước ${index + 1}`}
+                      src={youtubeEmbedUrl(video.id)}
+                      title={video.title}
                       className="h-full w-full"
-                      allow="encrypted-media; picture-in-picture; web-share"
+                      allow="accelerometer; encrypted-media; picture-in-picture; web-share"
                       allowFullScreen
                       loading="lazy"
-                      scrolling="no"
-                      style={{ border: 0, overflow: "hidden" }}
+                      style={{ border: 0 }}
                     />
                   ) : (
-                    <div className="absolute inset-0 grid place-items-center p-4 text-center">
-                      <div>
-                        <Badge tone="neutral">{platformLabel[platform]}</Badge>
-                        <p className="mt-3 max-w-xs break-all text-xs text-white/70">
-                          {submittedUrl}
-                        </p>
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          className="mt-4 bg-white text-fg hover:bg-white/90"
-                          onClick={() => loadWindow(index)}
-                          disabled={!embedUrl}
-                        >
-                          <Icon name="play" size={15} />
-                          Tải player
-                        </Button>
-                        {!embedUrl && (
-                          <p className="mt-3 text-xs text-white/60">
-                            Link này không tạo được embed. Hãy mở link gốc.
-                          </p>
-                        )}
-                      </div>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => loadPlayer(video.id)}
+                      className="group absolute inset-0 block w-full overflow-hidden text-left"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={video.thumbnailUrl}
+                        alt=""
+                        className="h-full w-full object-cover opacity-85 transition group-hover:scale-[1.02] group-hover:opacity-100"
+                      />
+                      <span className="absolute inset-0 bg-black/30" />
+                      <span className="absolute left-1/2 top-1/2 grid h-14 w-14 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white text-fg shadow-[var(--shadow-md)]">
+                        <Icon name="play" size={22} />
+                      </span>
+                    </button>
+                  )}
+                </div>
+                <div className="flex items-center justify-between gap-3 px-3 py-3">
+                  <a
+                    href={video.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="min-w-0 truncate text-sm font-semibold text-primary hover:underline"
+                  >
+                    Mở trên YouTube
+                  </a>
+                  {!loaded && (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => loadPlayer(video.id)}
+                    >
+                      <Icon name="play" size={14} />
+                      Tải player
+                    </Button>
                   )}
                 </div>
               </div>
             );
           })}
         </div>
+      ) : (
+        <Card>
+          <CardTitle>Không có video</CardTitle>
+          <div className="mt-4 rounded-xl border border-border bg-surface/60 p-8 text-center">
+            <p className="font-semibold">Chưa tìm thấy video public để hiển thị.</p>
+            <p className="mt-1 text-sm text-muted">
+              Thử dùng link channel dạng @handle hoặc /channel/UC...
+            </p>
+          </div>
+        </Card>
       )}
     </AppShell>
   );
