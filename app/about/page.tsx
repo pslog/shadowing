@@ -28,6 +28,12 @@ const PILLARS: { icon: IconName; color: string; title: string; body: string }[] 
   },
 ];
 
+const WEB_CREATORS: { iconSrc: string; name: string }[] = [
+  { iconSrc: "/creator-icons/sinhvv.jpg", name: "SinhVV" },
+  { iconSrc: "/creator-icons/codex.svg", name: "Codex" },
+  { iconSrc: "/creator-icons/claude.svg", name: "Claude Code" },
+];
+
 export default function AboutPage() {
   return (
     <AppShell>
@@ -120,10 +126,28 @@ export default function AboutPage() {
                 Sinh viên Đại học Ngoại ngữ - Đại học Đà Nẵng
               </p>
               <p className="mt-4 max-w-2xl text-sm leading-7 text-muted sm:mt-5">
-                Hà cũng đang học tiếng Nhật mỗi ngày như bạn. Góc học này là một đóng
-                góp nhỏ của Hà cho cộng đồng - để ai cần một nơi luyện nói đều có thể
-                vào học cùng, nhẹ nhàng và bền bỉ.
+                Hà cũng đang học tiếng Nhật mỗi ngày như nhiều bạn khác: có lúc hào
+                hứng, có lúc bận rộn, có lúc thấy việc luyện nói khó duy trì một mình.
+                Từ trải nghiệm đó, Hà muốn tạo một góc học nhỏ để mọi người có thể
+                nghe, nhắc lại, sửa từng chút và giữ thói quen nói tiếng Nhật đều hơn.
+                Đây không phải một khóa học lớn hay lời hứa học thật nhanh, mà là một
+                đóng góp chân thành cho cộng đồng - nơi ai cần luyện nói cũng có thể
+                vào học cùng, nhẹ nhàng, tử tế và bền bỉ.
               </p>
+              <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-medium text-muted/75">
+                <span>Web Creator:</span>
+                {WEB_CREATORS.map((creator) => (
+                  <span key={creator.name} className="inline-flex items-center gap-1">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={creator.iconSrc}
+                      alt=""
+                      className="h-3.5 w-3.5 rounded-full object-cover opacity-75"
+                    />
+                    {creator.name}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
         </section>
