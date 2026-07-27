@@ -1,7 +1,9 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 import { topicHue } from "@/lib/topic-style";
+import { optimizedImageSrc } from "@/lib/optimized-image";
 import type { Course } from "@/lib/types";
 import type { CourseStats } from "@/lib/store/selectors";
 
@@ -15,6 +17,7 @@ export function CourseCard({
   href: string;
 }) {
   const hue = course.accent ?? topicHue(course.topic);
+  const imageSrc = optimizedImageSrc(course.image_url);
   const done = stats.total > 0 && stats.completed >= stats.total;
   const pct = stats.total > 0 ? (stats.completed / stats.total) * 100 : 0;
   const scoreTone =
@@ -27,6 +30,7 @@ export function CourseCard({
   return (
     <Link
       href={href}
+      prefetch={false}
       className={[
         "card card-interactive group grid min-h-36 grid-cols-[5.5rem_minmax(0,1fr)] gap-3 overflow-hidden p-3 sm:grid-cols-[7rem_minmax(0,1fr)] sm:gap-4",
         done ? "ring-2 ring-[var(--success)]/35" : "",
@@ -36,7 +40,7 @@ export function CourseCard({
       <div
         className="relative h-full min-h-32 overflow-hidden rounded-2xl border border-border bg-surface"
         style={
-          course.image_url
+          imageSrc
             ? undefined
             : {
                 background: `linear-gradient(145deg, color-mix(in srgb, ${
@@ -45,13 +49,15 @@ export function CourseCard({
               }
         }
       >
-        {course.image_url ? (
+        {imageSrc ? (
           <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={course.image_url}
+            <Image
+              src={imageSrc}
               alt=""
-              className="h-full w-full object-cover object-top"
+              fill
+              sizes="(max-width: 640px) 5.5rem, 7rem"
+              className="object-cover object-top"
+              quality={70}
             />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/10" />
           </>

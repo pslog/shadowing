@@ -106,7 +106,8 @@
   --color-rose: var(--c-rose);
 
   --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
-  --font-jp: var(--font-jp), var(--font-jakarta), sans-serif;
+  --font-jp: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo,
+    "Noto Sans JP", var(--font-jakarta), sans-serif;
 
   --radius-xl: 1rem;
   --radius-2xl: 1.25rem;

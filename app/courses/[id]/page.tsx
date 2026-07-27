@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useData } from "@/lib/store/DataProvider";
@@ -24,6 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { topicHue } from "@/lib/topic-style";
+import { optimizedImageSrc } from "@/lib/optimized-image";
 
 export default function CoursePage() {
   const params = useParams<{ id: string }>();
@@ -54,6 +56,7 @@ export default function CoursePage() {
   const next = nextLessonInCourse(state, courseKey);
   const title = course?.title ?? "その他のレッスン";
   const description = course?.description ?? null;
+  const imageSrc = optimizedImageSrc(course?.image_url);
   const hue = course?.accent ?? topicHue(course?.topic ?? null);
   const pct = stats.total > 0 ? (stats.completed / stats.total) * 100 : 0;
   const allDone = stats.total > 0 && stats.completed >= stats.total;
@@ -66,13 +69,15 @@ export default function CoursePage() {
 
       <section className="mt-3 overflow-hidden rounded-[2rem] border border-border shadow-[var(--shadow-md)]">
         <div className="flex flex-col md:flex-row">
-          {course?.image_url ? (
+          {imageSrc ? (
             <div className="relative h-44 w-full shrink-0 sm:h-52 md:h-auto md:w-64 lg:w-72">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={course.image_url}
+              <Image
+                src={imageSrc}
                 alt={title}
-                className="h-full w-full object-cover"
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1024px) 16rem, 18rem"
+                className="object-cover"
+                quality={72}
               />
             </div>
           ) : (

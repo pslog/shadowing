@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { AppShell } from "@/components/layout/AppShell";
 import { Icon, type IconName } from "@/components/ui/icon";
@@ -42,13 +43,13 @@ export default function AboutPage() {
           <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-2xl">
               <div className="flex items-center gap-3">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/logo-mark.png"
+                <Image
+                  src="/logo-mark-256.webp"
                   alt="Shadowing JP"
                   width={52}
                   height={52}
                   className="h-12 w-12 shrink-0 object-contain lg:hidden"
+                  quality={75}
                 />
                 <div className="inline-flex min-w-0 items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-bold text-primary sm:text-sm">
                   <Icon name="star" size={15} />
@@ -70,13 +71,13 @@ export default function AboutPage() {
 
             <div className="relative hidden shrink-0 self-center lg:block">
               <div className="pointer-events-none absolute inset-4 -z-10 rounded-full bg-primary/15 blur-3xl" />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/logo-mark.png"
+              <Image
+                src="/logo-mark-256.webp"
                 alt="Shadowing JP"
                 width={240}
                 height={240}
                 className="h-52 w-52 object-contain drop-shadow-[0_16px_40px_rgba(99,96,242,0.25)] xl:h-60 xl:w-60"
+                quality={75}
               />
             </div>
           </div>
@@ -112,11 +113,13 @@ export default function AboutPage() {
         <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-sm)] sm:rounded-[1.5rem]">
           <div className="grid gap-0 md:grid-cols-[18rem_minmax(0,1fr)]">
             <div className="relative aspect-[4/3] max-h-64 overflow-hidden bg-surface md:aspect-auto md:max-h-none">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/author/nhat-ha-anime.png"
+              <Image
+                src="/author/nhat-ha-anime-768.webp"
                 alt="Avatar anime của tác giả Nhật Hà"
-                className="h-full w-full object-cover"
+                fill
+                sizes="(max-width: 768px) 100vw, 18rem"
+                className="object-cover"
+                quality={75}
               />
             </div>
             <div className="flex flex-col justify-center p-4 sm:p-8">

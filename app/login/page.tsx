@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useData } from "@/lib/store/DataProvider";
 import { Button } from "@/components/ui/button";
@@ -139,13 +140,13 @@ export default function LoginPage() {
         <div className="pointer-events-none absolute -left-16 bottom-0 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
 
         <div className="flex items-center gap-2.5">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/logo-mark.png"
+          <Image
+            src="/logo-mark-256.webp"
             alt="Shadowing JP"
             width={40}
             height={40}
             className="h-10 w-10 rounded-xl object-contain"
+            quality={75}
           />
           <span className="text-lg font-bold">Shadowing JP</span>
         </div>
@@ -190,13 +191,13 @@ export default function LoginPage() {
 
       <section className="grid place-items-center px-6 py-12">
         <div className="w-full max-w-sm text-center animate-in">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/logo-mark.png"
+          <Image
+            src="/logo-mark-256.webp"
             alt="Shadowing JP"
             width={64}
             height={64}
             className="animate-pop mx-auto mb-5 h-16 w-16 rounded-2xl object-contain shadow-[var(--shadow-glow)] lg:hidden"
+            quality={75}
           />
           <h1 className="text-3xl font-extrabold">おかえりなさい</h1>
           <p className="mt-2 text-muted">

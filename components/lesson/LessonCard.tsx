@@ -121,6 +121,7 @@ export function LessonCard({
 
         <Link
           href={lessonHref(lesson)}
+          prefetch={false}
           className={buttonClasses(
             status === "completed" ? "secondary" : "primary",
             "md",
