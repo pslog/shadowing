@@ -32,15 +32,18 @@ export default function ReviewPage() {
   const [stats, setStats] = useState<Map<string, VocabStat>>(new Map());
   const wordsKey = all.map((v) => v.word).join("|");
   useEffect(() => {
-    const client = createClient();
-    if (!client || all.length === 0) return;
+    if (all.length === 0) return;
     let cancelled = false;
     const words = [...new Set(all.map((v) => v.word))];
-    client
-      .from("vocab_stats")
-      .select("word,reading,saved_count,learned_count")
-      .in("word", words)
-      .then(({ data }) => {
+    createClient()
+      .then((client) =>
+        client
+          ?.from("vocab_stats")
+          .select("word,reading,saved_count,learned_count")
+          .in("word", words),
+      )
+      .then((result) => {
+        const data = result?.data;
         if (cancelled || !data) return;
         const map = new Map<string, VocabStat>();
         for (const r of data as (VocabStat & { word: string; reading: string })[]) {
@@ -50,7 +53,8 @@ export default function ReviewPage() {
           });
         }
         setStats(map);
-      });
+      })
+      .catch(() => undefined);
     return () => {
       cancelled = true;
     };

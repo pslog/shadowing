@@ -37,16 +37,18 @@ export function LessonVocabulary({
 
   useEffect(() => {
     if (items.length === 0) return;
-    const client = createClient();
-    if (!client) return;
     let cancelled = false;
 
     const words = [...new Set(items.map((v) => v.word))];
-    client
-      .from("vocab_stats")
-      .select("word,reading,saved_count,learned_count")
-      .in("word", words)
-      .then(({ data }) => {
+    createClient()
+      .then((client) =>
+        client
+          ?.from("vocab_stats")
+          .select("word,reading,saved_count,learned_count")
+          .in("word", words),
+      )
+      .then((result) => {
+        const data = result?.data;
         if (cancelled || !data) return;
         const map = new Map<string, VocabStat>();
         for (const r of data as (VocabStat & { word: string; reading: string })[]) {
@@ -63,7 +65,8 @@ export function LessonVocabulary({
               .map((v) => vocabKey(v.word, v.reading)),
           ),
         );
-      });
+      })
+      .catch(() => undefined);
 
     return () => {
       cancelled = true;

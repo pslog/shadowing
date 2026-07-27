@@ -213,7 +213,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const loadSupabaseState = useCallback(async (): Promise<AppState> => {
-    const supabase = createSupabaseClient();
+    const supabase = await createSupabaseClient();
     if (!supabase) return loadLocalState();
 
     const {
@@ -323,7 +323,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const persistSupabaseLesson = useCallback(
     async (lesson: Lesson, sentences: LessonSentence[]) => {
-      const supabase = createSupabaseClient();
+      const supabase = await createSupabaseClient();
       if (!supabase) return;
 
       const { error: lessonError } = await supabase.from("lessons").upsert(lesson);
@@ -352,7 +352,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const persistSupabaseOutcome = useCallback(
     async (next: AppState, outcome: AttemptOutcome) => {
-      const supabase = createSupabaseClient();
+      const supabase = await createSupabaseClient();
       if (!supabase || !next.profile) return;
 
       const progress = next.progress.find(
@@ -419,14 +419,19 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     hydrate();
 
-    const supabase = createSupabaseClient();
-    const subscription = supabase?.auth.onAuthStateChange(() => {
-      loadSupabaseState()
-        .then((next) => {
-          if (!cancelled) commit(next);
-        })
-        .catch(() => undefined);
-    }).data.subscription;
+    let subscription: { unsubscribe: () => void } | undefined;
+    createSupabaseClient()
+      .then((supabase) => {
+        if (cancelled) return;
+        subscription = supabase?.auth.onAuthStateChange(() => {
+          loadSupabaseState()
+            .then((next) => {
+              if (!cancelled) commit(next);
+            })
+            .catch(() => undefined);
+        }).data.subscription;
+      })
+      .catch(() => undefined);
 
     return () => {
       cancelled = true;
@@ -473,7 +478,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(
     async (input: LoginInput): Promise<Profile | null> => {
-      const supabase = createSupabaseClient();
+      const supabase = await createSupabaseClient();
       if (supabase) {
         const { error } = await supabase.auth.signInWithOAuth({
           provider: "google",
@@ -488,7 +493,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   );
 
   const sendEmailOtp = useCallback(async (email: string): Promise<void> => {
-    const supabase = createSupabaseClient();
+    const supabase = await createSupabaseClient();
     if (!supabase) return; // local demo: bỏ qua, verify chấp nhận mọi mã
     const { error } = await supabase.auth.signInWithOtp({
       email,
@@ -502,7 +507,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const verifyEmailOtp = useCallback(
     async (email: string, token: string): Promise<Profile | null> => {
-      const supabase = createSupabaseClient();
+      const supabase = await createSupabaseClient();
       if (supabase) {
         // User đã tồn tại → type "email". User lần đầu (signInWithOtp vừa tạo
         // tài khoản) → token thuộc luồng "signup". Client không biết trước là
@@ -530,7 +535,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   );
 
   const logout = useCallback(() => {
-    createSupabaseClient()?.auth.signOut();
+    createSupabaseClient()
+      .then((supabase) => supabase?.auth.signOut())
+      .catch(() => undefined);
     commit({ ...stateRef.current, profile: null });
   }, [commit]);
 
@@ -556,8 +563,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       commit({ ...prev, courses: [...prev.courses, course] });
       if (USING_SUPABASE) {
         createSupabaseClient()
-          ?.from("courses")
-          .upsert(course)
+          .then((supabase) => supabase?.from("courses").upsert(course))
           .then(undefined, console.error);
       }
       return course;
@@ -591,17 +597,20 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
       if (USING_SUPABASE) {
         createSupabaseClient()
-          ?.from("courses")
-          .update({
-            title: course.title,
-            description: course.description,
-            topic: course.topic,
-            level: course.level,
-            accent: course.accent,
-            image_url: course.image_url,
-            is_public: course.is_public,
-          })
-          .eq("id", course.id)
+          .then((supabase) =>
+            supabase
+              ?.from("courses")
+              .update({
+                title: course.title,
+                description: course.description,
+                topic: course.topic,
+                level: course.level,
+                accent: course.accent,
+                image_url: course.image_url,
+                is_public: course.is_public,
+              })
+              .eq("id", course.id),
+          )
           .then(undefined, console.error);
       }
 
@@ -745,9 +754,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       });
       if (USING_SUPABASE) {
         createSupabaseClient()
-          ?.from("lesson_sentences")
-          .update({ audio_start: audioStart, audio_end: audioEnd })
-          .eq("id", sentenceId)
+          .then((supabase) =>
+            supabase
+              ?.from("lesson_sentences")
+              .update({ audio_start: audioStart, audio_end: audioEnd })
+              .eq("id", sentenceId),
+          )
           .then(undefined, console.error);
       }
     },
@@ -771,9 +783,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         });
         if (USING_SUPABASE) {
           createSupabaseClient()
-            ?.from("saved_vocab")
-            .delete()
-            .eq("id", existing.id)
+            .then((supabase) =>
+              supabase?.from("saved_vocab").delete().eq("id", existing.id),
+            )
             .then(undefined, console.error);
         }
         return false;
@@ -794,8 +806,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       commit({ ...prev, savedVocab: [saved, ...prev.savedVocab] });
       if (USING_SUPABASE) {
         createSupabaseClient()
-          ?.from("saved_vocab")
-          .insert(saved)
+          .then((supabase) => supabase?.from("saved_vocab").insert(saved))
           .then(undefined, console.error);
       }
       return true;
@@ -814,9 +825,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       });
       if (USING_SUPABASE) {
         createSupabaseClient()
-          ?.from("saved_vocab")
-          .update({ learned })
-          .eq("id", savedId)
+          .then((supabase) =>
+            supabase?.from("saved_vocab").update({ learned }).eq("id", savedId),
+          )
           .then(undefined, console.error);
       }
     },
@@ -832,9 +843,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       });
       if (USING_SUPABASE) {
         createSupabaseClient()
-          ?.from("saved_vocab")
-          .delete()
-          .eq("id", savedId)
+          .then((supabase) => supabase?.from("saved_vocab").delete().eq("id", savedId))
           .then(undefined, console.error);
       }
     },

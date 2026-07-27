@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Noto_Sans_JP, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { DataProvider } from "@/lib/store/DataProvider";
 import { Aurora } from "@/components/layout/Aurora";
@@ -7,9 +7,16 @@ import { getSiteUrl, SITE_DESCRIPTION, SITE_NAME } from "@/lib/seo";
 
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  subsets: ["latin", "latin-ext"],
+  weight: ["400", "500", "600", "700", "800"],
   display: "swap",
+});
+
+const notoJp = Noto_Sans_JP({
+  variable: "--font-noto-jp",
+  weight: ["400", "500", "700"],
+  display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -74,7 +81,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="ja" className={`${jakarta.variable} h-full`}>
+    <html lang="vi" className={`${jakarta.variable} ${notoJp.variable} h-full`}>
       <body className="min-h-full">
         <script
           type="application/ld+json"

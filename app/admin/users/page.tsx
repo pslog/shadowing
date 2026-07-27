@@ -56,7 +56,7 @@ export default function AdminUsersPage() {
 
     setLoading(true);
     setError(null);
-    const supabase = createSupabaseClient();
+    const supabase = await createSupabaseClient();
     if (!supabase) {
       setLoading(false);
       return;
@@ -95,7 +95,7 @@ export default function AdminUsersPage() {
 
     setSavingId(user.id);
     setError(null);
-    const supabase = createSupabaseClient();
+    const supabase = await createSupabaseClient();
     const { error: updateError } =
       (await supabase
         ?.from("profiles")
