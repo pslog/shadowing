@@ -30,7 +30,7 @@ const PILLARS: { icon: IconName; color: string; title: string; body: string }[] 
 ];
 
 const WEB_CREATORS: { iconSrc: string; name: string }[] = [
-  { iconSrc: "/creator-icons/sinhvv.jpg", name: "SinhVV" },
+  { iconSrc: "/creator-icons/sinhvv.jpg", name: "Sinh" },
   { iconSrc: "/creator-icons/codex.svg", name: "Codex" },
   { iconSrc: "/creator-icons/claude.svg", name: "Claude Code" },
 ];
@@ -138,7 +138,7 @@ export default function AboutPage() {
                 vào học cùng, nhẹ nhàng, tử tế và bền bỉ.
               </p>
               <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-medium text-muted/75">
-                <span>Web Creator:</span>
+                <span>※Web Creator:</span>
                 {WEB_CREATORS.map((creator) => (
                   <span key={creator.name} className="inline-flex items-center gap-1">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
