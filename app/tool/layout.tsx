@@ -4,7 +4,7 @@ import { privatePageMetadata } from "@/lib/seo";
 export const metadata: Metadata = privatePageMetadata({
   title: "Tool kiểm tra video channel",
   description:
-    "Trang admin để tải danh sách video public từ một channel YouTube và kiểm tra player trực tiếp.",
+    "Trang admin để tải danh sách video public từ YouTube, TikTok, Facebook và kiểm tra player trực tiếp.",
   path: "/tool",
 });
 

@@ -12,16 +12,25 @@ import { Icon } from "@/components/ui/icon";
 import { useRequireProfile } from "@/lib/store/useRequireProfile";
 import { isAdminProfile } from "@/lib/store/selectors";
 
-interface ChannelVideo {
+type Platform = "youtube" | "tiktok" | "facebook";
+
+interface SourceVideo {
   id: string;
+  platform: Platform;
   title: string;
   url: string;
-  thumbnailUrl: string;
+  thumbnailUrl: string | null;
   publishedAt: string | null;
 }
 
 type LayoutMode = "compact" | "wide";
 type LoadState = "idle" | "loading" | "loaded" | "error";
+
+const platformLabel: Record<Platform, string> = {
+  youtube: "YouTube",
+  tiktok: "TikTok",
+  facebook: "Facebook",
+};
 
 function normalizeUrl(raw: string) {
   const trimmed = raw.trim();
@@ -29,8 +38,16 @@ function normalizeUrl(raw: string) {
   return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
 }
 
-function youtubeEmbedUrl(videoId: string) {
-  return `https://www.youtube-nocookie.com/embed/${videoId}?playsinline=1&rel=0`;
+function embedUrlFor(video: SourceVideo) {
+  if (video.platform === "youtube") {
+    return `https://www.youtube-nocookie.com/embed/${video.id}?playsinline=1&rel=0`;
+  }
+  if (video.platform === "tiktok") {
+    return `https://www.tiktok.com/player/v1/${video.id}`;
+  }
+  return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(
+    video.url,
+  )}&show_text=false`;
 }
 
 function formatPublished(value: string | null) {
@@ -51,34 +68,42 @@ function wallClasses(mode: LayoutMode) {
   return "grid gap-4 sm:grid-cols-2 xl:grid-cols-3";
 }
 
+function videoKey(video: SourceVideo) {
+  return `${video.platform}:${video.id}`;
+}
+
 export default function ToolPage() {
   const { profile, ready } = useRequireProfile();
   const [rawUrl, setRawUrl] = useState("");
   const [submittedUrl, setSubmittedUrl] = useState("");
-  const [videos, setVideos] = useState<ChannelVideo[]>([]);
-  const [loadedVideoIds, setLoadedVideoIds] = useState<string[]>([]);
+  const [videos, setVideos] = useState<SourceVideo[]>([]);
+  const [loadedVideoKeys, setLoadedVideoKeys] = useState<string[]>([]);
   const [layoutMode, setLayoutMode] = useState<LayoutMode>("compact");
   const [loadState, setLoadState] = useState<LoadState>("idle");
   const [error, setError] = useState<string | null>(null);
 
   const loadedCount = useMemo(
-    () => videos.filter((video) => loadedVideoIds.includes(video.id)).length,
-    [loadedVideoIds, videos],
+    () => videos.filter((video) => loadedVideoKeys.includes(videoKey(video))).length,
+    [loadedVideoKeys, videos],
+  );
+  const platforms = useMemo(
+    () => [...new Set(videos.map((video) => video.platform))],
+    [videos],
   );
 
   if (!ready || !profile) return <FullScreenLoading />;
   if (!isAdminProfile(profile)) return <AdminOnlyNotice />;
 
-  async function loadChannelVideos() {
+  async function loadSourceVideos() {
     const nextUrl = normalizeUrl(rawUrl);
     if (!nextUrl) {
-      setError("Nhập link channel YouTube trước.");
+      setError("Nhập link channel/profile/page trước.");
       return;
     }
 
     setSubmittedUrl(nextUrl);
     setVideos([]);
-    setLoadedVideoIds([]);
+    setLoadedVideoKeys([]);
     setError(null);
     setLoadState("loading");
 
@@ -87,7 +112,7 @@ export default function ToolPage() {
         `/api/tool/channel-videos?url=${encodeURIComponent(nextUrl)}`,
       );
       const payload = (await response.json()) as {
-        videos?: ChannelVideo[];
+        videos?: SourceVideo[];
         error?: string;
       };
 
@@ -99,7 +124,9 @@ export default function ToolPage() {
       setVideos(nextVideos);
       setLoadState("loaded");
       if (nextVideos.length === 0) {
-        setError("Không tìm thấy video public nào trong channel này.");
+        setError(
+          "Không tìm thấy video public nào. TikTok/Facebook có thể chặn profile riêng tư hoặc nội dung cần đăng nhập.",
+        );
       }
     } catch (loadError) {
       setLoadState("error");
@@ -111,14 +138,15 @@ export default function ToolPage() {
     }
   }
 
-  function loadPlayer(videoId: string) {
-    setLoadedVideoIds((current) =>
-      current.includes(videoId) ? current : [...current, videoId],
+  function loadPlayer(video: SourceVideo) {
+    const key = videoKey(video);
+    setLoadedVideoKeys((current) =>
+      current.includes(key) ? current : [...current, key],
     );
   }
 
   function loadAllPlayers() {
-    setLoadedVideoIds(videos.map((video) => video.id));
+    setLoadedVideoKeys(videos.map(videoKey));
   }
 
   return (
@@ -130,31 +158,36 @@ export default function ToolPage() {
           </Link>
           <h1 className="mt-1 text-2xl font-bold">Tool kiểm tra video channel</h1>
           <p className="max-w-3xl text-muted">
-            Dán link channel YouTube, tool sẽ tải danh sách video public và cho mở
-            player ngay trên page để kiểm tra nhanh.
+            Dán link YouTube channel, TikTok profile hoặc Facebook page để tải video
+            public và mở player trực tiếp trên page.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Badge tone="primary">{videos.length} video</Badge>
           <Badge tone="neutral">{loadedCount} player đã tải</Badge>
+          {platforms.map((platform) => (
+            <Badge key={platform} tone="neutral">
+              {platformLabel[platform]}
+            </Badge>
+          ))}
         </div>
       </div>
 
       <Card className="mb-5">
-        <CardTitle>Link channel</CardTitle>
+        <CardTitle>Link nguồn</CardTitle>
         <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_auto]">
           <input
             value={rawUrl}
             onChange={(event) => setRawUrl(event.target.value)}
             onKeyDown={(event) => {
-              if (event.key === "Enter") void loadChannelVideos();
+              if (event.key === "Enter") void loadSourceVideos();
             }}
-            placeholder="https://www.youtube.com/@channel | https://www.youtube.com/channel/UC..."
+            placeholder="youtube.com/@channel | tiktok.com/@user | facebook.com/page"
             className="focus-ring h-11 w-full rounded-xl border border-border bg-surface px-3 font-mono text-sm outline-none"
           />
           <Button
             type="button"
-            onClick={() => void loadChannelVideos()}
+            onClick={() => void loadSourceVideos()}
             disabled={loadState === "loading"}
           >
             <Icon name="play" size={16} />
@@ -204,9 +237,9 @@ export default function ToolPage() {
               <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-primary/10 text-primary">
                 <Icon name="play" size={20} />
               </div>
-              <p className="font-semibold">Nhập link channel để tải video.</p>
+              <p className="font-semibold">Nhập link nguồn để tải video.</p>
               <p className="mt-1 text-sm text-muted">
-                Hỗ trợ dạng @handle và /channel/UC...
+                Hỗ trợ YouTube, TikTok và Facebook public.
               </p>
             </div>
           </div>
@@ -217,7 +250,7 @@ export default function ToolPage() {
           <div className="mt-4 grid min-h-[28rem] place-items-center rounded-xl border border-border bg-surface/60 p-8 text-center">
             <div>
               <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-              <p className="font-semibold">Đang đọc video từ channel...</p>
+              <p className="font-semibold">Đang đọc video từ nguồn...</p>
               <p className="mt-1 max-w-md break-all text-sm text-muted">
                 {submittedUrl}
               </p>
@@ -227,14 +260,15 @@ export default function ToolPage() {
       ) : videos.length > 0 ? (
         <div className={wallClasses(layoutMode)}>
           {videos.map((video, index) => {
-            const loaded = loadedVideoIds.includes(video.id);
+            const loaded = loadedVideoKeys.includes(videoKey(video));
             return (
               <div
-                key={video.id}
+                key={videoKey(video)}
                 className="overflow-hidden rounded-xl border border-border bg-card shadow-[var(--shadow-md)]"
               >
                 <div className="flex min-h-14 items-center gap-3 border-b border-border bg-surface/80 px-3 py-2">
                   <Badge tone="neutral">#{index + 1}</Badge>
+                  <Badge tone="primary">{platformLabel[video.platform]}</Badge>
                   <div className="min-w-0">
                     <p className="line-clamp-1 text-sm font-semibold">{video.title}</p>
                     <p className="text-xs text-muted">{formatPublished(video.publishedAt)}</p>
@@ -243,26 +277,33 @@ export default function ToolPage() {
                 <div className="relative aspect-video bg-black">
                   {loaded ? (
                     <iframe
-                      src={youtubeEmbedUrl(video.id)}
+                      src={embedUrlFor(video)}
                       title={video.title}
                       className="h-full w-full"
-                      allow="accelerometer; encrypted-media; picture-in-picture; web-share"
+                      allow="accelerometer; autoplay; encrypted-media; picture-in-picture; web-share"
                       allowFullScreen
                       loading="lazy"
-                      style={{ border: 0 }}
+                      scrolling="no"
+                      style={{ border: 0, overflow: "hidden" }}
                     />
                   ) : (
                     <button
                       type="button"
-                      onClick={() => loadPlayer(video.id)}
+                      onClick={() => loadPlayer(video)}
                       className="group absolute inset-0 block w-full overflow-hidden text-left"
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={video.thumbnailUrl}
-                        alt=""
-                        className="h-full w-full object-cover opacity-85 transition group-hover:scale-[1.02] group-hover:opacity-100"
-                      />
+                      {video.thumbnailUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={video.thumbnailUrl}
+                          alt=""
+                          className="h-full w-full object-cover opacity-85 transition group-hover:scale-[1.02] group-hover:opacity-100"
+                        />
+                      ) : (
+                        <span className="grid h-full w-full place-items-center bg-surface text-sm font-semibold text-white/70">
+                          {platformLabel[video.platform]}
+                        </span>
+                      )}
                       <span className="absolute inset-0 bg-black/30" />
                       <span className="absolute left-1/2 top-1/2 grid h-14 w-14 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white text-fg shadow-[var(--shadow-md)]">
                         <Icon name="play" size={22} />
@@ -277,14 +318,14 @@ export default function ToolPage() {
                     rel="noreferrer"
                     className="min-w-0 truncate text-sm font-semibold text-primary hover:underline"
                   >
-                    Mở trên YouTube
+                    Mở trên {platformLabel[video.platform]}
                   </a>
                   {!loaded && (
                     <Button
                       type="button"
                       variant="secondary"
                       size="sm"
-                      onClick={() => loadPlayer(video.id)}
+                      onClick={() => loadPlayer(video)}
                     >
                       <Icon name="play" size={14} />
                       Tải player
@@ -301,7 +342,7 @@ export default function ToolPage() {
           <div className="mt-4 rounded-xl border border-border bg-surface/60 p-8 text-center">
             <p className="font-semibold">Chưa tìm thấy video public để hiển thị.</p>
             <p className="mt-1 text-sm text-muted">
-              Thử dùng link channel dạng @handle hoặc /channel/UC...
+              Thử link profile/page public hoặc link video trực tiếp.
             </p>
           </div>
         </Card>

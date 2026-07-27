@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { useData } from "@/lib/store/DataProvider";
 import {
@@ -134,39 +135,38 @@ function MountainRoadmap({
         </span>
       </div>
 
-      <div className="relative mt-4 h-[18.5rem] overflow-hidden rounded-3xl border border-border bg-[linear-gradient(180deg,#dff4ff_0%,#eef0ff_52%,#e8f7f1_100%)]">
-        <div className="absolute right-8 top-7 h-14 w-14 rounded-full bg-[#ffd98b] shadow-[0_0_44px_rgba(245,147,49,0.35)]" />
-        <div className="absolute left-8 top-9 h-3 w-24 rounded-full bg-white/70 blur-[1px]" />
-        <div className="absolute right-28 top-16 h-2.5 w-20 rounded-full bg-white/65 blur-[1px]" />
-        <div
-          className="absolute inset-x-0 bottom-0 h-[33%] bg-[linear-gradient(180deg,#d7eee9,#f5fbf8)]"
-          style={{ clipPath: "polygon(0 100%, 0 45%, 15% 58%, 30% 50%, 44% 64%, 58% 51%, 73% 63%, 100% 44%, 100% 100%)" }}
+      <div className="relative mt-4 h-[18.5rem] overflow-hidden rounded-3xl border border-border bg-surface shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]">
+        <Image
+          src="/progress/fuji-roadmap.png"
+          alt=""
+          fill
+          priority
+          sizes="(min-width: 1024px) 58vw, 100vw"
+          className="object-cover"
+          aria-hidden="true"
         />
-        <div
-          className="absolute inset-x-7 bottom-0 h-[82%] bg-[linear-gradient(130deg,#cec2ff_0%,#ded8ff_48%,#dcecff_100%)]"
-          style={{ clipPath: "polygon(0 100%, 50% 8%, 100% 100%)" }}
-        />
-        <div
-          className="absolute bottom-0 left-1/2 h-[80%] w-1/2 bg-[linear-gradient(125deg,rgba(117,104,220,0.18),rgba(81,126,190,0.08))]"
-          style={{ clipPath: "polygon(0 10%, 100% 100%, 0 100%)" }}
-        />
-        <div
-          className="absolute left-1/2 top-[7%] h-24 w-40 -translate-x-1/2 bg-white/95"
-          style={{ clipPath: "polygon(50% 0, 77% 72%, 62% 58%, 52% 86%, 41% 57%, 24% 72%)" }}
-        />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0)_44%,rgba(255,255,255,0.42)_100%)] dark:bg-[linear-gradient(180deg,rgba(14,15,28,0.06)_0%,rgba(14,15,28,0.1)_46%,rgba(14,15,28,0.45)_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(75%_65%_at_12%_82%,rgba(255,255,255,0.72),rgba(255,255,255,0.08)_56%,transparent_78%)] dark:bg-[radial-gradient(75%_65%_at_12%_82%,rgba(14,15,28,0.42),rgba(14,15,28,0.08)_56%,transparent_78%)]" />
         <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
           <path
             d="M10 82 C17 80, 21 77, 27 72 S38 63, 42 59 S51 48, 53 43 S60 31, 55 25 S52 18, 50 15"
             fill="none"
-            stroke="currentColor"
-            strokeDasharray="2.4 3.4"
+            stroke="rgba(255,255,255,0.86)"
             strokeLinecap="round"
-            strokeWidth="1.55"
-            className="text-primary/55"
+            strokeWidth="3.2"
+          />
+          <path
+            d="M10 82 C17 80, 21 77, 27 72 S38 63, 42 59 S51 48, 53 43 S60 31, 55 25 S52 18, 50 15"
+            fill="none"
+            stroke="currentColor"
+            strokeDasharray="2.8 3.2"
+            strokeLinecap="round"
+            strokeWidth="1.7"
+            className="text-primary/70"
           />
         </svg>
 
-        <div className="absolute left-5 top-5 flex items-center gap-2 rounded-2xl bg-card/90 px-3 py-2 text-sm font-extrabold shadow-sm backdrop-blur">
+        <div className="absolute left-5 top-5 flex items-center gap-2 rounded-2xl border border-white/55 bg-card/85 px-3 py-2 text-sm font-extrabold shadow-[var(--shadow-sm)] backdrop-blur-md">
           <Icon name="trophy" size={16} className="text-[var(--c-amber)]" />
           富士山
         </div>
@@ -177,7 +177,7 @@ function MountainRoadmap({
           <div className="grid h-11 w-11 place-items-center rounded-2xl border border-white/40 brand-gradient text-white shadow-[var(--shadow-glow)]">
             <Icon name="star" size={18} filled />
           </div>
-          <span className="-ml-5 mt-2 block rounded-full bg-card/95 px-2.5 py-1 text-[11px] font-bold text-primary shadow-sm">
+          <span className="-ml-5 mt-2 block rounded-full border border-white/60 bg-card/95 px-2.5 py-1 text-[11px] font-bold text-primary shadow-sm backdrop-blur">
             現在地
           </span>
         </div>
@@ -191,7 +191,7 @@ function MountainRoadmap({
             <div
               key={item.level}
               className={[
-                "flex min-h-[2.9rem] items-center gap-1.5 rounded-xl border px-1.5 py-1",
+                "flex min-h-[3.05rem] items-center gap-1.5 rounded-xl border px-2 py-1.5 transition-colors",
                 current
                   ? "border-primary bg-primary/10"
                   : reached

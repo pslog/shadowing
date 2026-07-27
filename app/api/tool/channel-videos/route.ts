@@ -2,16 +2,19 @@ import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-interface ChannelVideo {
+type Platform = "youtube" | "tiktok" | "facebook";
+
+interface SourceVideo {
   id: string;
+  platform: Platform;
   title: string;
   url: string;
-  thumbnailUrl: string;
+  thumbnailUrl: string | null;
   publishedAt: string | null;
 }
 
-interface ScrapedVideos {
-  videos: ChannelVideo[];
+interface YouTubeScrape {
+  videos: SourceVideo[];
   continuations: string[];
 }
 
@@ -21,7 +24,7 @@ function normalizeUrl(raw: string) {
   return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
 }
 
-function jsonStringValue(raw: string) {
+function decodeJsonString(raw: string) {
   try {
     return JSON.parse(`"${raw.replace(/"/g, '\\"')}"`) as string;
   } catch {
@@ -29,11 +32,29 @@ function jsonStringValue(raw: string) {
   }
 }
 
+function decodeHtml(raw: string) {
+  return raw
+    .replace(/\\u0026/g, "&")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+}
+
 function textBetween(source: string, patterns: RegExp[]) {
   for (const pattern of patterns) {
     const match = source.match(pattern);
-    if (match?.[1]) return jsonStringValue(match[1]);
+    if (match?.[1]) return decodeHtml(decodeJsonString(match[1]));
   }
+  return null;
+}
+
+function detectPlatform(url: URL): Platform | null {
+  const host = url.hostname.replace(/^www\./, "");
+  if (host.includes("youtube.com") || host.includes("youtu.be")) return "youtube";
+  if (host.includes("tiktok.com")) return "tiktok";
+  if (host.includes("facebook.com") || host.includes("fb.watch")) return "facebook";
   return null;
 }
 
@@ -91,7 +112,7 @@ function simpleText(value: unknown): string | null {
   return text.simpleText ?? text.runs?.map((run) => run.text ?? "").join("") ?? null;
 }
 
-function thumbnailUrl(value: unknown, videoId: string) {
+function youtubeThumbnail(value: unknown, videoId: string) {
   if (!value || typeof value !== "object") {
     return `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
   }
@@ -103,8 +124,8 @@ function thumbnailUrl(value: unknown, videoId: string) {
   );
 }
 
-function collectVideosFromJson(root: unknown): ScrapedVideos {
-  const videos = new Map<string, ChannelVideo>();
+function collectYouTubeVideosFromJson(root: unknown): YouTubeScrape {
+  const videos = new Map<string, SourceVideo>();
   const continuations = new Set<string>();
 
   function visit(node: unknown) {
@@ -130,9 +151,10 @@ function collectVideosFromJson(root: unknown): ScrapedVideos {
     if (videoRenderer?.videoId && !videos.has(videoRenderer.videoId)) {
       videos.set(videoRenderer.videoId, {
         id: videoRenderer.videoId,
+        platform: "youtube",
         title: simpleText(videoRenderer.title) ?? videoRenderer.videoId,
         url: `https://www.youtube.com/watch?v=${videoRenderer.videoId}`,
-        thumbnailUrl: thumbnailUrl(videoRenderer.thumbnail, videoRenderer.videoId),
+        thumbnailUrl: youtubeThumbnail(videoRenderer.thumbnail, videoRenderer.videoId),
         publishedAt: simpleText(videoRenderer.publishedTimeText),
       });
     }
@@ -166,7 +188,26 @@ function collectVideosFromJson(root: unknown): ScrapedVideos {
   };
 }
 
-function videoIdFromUrl(url: URL) {
+async function fetchText(url: string, platform: string) {
+  const response = await fetch(url, {
+    cache: "no-store",
+    headers: {
+      accept:
+        "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "accept-language": "en-US,en;q=0.9",
+      "user-agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`${platform} returned ${response.status}`);
+  }
+
+  return response.text();
+}
+
+function youtubeVideoIdFromUrl(url: URL) {
   if (url.hostname.includes("youtu.be")) {
     return url.pathname.split("/").filter(Boolean)[0] ?? null;
   }
@@ -176,7 +217,7 @@ function videoIdFromUrl(url: URL) {
   return url.searchParams.get("v");
 }
 
-function channelPageUrl(rawUrl: string) {
+function youtubeChannelPageUrl(rawUrl: string) {
   const url = new URL(rawUrl);
   const parts = url.pathname.split("/").filter(Boolean);
 
@@ -200,49 +241,34 @@ function channelPageUrl(rawUrl: string) {
   };
 }
 
-async function fetchText(url: string) {
-  const response = await fetch(url, {
-    cache: "no-store",
-    headers: {
-      "accept-language": "en-US,en;q=0.9",
-      "user-agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36",
-    },
-  });
+function parseYouTubeRssVideos(xml: string): SourceVideo[] {
+  const entries = xml.match(/<entry>[\s\S]*?<\/entry>/g) ?? [];
+  const videos: SourceVideo[] = [];
 
-  if (!response.ok) {
-    throw new Error(`YouTube returned ${response.status}`);
+  for (const entry of entries) {
+    const id = entry.match(/<yt:videoId>([^<]+)<\/yt:videoId>/)?.[1];
+    if (!id) continue;
+
+    const title = entry.match(/<media:title>([^<]+)<\/media:title>/)?.[1] ?? id;
+    const publishedAt = entry.match(/<published>([^<]+)<\/published>/)?.[1] ?? null;
+    const thumbnailUrl =
+      entry.match(/<media:thumbnail url="([^"]+)"/)?.[1] ??
+      `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
+
+    videos.push({
+      id,
+      platform: "youtube",
+      title: decodeHtml(title),
+      url: `https://www.youtube.com/watch?v=${id}`,
+      thumbnailUrl,
+      publishedAt,
+    });
   }
 
-  return response.text();
+  return videos;
 }
 
-function parseRssVideos(xml: string): ChannelVideo[] {
-  const entries = xml.match(/<entry>[\s\S]*?<\/entry>/g) ?? [];
-
-  return entries
-    .map((entry) => {
-      const id = entry.match(/<yt:videoId>([^<]+)<\/yt:videoId>/)?.[1];
-      if (!id) return null;
-
-      const title = entry.match(/<media:title>([^<]+)<\/media:title>/)?.[1] ?? id;
-      const publishedAt = entry.match(/<published>([^<]+)<\/published>/)?.[1] ?? null;
-      const thumbnailUrl =
-        entry.match(/<media:thumbnail url="([^"]+)"/)?.[1] ??
-        `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
-
-      return {
-        id,
-        title: title.replace(/&amp;/g, "&").replace(/&quot;/g, '"'),
-        url: `https://www.youtube.com/watch?v=${id}`,
-        thumbnailUrl,
-        publishedAt,
-      };
-    })
-    .filter((video): video is ChannelVideo => Boolean(video));
-}
-
-function parseHtmlVideos(html: string) {
+function parseYouTubeHtmlVideos(html: string): SourceVideo[] {
   const videoIds = [...html.matchAll(/"videoId":"([A-Za-z0-9_-]{11})"/g)].map(
     (match) => match[1],
   );
@@ -263,6 +289,7 @@ function parseHtmlVideos(html: string) {
 
     return {
       id,
+      platform: "youtube",
       title,
       url: `https://www.youtube.com/watch?v=${id}`,
       thumbnailUrl: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
@@ -271,16 +298,16 @@ function parseHtmlVideos(html: string) {
   });
 }
 
-async function fetchContinuationVideos(
+async function fetchYouTubeContinuationVideos(
   apiKey: string | null,
   clientVersion: string | null,
   initialTokens: string[],
 ) {
   if (!apiKey || !clientVersion || initialTokens.length === 0) {
-    return [] satisfies ChannelVideo[];
+    return [] satisfies SourceVideo[];
   }
 
-  const videos: ChannelVideo[] = [];
+  const videos: SourceVideo[] = [];
   const queue = [...initialTokens];
   const seenTokens = new Set<string>();
   const maxPages = 50;
@@ -314,7 +341,7 @@ async function fetchContinuationVideos(
 
     if (!response.ok) break;
 
-    const scraped = collectVideosFromJson(await response.json());
+    const scraped = collectYouTubeVideosFromJson(await response.json());
     videos.push(...scraped.videos);
     for (const nextToken of scraped.continuations) {
       if (!seenTokens.has(nextToken)) queue.push(nextToken);
@@ -324,53 +351,52 @@ async function fetchContinuationVideos(
   return videos;
 }
 
-function mergeVideos(primary: ChannelVideo[], secondary: ChannelVideo[]) {
-  const byId = new Map<string, ChannelVideo>();
-  for (const video of [...primary, ...secondary]) {
-    const current = byId.get(video.id);
-    byId.set(video.id, {
+function mergeVideos(...groups: SourceVideo[][]) {
+  const byKey = new Map<string, SourceVideo>();
+  for (const video of groups.flat()) {
+    const key = `${video.platform}:${video.id}`;
+    const current = byKey.get(key);
+    byKey.set(key, {
       ...video,
       title: current?.title && current.title !== current.id ? current.title : video.title,
       publishedAt: current?.publishedAt ?? video.publishedAt,
       thumbnailUrl: current?.thumbnailUrl ?? video.thumbnailUrl,
     });
   }
-  return [...byId.values()];
+  return [...byKey.values()];
 }
 
-async function resolveChannel(rawUrl: string) {
+async function resolveYouTube(rawUrl: string) {
   const target = new URL(normalizeUrl(rawUrl));
-  if (!target.hostname.includes("youtube.com") && !target.hostname.includes("youtu.be")) {
-    throw new Error("Hiện chỉ hỗ trợ link YouTube channel.");
-  }
-
-  const directVideoId = videoIdFromUrl(target);
+  const directVideoId = youtubeVideoIdFromUrl(target);
   if (directVideoId) {
     return {
       videos: [
         {
           id: directVideoId,
+          platform: "youtube" as const,
           title: directVideoId,
           url: `https://www.youtube.com/watch?v=${directVideoId}`,
           thumbnailUrl: `https://i.ytimg.com/vi/${directVideoId}/hqdefault.jpg`,
           publishedAt: null,
         },
       ],
-      source: "video",
+      source: "youtube-video",
+      platform: "youtube",
     };
   }
 
-  const channel = channelPageUrl(target.href);
-  if (!channel) throw new Error("Không đọc được link channel YouTube.");
+  const channel = youtubeChannelPageUrl(target.href);
+  if (!channel) throw new Error("Không đọc được link YouTube channel.");
 
-  const html = await fetchText(channel.videosUrl);
+  const html = await fetchText(channel.videosUrl, "YouTube");
   const initialData =
     parseJsonObjectFrom(html, "var ytInitialData =") ??
     parseJsonObjectFrom(html, "window[\"ytInitialData\"] =");
-  const scrapedInitial = collectVideosFromJson(initialData);
+  const scrapedInitial = collectYouTubeVideosFromJson(initialData);
   const apiKey = textBetween(html, [/"INNERTUBE_API_KEY":"([^"]+)"/]);
   const clientVersion = textBetween(html, [/"INNERTUBE_CLIENT_VERSION":"([^"]+)"/]);
-  const continuationVideos = await fetchContinuationVideos(
+  const continuationVideos = await fetchYouTubeContinuationVideos(
     apiKey,
     clientVersion,
     scrapedInitial.continuations,
@@ -382,33 +408,257 @@ async function resolveChannel(rawUrl: string) {
       /"externalId":"(UC[A-Za-z0-9_-]+)"/,
       /<meta itemprop="channelId" content="(UC[A-Za-z0-9_-]+)">/,
     ]);
-
-  const htmlVideos = parseHtmlVideos(html);
   const rssVideos = channelId
-    ? parseRssVideos(
-        await fetchText(`https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`),
+    ? parseYouTubeRssVideos(
+        await fetchText(
+          `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`,
+          "YouTube RSS",
+        ),
       )
     : [];
 
   return {
-    videos: mergeVideos(rssVideos, [
-      ...scrapedInitial.videos,
-      ...continuationVideos,
-      ...htmlVideos,
-    ]),
-    source: channelId ? "channel" : "channel-page",
+    videos: mergeVideos(
+      rssVideos,
+      scrapedInitial.videos,
+      continuationVideos,
+      parseYouTubeHtmlVideos(html),
+    ),
+    source: channelId ? "youtube-channel" : "youtube-channel-page",
+    platform: "youtube",
   };
+}
+
+function tiktokVideoIdFromUrl(url: URL) {
+  return url.pathname.match(/\/video\/(\d+)/)?.[1] ?? null;
+}
+
+function tiktokHandleFromUrl(url: URL) {
+  return (
+    url.pathname
+    .split("/")
+    .filter(Boolean)
+    .find((part) => part.startsWith("@"))
+      ?.replace(/^@/, "") ?? null
+  );
+}
+
+function parseTikTokVideos(html: string, handle: string | null): SourceVideo[] {
+  const videos = new Map<string, SourceVideo>();
+  const ids = [
+    ...html.matchAll(/"id":"(\d{15,25})"/g),
+    ...html.matchAll(/\\"id\\":\\"(\d{15,25})\\"/g),
+    ...html.matchAll(/\/video\/(\d{15,25})/g),
+  ].map((match) => match[1]);
+
+  for (const id of [...new Set(ids)]) {
+    const index = Math.max(
+      html.indexOf(`"id":"${id}"`),
+      html.indexOf(`\\"id\\":\\"${id}\\"`),
+      html.indexOf(`/video/${id}`),
+    );
+    const nearby = index >= 0 ? html.slice(Math.max(0, index - 2000), index + 5000) : "";
+    const title =
+      textBetween(nearby, [
+        /"desc":"([^"]*)"/,
+        /\\"desc\\":\\"([^"]*)\\"/,
+        /"shareTitle":"([^"]*)"/,
+      ]) ?? id;
+    const thumbnailUrl = textBetween(nearby, [
+      /"cover":"([^"]+)"/,
+      /\\"cover\\":\\"([^"]+)\\"/,
+      /"originCover":"([^"]+)"/,
+      /\\"originCover\\":\\"([^"]+)\\"/,
+    ]);
+    const author =
+      textBetween(nearby, [
+        /"uniqueId":"([^"]+)"/,
+        /\\"uniqueId\\":\\"([^"]+)\\"/,
+      ]) ?? handle;
+
+    videos.set(id, {
+      id,
+      platform: "tiktok",
+      title: title || id,
+      url: author
+        ? `https://www.tiktok.com/@${author}/video/${id}`
+        : `https://www.tiktok.com/video/${id}`,
+      thumbnailUrl,
+      publishedAt: null,
+    });
+  }
+
+  return [...videos.values()];
+}
+
+async function resolveTikTok(rawUrl: string) {
+  const target = new URL(normalizeUrl(rawUrl));
+  const directVideoId = tiktokVideoIdFromUrl(target);
+  if (directVideoId) {
+    return {
+      videos: [
+        {
+          id: directVideoId,
+          platform: "tiktok" as const,
+          title: directVideoId,
+          url: target.href,
+          thumbnailUrl: null,
+          publishedAt: null,
+        },
+      ],
+      source: "tiktok-video",
+      platform: "tiktok",
+    };
+  }
+
+  const html = await fetchText(target.href, "TikTok");
+  const videos = parseTikTokVideos(html, tiktokHandleFromUrl(target));
+  return {
+    videos,
+    source: "tiktok-profile",
+    platform: "tiktok",
+  };
+}
+
+function facebookVideoIdFromUrl(url: URL) {
+  if (url.pathname.includes("/reel/") || url.pathname.includes("/reels/")) {
+    return url.pathname.match(/\/reels?\/(\d+)/)?.[1] ?? null;
+  }
+  if (url.pathname.includes("/videos/")) {
+    return url.pathname.match(/\/videos\/(?:[^/]+\/)?(\d+)/)?.[1] ?? null;
+  }
+  return url.searchParams.get("v");
+}
+
+function facebookVideosUrl(url: URL) {
+  if (
+    url.searchParams.get("v") ||
+    url.pathname.includes("/videos/") ||
+    url.pathname.includes("/reel/")
+  ) {
+    return url.href;
+  }
+
+  const cleanPath = url.pathname.replace(/\/$/, "");
+  return `${url.origin}${cleanPath}/videos`;
+}
+
+function parseFacebookVideos(html: string, fallbackUrl: string): SourceVideo[] {
+  const videos = new Map<string, SourceVideo>();
+  const pageTitle =
+    textBetween(html, [
+      /<meta property="og:title" content="([^"]+)"/,
+      /<title>([^<]+)<\/title>/,
+    ]) ?? "Facebook video";
+  const pageThumbnail = textBetween(html, [
+    /<meta property="og:image" content="([^"]+)"/,
+  ]);
+
+  const ids = [
+    ...html.matchAll(/"video_id":"(\d+)"/g),
+    ...html.matchAll(/\\"video_id\\":\\"(\d+)\\"/g),
+    ...html.matchAll(/\/videos\/(\d+)/g),
+    ...html.matchAll(/\/watch\/\?v=(\d+)/g),
+    ...html.matchAll(/\/reels?\/(\d+)/g),
+  ].map((match) => match[1]);
+
+  for (const id of [...new Set(ids)]) {
+    const index = html.indexOf(id);
+    const nearby = index >= 0 ? html.slice(Math.max(0, index - 2000), index + 4000) : "";
+    const title =
+      textBetween(nearby, [
+        /"title":"([^"]+)"/,
+        /\\"title\\":\\"([^"]+)\\"/,
+        /"name":"([^"]+)"/,
+      ]) ?? pageTitle;
+    const thumbnailUrl =
+      textBetween(nearby, [
+        /"thumbnailImage":\{"uri":"([^"]+)"/,
+        /\\"thumbnailImage\\":\{\\"uri\\":\\"([^"]+)\\"/,
+        /"preferred_thumbnail":\{"image":\{"uri":"([^"]+)"/,
+      ]) ?? pageThumbnail;
+
+    videos.set(id, {
+      id,
+      platform: "facebook",
+      title: title || id,
+      url: `https://www.facebook.com/watch/?v=${id}`,
+      thumbnailUrl,
+      publishedAt: null,
+    });
+  }
+
+  if (videos.size === 0) {
+    const directId = textBetween(fallbackUrl, [
+      /[?&]v=(\d+)/,
+      /\/videos\/(\d+)/,
+      /\/reels?\/(\d+)/,
+    ]);
+    if (directId) {
+      videos.set(directId, {
+        id: directId,
+        platform: "facebook",
+        title: pageTitle,
+        url: fallbackUrl,
+        thumbnailUrl: pageThumbnail,
+        publishedAt: null,
+      });
+    }
+  }
+
+  return [...videos.values()];
+}
+
+async function resolveFacebook(rawUrl: string) {
+  const target = new URL(normalizeUrl(rawUrl));
+  const directVideoId = facebookVideoIdFromUrl(target);
+  const html = await fetchText(facebookVideosUrl(target), "Facebook");
+  const videos = parseFacebookVideos(html, target.href);
+
+  if (directVideoId && !videos.some((video) => video.id === directVideoId)) {
+    videos.unshift({
+      id: directVideoId,
+      platform: "facebook",
+      title:
+        textBetween(html, [
+          /<meta property="og:title" content="([^"]+)"/,
+          /<title>([^<]+)<\/title>/,
+        ]) ?? directVideoId,
+      url: target.href,
+      thumbnailUrl: textBetween(html, [
+        /<meta property="og:image" content="([^"]+)"/,
+      ]),
+      publishedAt: null,
+    });
+  }
+
+  return {
+    videos,
+    source: directVideoId ? "facebook-video" : "facebook-page",
+    platform: "facebook",
+  };
+}
+
+async function resolveSource(rawUrl: string) {
+  const target = new URL(normalizeUrl(rawUrl));
+  const platform = detectPlatform(target);
+
+  if (platform === "youtube") return resolveYouTube(target.href);
+  if (platform === "tiktok") return resolveTikTok(target.href);
+  if (platform === "facebook") return resolveFacebook(target.href);
+
+  throw new Error("Hiện hỗ trợ YouTube, TikTok và Facebook.");
 }
 
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
-    const rawChannelUrl = url.searchParams.get("url") ?? "";
-    if (!rawChannelUrl.trim()) {
-      return NextResponse.json({ error: "Thiếu link channel." }, { status: 400 });
+    const rawSourceUrl = url.searchParams.get("url") ?? "";
+    if (!rawSourceUrl.trim()) {
+      return NextResponse.json({ error: "Thiếu link nguồn." }, { status: 400 });
     }
 
-    const result = await resolveChannel(rawChannelUrl);
+    const result = await resolveSource(rawSourceUrl);
     return NextResponse.json(result);
   } catch (error) {
     return NextResponse.json(
