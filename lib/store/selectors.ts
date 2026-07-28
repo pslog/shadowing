@@ -80,6 +80,12 @@ export function lessonById(state: AppState, id: string): Lesson | undefined {
 
 /** Resolve a course by slug, falling back to id (keeps old UUID links working). */
 export function courseBySlug(state: AppState, key: string): Course | undefined {
+  if (key === "jlpt-n2-kai") {
+    return (
+      (state.courses ?? []).find((c) => c.slug === "jlpt-n2-choukai") ??
+      courseById(state, "00000000-0000-0000-0000-0000000c000f")
+    );
+  }
   return (state.courses ?? []).find((c) => c.slug === key) ?? courseById(state, key);
 }
 

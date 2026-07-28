@@ -140,11 +140,13 @@ export default function CoursePage() {
 
             {next && (
               <Link
-                href={lessonHref(next)}
+                href={showN2Filters ? "#n2-filter" : lessonHref(next)}
                 className={buttonClasses("primary", "md", "mt-4")}
               >
-                <Icon name={allDone ? "retry" : "arrow-right"} size={16} />
-                {allDone
+                <Icon name={showN2Filters ? "target" : allDone ? "retry" : "arrow-right"} size={16} />
+                {showN2Filters
+                  ? "条件を選択する"
+                  : allDone
                   ? "もう一度練習"
                   : stats.completed > 0
                     ? "続きから"

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useData } from "@/lib/store/DataProvider";
 import {
   bestAttemptForSentence,
@@ -33,6 +34,7 @@ import { Badge } from "@/components/ui/badge";
 import { ProgressBar } from "@/components/ui/progress";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { AudioRecorder } from "./AudioRecorder";
+import { isN2Course } from "@/lib/n2-course";
 import { ScoreResult } from "./ScoreResult";
 import { LessonReview } from "./LessonReview";
 import { LessonVocabulary } from "./LessonVocabulary";
@@ -396,6 +398,7 @@ function InlineScore({
 
 export function LessonPlayer({ lessonId }: { lessonId: string }) {
   const { state, recordAttempt } = useData();
+  const searchParams = useSearchParams();
   const [index, setIndex] = useState(0);
   const [fresh, setFresh] = useState<FreshResult | null>(null);
   const [missionAlert, setMissionAlert] = useState<AttemptOutcome | null>(null);
@@ -431,9 +434,15 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
   const parentCourse = lesson.course_id
     ? courseById(state, lesson.course_id)
     : undefined;
-  const courseHref = parentCourse
+  const baseCourseHref = parentCourse
     ? courseHrefOf(parentCourse)
     : `/courses/${lesson.course_id ?? UNCATEGORIZED_COURSE_ID}`;
+  const fromMondai = searchParams.get("fromMondai");
+  const fromExam = searchParams.get("fromExam");
+  const courseHref =
+    isN2Course(parentCourse) && fromMondai && fromExam
+      ? `${baseCourseHref}?mondai=${encodeURIComponent(fromMondai)}&exam=${encodeURIComponent(fromExam)}#n2-filter`
+      : baseCourseHref;
   const current = sentences[Math.min(index, sentences.length - 1)];
   const passed = passedCountForLesson(state, lessonId);
   const total = sentences.length;

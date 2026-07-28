@@ -22,6 +22,7 @@ export function LessonCard({
   total,
   lastAttemptAt,
   averageScore,
+  href,
 }: {
   lesson: Lesson;
   status: LessonStatus;
@@ -29,6 +30,7 @@ export function LessonCard({
   total: number;
   lastAttemptAt?: string | null;
   averageScore?: number | null;
+  href?: string;
 }) {
   const s = STATUS[status];
   const pct = total > 0 ? (passed / total) * 100 : 0;
@@ -120,7 +122,7 @@ export function LessonCard({
         </div>
 
         <Link
-          href={lessonHref(lesson)}
+          href={href ?? lessonHref(lesson)}
           prefetch={false}
           className={buttonClasses(
             status === "completed" ? "secondary" : "primary",
