@@ -21,11 +21,13 @@ import {
 import { AppShell } from "@/components/layout/AppShell";
 import { FullScreenLoading } from "@/components/ui/loading";
 import { LessonCard } from "@/components/lesson/LessonCard";
+import { N2CourseLessonGrid } from "@/components/lesson/N2CourseLessonGrid";
 import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { topicHue } from "@/lib/topic-style";
 import { optimizedImageSrc } from "@/lib/optimized-image";
+import { isN2Course } from "@/lib/n2-course";
 
 export default function CoursePage() {
   const params = useParams<{ id: string }>();
@@ -60,6 +62,8 @@ export default function CoursePage() {
   const hue = course?.accent ?? topicHue(course?.topic ?? null);
   const pct = stats.total > 0 ? (stats.completed / stats.total) * 100 : 0;
   const allDone = stats.total > 0 && stats.completed >= stats.total;
+  const showN2Filters =
+    isN2Course(course) && lessons.some((lesson) => lesson.media_url?.startsWith("/audio/n2/"));
 
   return (
     <AppShell>
@@ -163,6 +167,8 @@ export default function CoursePage() {
         <p className="mt-8 text-center text-muted">
           このコースにはまだレッスンがありません。
         </p>
+      ) : showN2Filters ? (
+        <N2CourseLessonGrid lessons={lessons} state={state} />
       ) : (
         <div className="stagger mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {lessons.map((l, i) => (
