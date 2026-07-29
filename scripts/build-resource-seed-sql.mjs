@@ -45,7 +45,7 @@ const COURSE = {
   topic: "しごとの日本語",
   level: "N3-N2",
   accent: "#6366f1",
-  image_url: "/course-covers/it-nihongo.jpg",
+  image_url: "/course-covers/it-nihongo-2.png",
 };
 
 const lines = [];

@@ -70,7 +70,7 @@ const statements = [
       "しごとの日本語",
       "N3-N2",
       "#6366f1",
-      "/course-covers/it-nihongo.jpg",
+      "/course-covers/it-nihongo-2.png",
     ],
   },
   {
