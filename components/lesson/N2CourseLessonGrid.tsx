@@ -72,7 +72,7 @@ function FilterChip({
       aria-pressed={active}
       onClick={onClick}
       className={[
-        "focus-ring inline-flex min-h-11 shrink-0 touch-manipulation items-center justify-center gap-2 whitespace-nowrap rounded-xl border px-3 text-sm font-bold transition-all active:scale-[0.98]",
+        "focus-ring inline-flex min-h-11 w-full touch-manipulation items-center justify-center gap-2 rounded-xl border px-3 text-center text-sm font-bold leading-snug transition-all active:scale-[0.98] sm:w-auto sm:shrink-0 sm:whitespace-nowrap",
         active
           ? "border-primary bg-primary text-primary-fg shadow-[var(--shadow-glow)]"
           : "border-border bg-surface text-fg hover:border-primary/40 hover:bg-card",
@@ -213,7 +213,7 @@ export function N2CourseLessonGrid({
               <h3 className="text-sm font-extrabold">問題形式</h3>
               <span className="text-xs font-bold text-muted">必須</span>
             </div>
-            <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="grid grid-cols-1 gap-2 min-[430px]:grid-cols-2 sm:flex sm:flex-wrap">
               {Object.keys(N2_MONDAI_LABELS).map((key) => (
                 <FilterChip
                   key={key}
@@ -231,7 +231,7 @@ export function N2CourseLessonGrid({
               <h3 className="text-sm font-extrabold">受験年月</h3>
               <span className="text-xs font-bold text-muted">必須</span>
             </div>
-            <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="grid grid-cols-3 gap-2 min-[430px]:grid-cols-4 sm:flex sm:flex-wrap">
               {visibleExams.map((key) => (
                 <FilterChip
                   key={key}
@@ -245,7 +245,7 @@ export function N2CourseLessonGrid({
                 <button
                   type="button"
                   onClick={() => setShowAllExams(true)}
-                  className="focus-ring inline-flex min-h-11 shrink-0 touch-manipulation items-center justify-center rounded-xl border border-dashed border-primary/35 bg-card px-3 text-sm font-extrabold text-primary transition hover:bg-primary/8 active:scale-[0.98]"
+                  className="focus-ring inline-flex min-h-11 touch-manipulation items-center justify-center rounded-xl border border-dashed border-primary/35 bg-card px-3 text-sm font-extrabold text-primary transition hover:bg-primary/8 active:scale-[0.98]"
                 >
                   +{hiddenExamCount}
                 </button>
