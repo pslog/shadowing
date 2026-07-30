@@ -82,16 +82,16 @@ export default function CoursePage() {
         ← コース一覧
       </Link>
 
-      <section className="mt-3 overflow-hidden rounded-[2rem] border border-border shadow-[var(--shadow-md)]">
+      <section className="mt-3 overflow-hidden rounded-[1.35rem] border border-border shadow-[var(--shadow-md)] sm:rounded-[2rem]">
         <div className="flex flex-col md:flex-row">
           {imageSrc ? (
-            <div className="relative h-44 w-full shrink-0 sm:h-52 md:h-auto md:w-64 lg:w-72">
+            <div className="relative h-36 w-full shrink-0 sm:h-52 md:h-auto md:w-64 lg:w-72">
               <Image
                 src={imageSrc}
                 alt={title}
                 fill
                 sizes="(max-width: 768px) 100vw, (max-width: 1024px) 16rem, 18rem"
-                className="object-cover"
+                className={showN2Filters ? "bg-white object-contain p-2" : "object-cover"}
                 quality={72}
               />
             </div>
@@ -111,7 +111,7 @@ export default function CoursePage() {
             </div>
           )}
 
-          <div className="min-w-0 flex-1 p-5 sm:p-6">
+          <div className="min-w-0 flex-1 p-4 sm:p-6">
             <div className="mb-2 flex flex-wrap items-center gap-1.5">
               {course?.topic && <Badge tone="primary">{course.topic}</Badge>}
               {course?.level && <Badge>{course.level}</Badge>}
@@ -119,11 +119,11 @@ export default function CoursePage() {
                 {allDone ? "全完了" : "学習中"}
               </Badge>
             </div>
-            <h1 lang="ja" className="text-2xl font-extrabold leading-tight sm:text-3xl">
+            <h1 lang="ja" className="text-[1.45rem] font-extrabold leading-tight sm:text-3xl">
               {title}
             </h1>
             {description && (
-              <p className="mt-2 text-sm leading-relaxed text-muted">{description}</p>
+              <p className="mt-2 text-sm leading-relaxed text-muted sm:max-w-3xl">{description}</p>
             )}
 
             <div className="mt-4">
@@ -152,7 +152,7 @@ export default function CoursePage() {
             {next && (
               <Link
                 href={showN2Filters ? "#n2-filter" : lessonHref(next)}
-                className={buttonClasses("primary", "md", "mt-4")}
+                className={buttonClasses("primary", "md", "mt-4 w-full sm:w-auto")}
               >
                 <Icon name={showN2Filters ? "target" : allDone ? "retry" : "arrow-right"} size={16} />
                 {showN2Filters

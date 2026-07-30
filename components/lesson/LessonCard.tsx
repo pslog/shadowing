@@ -54,7 +54,7 @@ export function LessonCard({
       style={{ ["--tile-c" as string]: completed ? "var(--success)" : hue }}
     >
       <div
-        className="relative px-5 pb-4 pt-5"
+        className="relative px-4 pb-3.5 pt-4 sm:px-5 sm:pb-4 sm:pt-5"
         style={{
           background: `linear-gradient(135deg, color-mix(in srgb, ${
             completed ? "var(--success)" : hue
@@ -63,7 +63,7 @@ export function LessonCard({
       >
         <div className="flex items-start justify-between gap-3">
           <span
-            className="tile-icon h-10 w-10 shrink-0"
+            className="tile-icon h-9 w-9 shrink-0 sm:h-10 sm:w-10"
             style={{ ["--tile-c" as string]: completed ? "var(--success)" : hue }}
           >
             <Icon name={completed ? "trophy" : "book"} size={20} />
@@ -73,7 +73,7 @@ export function LessonCard({
             {s.label}
           </Badge>
         </div>
-        <h3 lang="ja" className="mt-3 line-clamp-2 text-base font-bold leading-snug">
+        <h3 lang="ja" className="mt-2.5 line-clamp-2 text-[0.95rem] font-bold leading-snug sm:mt-3 sm:text-base">
           {lesson.title}
         </h3>
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -90,7 +90,7 @@ export function LessonCard({
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col gap-3 px-5 pb-5">
+      <div className="flex flex-1 flex-col gap-3 px-4 pb-4 sm:px-5 sm:pb-5">
         <div>
           <div className="mb-2 flex items-center justify-between gap-2 text-xs">
             <span className="font-bold text-fg tabular-nums">
@@ -127,7 +127,7 @@ export function LessonCard({
           className={buttonClasses(
             status === "completed" ? "secondary" : "primary",
             "md",
-            "mt-auto",
+            "mt-auto min-h-11 w-full sm:w-auto",
           )}
         >
           {status === "not_started"
