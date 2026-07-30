@@ -397,7 +397,7 @@ function InlineScore({
 }
 
 export function LessonPlayer({ lessonId }: { lessonId: string }) {
-  const { state, recordAttempt } = useData();
+  const { state, recordAttempt, ensureLessonSentences, usingSupabase } = useData();
   const searchParams = useSearchParams();
   const [index, setIndex] = useState(0);
   const [fresh, setFresh] = useState<FreshResult | null>(null);
@@ -418,6 +418,20 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
     () => sentencesForLesson(state, lessonId),
     [state, lessonId],
   );
+
+  useEffect(() => {
+    if (!lesson || sentences.length > 0 || !usingSupabase) return;
+    void ensureLessonSentences(lesson.id);
+  }, [ensureLessonSentences, lesson, sentences.length, usingSupabase]);
+
+  if (lesson && sentences.length === 0 && usingSupabase) {
+    return (
+      <div className="card p-6 text-center text-muted">
+        <span className="mx-auto mb-3 block h-7 w-7 animate-spin rounded-full border-2 border-border border-t-primary" />
+        <p className="text-sm font-semibold">読み込み中...</p>
+      </div>
+    );
+  }
 
   if (!lesson || sentences.length === 0) {
     return (

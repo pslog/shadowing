@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { LessonCard } from "@/components/lesson/LessonCard";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 import { N2_MONDAI_LABELS, n2LessonMeta } from "@/lib/n2-course";
+import { useData } from "@/lib/store/DataProvider";
 import {
   lastAttemptAtForLesson,
   lessonAverageScore,
@@ -101,6 +102,7 @@ export function N2CourseLessonGrid({
   lessons: Lesson[];
   state: AppState;
 }) {
+  const { ensureLessonSentences, usingSupabase } = useData();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const sortedLessons = useMemo(() => [...lessons].sort(n2Sort), [lessons]);
@@ -150,6 +152,11 @@ export function N2CourseLessonGrid({
   const lessonFilterQuery = readyToShow
     ? `?fromMondai=${mondai}&fromExam=${examToParam(exam)}`
     : "";
+
+  useEffect(() => {
+    if (!usingSupabase || filteredLessons.length === 0) return;
+    void ensureLessonSentences(filteredLessons.map((lesson) => lesson.id));
+  }, [ensureLessonSentences, filteredLessons, usingSupabase]);
 
   return (
     <section id="n2-filter" className="mt-6 scroll-mt-24 space-y-4">

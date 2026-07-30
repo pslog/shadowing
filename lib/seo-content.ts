@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { N2_COURSE_SLUG } from "@/lib/n2-course";
 
 type CourseSeo = {
   id: string;
@@ -51,17 +52,18 @@ async function fetchRows<T>(
 }
 
 export const courseSeoBySlug = cache(async (key: string) => {
+  const lookupKey = key === "jlpt-n2-kai" ? N2_COURSE_SLUG : key;
   const select = "id,slug,title,description,topic,level";
   const bySlug = await fetchRows<CourseSeo>("courses", {
     select,
-    slug: `eq.${key}`,
+    slug: `eq.${lookupKey}`,
     limit: "1",
   });
   if (bySlug[0]) return bySlug[0];
 
   const byId = await fetchRows<CourseSeo>("courses", {
     select,
-    id: `eq.${key}`,
+    id: `eq.${lookupKey}`,
     limit: "1",
   });
   return byId[0] ?? null;

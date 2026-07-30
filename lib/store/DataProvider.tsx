@@ -107,6 +107,7 @@ interface DataContextValue {
     audioStart: number | null,
     audioEnd: number | null,
   ) => void;
+  ensureLessonSentences: (lessonIds: string | string[]) => Promise<void>;
   recordAttempt: (input: RecordAttemptInput) => AttemptOutcome;
   reset: () => void;
 }
@@ -205,11 +206,79 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   );
   const [ready, setReady] = useState(false);
   const hydrated = useRef(false);
+  const loadingSentenceLessons = useRef(new Set<string>());
   const stateRef = useRef<AppState>(state);
 
   const commit = useCallback((next: AppState) => {
     stateRef.current = next;
     setState(next);
+  }, []);
+
+  const loadSupabaseCourseShellState = useCallback(async (): Promise<AppState> => {
+    const supabase = await createSupabaseClient();
+    if (!supabase) return loadLocalState();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    let profile: Profile | null = null;
+    if (user) {
+      const fallbackProfile = profileFromUser(user);
+      await supabase.from("profiles").upsert({
+        id: fallbackProfile.id,
+        email: fallbackProfile.email,
+        display_name: fallbackProfile.display_name,
+        avatar_url: fallbackProfile.avatar_url,
+      });
+
+      const { data } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+      profile = profileFromUser(user, data as Profile | null);
+    }
+
+    const fetchAll = async (
+      table: string,
+      orderCols: [string, boolean][],
+    ): Promise<unknown[]> => {
+      const size = 1000;
+      let out: unknown[] = [];
+      let from = 0;
+      for (;;) {
+        let q = supabase.from(table).select("*");
+        for (const [col, asc] of orderCols) q = q.order(col, { ascending: asc });
+        const { data, error } = await q.range(from, from + size - 1);
+        if (error) throw error;
+        out = out.concat(data ?? []);
+        if (!data || data.length < size) break;
+        from += size;
+      }
+      return out;
+    };
+
+    const [coursesResult, lessonsAll] = await Promise.all([
+      supabase
+        .from("courses")
+        .select("*")
+        .order("order_index", { ascending: true })
+        .then((r) => r, () => ({ data: [], error: null })),
+      fetchAll("lessons", [["title", true]]),
+    ]);
+
+    return {
+      profile,
+      courses: (coursesResult.data ?? []) as Course[],
+      lessons: lessonsAll as Lesson[],
+      sentences: [],
+      attempts: [],
+      progress: [],
+      missions: [],
+      xpEvents: [],
+      savedVocab: [],
+    };
   }, []);
 
   const loadSupabaseState = useCallback(async (): Promise<AppState> => {
@@ -267,7 +336,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       xpEventsResult,
       savedVocabResult,
       lessonsAll,
-      sentencesAll,
     ] = await Promise.all([
       supabase
         .from("courses")
@@ -302,17 +370,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             .order("created_at", { ascending: false })
         : Promise.resolve({ data: [], error: null }),
       fetchAll("lessons", [["title", true]]),
-      fetchAll("lesson_sentences", [
-        ["lesson_id", true],
-        ["order_index", true],
-      ]),
     ]);
 
     return {
       profile,
       courses: (coursesResult.data ?? []) as Course[],
       lessons: lessonsAll as Lesson[],
-      sentences: sentencesAll as LessonSentence[],
+      sentences: stateRef.current.sentences,
       attempts: (attemptsResult.data ?? []) as AppState["attempts"],
       progress: (progressResult.data ?? []) as AppState["progress"],
       missions: (missionsResult.data ?? []) as AppState["missions"],
@@ -320,6 +384,106 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       savedVocab: (savedVocabResult.data ?? []) as AppState["savedVocab"],
     };
   }, []);
+
+  const loadSupabaseDeferredState = useCallback(async (base: AppState): Promise<AppState> => {
+    const supabase = await createSupabaseClient();
+    if (!supabase) return base;
+
+    const userId = base.profile?.id;
+
+    const [
+      attemptsResult,
+      progressResult,
+      missionsResult,
+      xpEventsResult,
+      savedVocabResult,
+    ] = await Promise.all([
+      userId
+        ? supabase
+            .from("sentence_attempts")
+            .select("*")
+            .eq("user_id", userId)
+            .order("created_at", { ascending: true })
+        : Promise.resolve({ data: [], error: null }),
+      userId
+        ? supabase.from("lesson_progress").select("*").eq("user_id", userId)
+        : Promise.resolve({ data: [], error: null }),
+      userId
+        ? supabase.from("daily_missions").select("*").eq("user_id", userId)
+        : Promise.resolve({ data: [], error: null }),
+      userId
+        ? supabase
+            .from("xp_events")
+            .select("*")
+            .eq("user_id", userId)
+            .order("created_at", { ascending: true })
+        : Promise.resolve({ data: [], error: null }),
+      userId
+        ? supabase
+            .from("saved_vocab")
+            .select("*")
+            .eq("user_id", userId)
+            .order("created_at", { ascending: false })
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+
+    return {
+      ...base,
+      sentences: stateRef.current.sentences,
+      attempts: (attemptsResult.data ?? []) as AppState["attempts"],
+      progress: (progressResult.data ?? []) as AppState["progress"],
+      missions: (missionsResult.data ?? []) as AppState["missions"],
+      xpEvents: (xpEventsResult.data ?? []) as AppState["xpEvents"],
+      savedVocab: (savedVocabResult.data ?? []) as AppState["savedVocab"],
+    };
+  }, []);
+
+  const ensureLessonSentences = useCallback(
+    async (lessonIds: string | string[]): Promise<void> => {
+      if (!USING_SUPABASE) return;
+
+      const ids = [...new Set(Array.isArray(lessonIds) ? lessonIds : [lessonIds])].filter(
+        Boolean,
+      );
+      const missingIds = ids.filter(
+        (id) =>
+          !stateRef.current.sentences.some((sentence) => sentence.lesson_id === id) &&
+          !loadingSentenceLessons.current.has(id),
+      );
+      if (missingIds.length === 0) return;
+
+      for (const id of missingIds) loadingSentenceLessons.current.add(id);
+
+      try {
+        const supabase = await createSupabaseClient();
+        if (!supabase) return;
+
+        const { data, error } = await supabase
+          .from("lesson_sentences")
+          .select("*")
+          .in("lesson_id", missingIds)
+          .order("lesson_id", { ascending: true })
+          .order("order_index", { ascending: true });
+        if (error) throw error;
+
+        const incoming = (data ?? []) as LessonSentence[];
+        const incomingLessonIds = new Set(missingIds);
+        const prev = stateRef.current;
+        commit({
+          ...prev,
+          sentences: [
+            ...prev.sentences.filter(
+              (sentence) => !incomingLessonIds.has(sentence.lesson_id),
+            ),
+            ...incoming,
+          ],
+        });
+      } finally {
+        for (const id of missingIds) loadingSentenceLessons.current.delete(id);
+      }
+    },
+    [commit],
+  );
 
   const persistSupabaseLesson = useCallback(
     async (lesson: Lesson, sentences: LessonSentence[]) => {
@@ -405,7 +569,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     async function hydrate() {
       let next: AppState;
       try {
-        next = USING_SUPABASE ? await loadSupabaseState() : loadLocalState();
+        next = USING_SUPABASE ? await loadSupabaseCourseShellState() : loadLocalState();
       } catch {
         next = loadLocalState();
       }
@@ -415,6 +579,16 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       setState(next);
       hydrated.current = true;
       setReady(true);
+
+      if (USING_SUPABASE) {
+        window.setTimeout(() => {
+          loadSupabaseDeferredState(next)
+            .then((fullState) => {
+              if (!cancelled) commit(fullState);
+            })
+            .catch(() => undefined);
+        }, 250);
+      }
     }
 
     hydrate();
@@ -423,7 +597,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     createSupabaseClient()
       .then((supabase) => {
         if (cancelled) return;
-        subscription = supabase?.auth.onAuthStateChange(() => {
+        subscription = supabase?.auth.onAuthStateChange((event) => {
+          if (event === "INITIAL_SESSION") return;
           loadSupabaseState()
             .then((next) => {
               if (!cancelled) commit(next);
@@ -437,7 +612,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       cancelled = true;
       subscription?.unsubscribe();
     };
-  }, [commit, loadSupabaseState]);
+  }, [commit, loadSupabaseCourseShellState, loadSupabaseDeferredState, loadSupabaseState]);
 
   useEffect(() => {
     if (!hydrated.current || USING_SUPABASE) return;
@@ -885,6 +1060,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       createLesson,
       updateLesson,
       updateSentenceTiming,
+      ensureLessonSentences,
       recordAttempt,
       reset,
     }),
@@ -903,6 +1079,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       createLesson,
       updateLesson,
       updateSentenceTiming,
+      ensureLessonSentences,
       recordAttempt,
       reset,
     ],

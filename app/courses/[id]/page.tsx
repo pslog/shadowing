@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 import { useData } from "@/lib/store/DataProvider";
 import {
   courseBySlug,
@@ -31,7 +32,17 @@ import { isN2Course } from "@/lib/n2-course";
 
 export default function CoursePage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { state, ready } = useData();
+
+  useEffect(() => {
+    if (params.id !== "jlpt-n2-kai") return;
+    const query = searchParams.toString();
+    router.replace(
+      `/courses/jlpt-n2-choukai${query ? `?${query}` : ""}${window.location.hash}`,
+    );
+  }, [params.id, router, searchParams]);
 
   if (!ready) return <FullScreenLoading />;
 
