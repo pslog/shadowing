@@ -231,7 +231,7 @@ export function N2CourseLessonGrid({
               <h3 className="text-sm font-extrabold">受験年月</h3>
               <span className="text-xs font-bold text-muted">必須</span>
             </div>
-            <div className="grid grid-cols-3 gap-2 min-[430px]:grid-cols-4 sm:flex sm:flex-wrap">
+            <div className="grid grid-cols-3 gap-2 min-[430px]:grid-cols-4 sm:hidden">
               {visibleExams.map((key) => (
                 <FilterChip
                   key={key}
@@ -250,6 +250,17 @@ export function N2CourseLessonGrid({
                   +{hiddenExamCount}
                 </button>
               )}
+            </div>
+            <div className="hidden gap-2 sm:flex sm:flex-wrap">
+              {exams.map((key) => (
+                <FilterChip
+                  key={key}
+                  active={exam === key}
+                  count={examCounts.get(key) ?? 0}
+                  label={key}
+                  onClick={() => updateFilter(mondai, key)}
+                />
+              ))}
             </div>
           </div>
         </div>
