@@ -6,10 +6,16 @@ const now = new Date();
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
     {
+      url: absoluteUrl("/"),
+      lastModified: now,
+      changeFrequency: "daily",
+      priority: 1,
+    },
+    {
       url: absoluteUrl("/about"),
       lastModified: now,
       changeFrequency: "monthly",
-      priority: 0.9,
+      priority: 0.7,
     },
     {
       url: absoluteUrl("/courses"),

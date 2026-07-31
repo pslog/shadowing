@@ -153,7 +153,7 @@ export default function ToolPage() {
     <AppShell>
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <Link href="/dashboard" className="text-sm text-muted hover:text-fg">
+          <Link href="/" className="text-sm text-muted hover:text-fg">
             Về dashboard
           </Link>
           <h1 className="mt-1 text-2xl font-bold">Tool kiểm tra video channel</h1>

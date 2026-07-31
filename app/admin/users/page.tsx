@@ -119,7 +119,7 @@ export default function AdminUsersPage() {
     <AppShell>
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <Link href="/dashboard" className="text-sm text-muted hover:text-fg">
+          <Link href="/" className="text-sm text-muted hover:text-fg">
             ダッシュボードへ
           </Link>
           <h1 className="mt-1 text-2xl font-bold">ユーザー管理</h1>

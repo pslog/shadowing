@@ -42,7 +42,7 @@ export default function LoginPage() {
   const [resendIn, setResendIn] = useState(0);
 
   useEffect(() => {
-    if (ready && state.profile) router.replace("/dashboard");
+    if (ready && state.profile) router.replace("/");
   }, [ready, state.profile, router]);
 
   useEffect(() => {
@@ -83,7 +83,7 @@ export default function LoginPage() {
         display_name: "学習者",
         avatar_url: null,
       });
-      if (profile) router.replace("/dashboard");
+      if (profile) router.replace("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "ログインに失敗しました。");
       setSubmitting(false);
@@ -122,7 +122,7 @@ export default function LoginPage() {
     try {
       const profile = await verifyEmailOtp(email.trim(), code);
       // Supabase: profile は onAuthStateChange 経由で反映され、上の useEffect が遷移する。
-      if (profile) router.replace("/dashboard");
+      if (profile) router.replace("/");
     } catch (err) {
       setError(
         err instanceof Error

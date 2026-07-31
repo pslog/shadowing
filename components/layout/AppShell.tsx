@@ -17,7 +17,7 @@ import { Avatar } from "@/components/ui/avatar";
 type NavItem = { href: string; label: string; icon: IconName; alt?: string[] };
 
 const NAV: NavItem[] = [
-  { href: "/dashboard", label: "ホーム", icon: "home" },
+  { href: "/", label: "ホーム", icon: "home" },
   { href: "/courses", label: "コース", icon: "book", alt: ["/lessons"] },
   { href: "/review", label: "単語帳", icon: "bookmark" },
   { href: "/progress", label: "進捗", icon: "trending" },
@@ -56,7 +56,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-dvh flex-col pb-16 md:pb-0">
       <header className="glass sticky top-0 z-30 pt-[env(safe-area-inset-top)]">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4">
-          <Link href="/dashboard" className="flex items-center gap-2.5 font-bold">
+          <Link href="/" className="flex items-center gap-2.5 font-bold">
             <Image
               src="/logo-mark-256.webp"
               alt="Shadowing JP"

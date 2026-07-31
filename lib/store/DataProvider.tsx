@@ -218,28 +218,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const supabase = await createSupabaseClient();
     if (!supabase) return loadLocalState();
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    let profile: Profile | null = null;
-    if (user) {
-      const fallbackProfile = profileFromUser(user);
-      await supabase.from("profiles").upsert({
-        id: fallbackProfile.id,
-        email: fallbackProfile.email,
-        display_name: fallbackProfile.display_name,
-        avatar_url: fallbackProfile.avatar_url,
-      });
-
-      const { data } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-      profile = profileFromUser(user, data as Profile | null);
-    }
-
     const fetchAll = async (
       table: string,
       orderCols: [string, boolean][],
@@ -259,7 +237,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       return out;
     };
 
-    const [coursesResult, lessonsAll] = await Promise.all([
+    const [authResult, coursesResult, lessonsAll] = await Promise.all([
+      supabase.auth.getUser(),
       supabase
         .from("courses")
         .select("*")
@@ -267,9 +246,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         .then((r) => r, () => ({ data: [], error: null })),
       fetchAll("lessons", [["title", true]]),
     ]);
+    const user = authResult.data.user;
 
     return {
-      profile,
+      profile: user ? profileFromUser(user) : null,
       courses: (coursesResult.data ?? []) as Course[],
       lessons: lessonsAll as Lesson[],
       sentences: [],
@@ -389,7 +369,28 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const supabase = await createSupabaseClient();
     if (!supabase) return base;
 
-    const userId = base.profile?.id;
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    let profile = base.profile;
+    if (user) {
+      const fallbackProfile = profileFromUser(user, base.profile);
+      await supabase.from("profiles").upsert({
+        id: fallbackProfile.id,
+        email: fallbackProfile.email,
+        display_name: fallbackProfile.display_name,
+        avatar_url: fallbackProfile.avatar_url,
+      });
+
+      const { data } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+      profile = profileFromUser(user, data as Profile | null);
+    }
+
+    const userId = user?.id;
 
     const [
       attemptsResult,
@@ -429,6 +430,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     return {
       ...base,
+      profile,
       sentences: stateRef.current.sentences,
       attempts: (attemptsResult.data ?? []) as AppState["attempts"],
       progress: (progressResult.data ?? []) as AppState["progress"],
@@ -657,7 +659,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       if (supabase) {
         const { error } = await supabase.auth.signInWithOAuth({
           provider: "google",
-          options: { redirectTo: `${window.location.origin}/dashboard` },
+          options: { redirectTo: `${window.location.origin}/` },
         });
         if (error) throw error;
         return null;
