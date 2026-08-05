@@ -3,8 +3,10 @@ import { Noto_Sans_JP, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { DataProvider } from "@/lib/store/DataProvider";
 import { Aurora } from "@/components/layout/Aurora";
-import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
+import { GoogleAnalyticsRouteTracker } from "@/components/analytics/GoogleAnalytics";
 import { getSiteUrl, SITE_DESCRIPTION, SITE_NAME } from "@/lib/seo";
+
+const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || "G-6T2YMDZRKX";
 
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
@@ -83,6 +85,23 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="vi" className={`${jakarta.variable} ${notoJp.variable} h-full`}>
+      <head>
+        <script
+          async
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              window.gtag = gtag;
+              gtag('js', new Date());
+              gtag('config', '${GA_MEASUREMENT_ID}');
+            `,
+          }}
+        />
+      </head>
       <body className="min-h-full">
         <script
           type="application/ld+json"
@@ -107,7 +126,7 @@ export default function RootLayout({
         />
         <Aurora />
         <DataProvider>{children}</DataProvider>
-        <GoogleAnalytics />
+        <GoogleAnalyticsRouteTracker />
       </body>
     </html>
   );
