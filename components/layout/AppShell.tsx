@@ -22,6 +22,8 @@ interface PublicSiteVisitOverview {
 
 const SITE_VISIT_DISPLAY_BASELINE = 1000;
 const SITE_VISIT_DEDUPE_MS = 2_000;
+const COPYRIGHT_YEAR = 2026;
+const NUMBER_FORMAT = new Intl.NumberFormat("en-US");
 const recentSiteVisitRecords = new Map<string, number>();
 
 const NAV: NavItem[] = [
@@ -280,12 +282,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               className="text-xs text-muted tabular-nums"
               aria-label={`${displayTotalVisits} total website visits`}
             >
-              {displayTotalVisits.toLocaleString()} lượt truy cập
+              {NUMBER_FORMAT.format(displayTotalVisits)} lượt truy cập
             </p>
           </div>
         </div>
         <div className="border-t border-border/50 px-4 py-3 text-center text-[11px] text-muted">
-          © {new Date().getFullYear()} Shadowing JP
+          © {COPYRIGHT_YEAR} Shadowing JP
         </div>
       </footer>
 

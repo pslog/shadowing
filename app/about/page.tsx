@@ -64,8 +64,8 @@ export default function AboutPage() {
 
               <p className="mt-4 max-w-2xl text-base font-semibold leading-7 text-muted sm:mt-5 sm:text-lg sm:leading-8">
                 Shadowing JP được làm cho những người đang học tiếng Nhật cùng có một
-                nơi luyện nói nhẹ nhàng mỗi ngày. Không bán khóa học, không đặt lợi ích
-                cá nhân lên trước, chỉ cùng nhau nghe, nói lại và tiến bộ từng chút.
+                nơi luyện nói nhẹ nhàng mỗi ngày: nghe câu thật, nói lại từng chút,
+                giữ thói quen đều hơn và cùng nhau tiến bộ.
               </p>
             </div>
 
@@ -150,6 +150,31 @@ export default function AboutPage() {
                     {creator.name}
                   </span>
                 ))}
+              </div>
+              <div className="mt-4 max-w-2xl">
+                <p className="mb-2 text-[11px] font-black uppercase tracking-[0.18em] text-primary">
+                  Dev note
+                </p>
+                <div className="grid gap-2 text-xs leading-5 text-muted sm:grid-cols-2">
+                  {[
+                    ["Build style", "Vibe coding with AI coding tools"],
+                    ["Frontend", "Next.js + React"],
+                    ["Hosting", "Vercel app domain - free tier"],
+                    ["Database", "Supabase PostgreSQL - free tier"],
+                  ].map(([label, value]) => (
+                    <p
+                      key={label}
+                      className="min-w-0 rounded-xl border border-border/70 bg-surface/70 px-3 py-2"
+                    >
+                      <span className="block font-black text-fg">{label}</span>
+                      <span>{value}</span>
+                    </p>
+                  ))}
+                  <p className="rounded-xl border border-primary/15 bg-primary/5 px-3 py-2 sm:col-span-2">
+                    <span className="font-black text-primary">Pricing:</span>{" "}
+                    chi phí gần như 0 đồng, nên chúng tôi không có nhu cầu thu tiền bạn.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
