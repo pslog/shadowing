@@ -16,6 +16,14 @@ import { Avatar } from "@/components/ui/avatar";
 
 type NavItem = { href: string; label: string; icon: IconName; alt?: string[] };
 
+interface PublicSiteVisitOverview {
+  totalVisits: number;
+}
+
+const SITE_VISIT_DISPLAY_BASELINE = 1000;
+const SITE_VISIT_DEDUPE_MS = 2_000;
+const recentSiteVisitRecords = new Map<string, number>();
+
 const NAV: NavItem[] = [
   { href: "/", label: "ホーム", icon: "home" },
   { href: "/courses", label: "コース", icon: "book", alt: ["/lessons"] },
@@ -40,17 +48,89 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const profileLevel = profile ? levelProgress(profile.total_xp).level : 1;
   const canAdmin = isAdminProfile(profile);
   const navItems: NavItem[] = canAdmin
-    ? [...NAV, { href: "/admin/users", label: "ユーザー管理", icon: "cap" }]
+    ? [
+        ...NAV,
+        { href: "/admin/users", label: "管理", icon: "cap", alt: ["/admin"] },
+      ]
     : NAV;
   // Mobile bottom bar: keep only the core daily-use tabs so it never crowds.
   // 紹介 (static intro) and admin live in the desktop nav / footer only.
   const mobileNavItems = navItems.filter(
-    (item) => item.href !== "/about" && item.href !== "/admin/users",
+    (item) => item.href !== "/about" && !item.href.startsWith("/admin"),
   );
   const isActive = useActive();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [visitOverview, setVisitOverview] = useState<PublicSiteVisitOverview>({
+    totalVisits: 0,
+  });
+  const displayTotalVisits = visitOverview.totalVisits + SITE_VISIT_DISPLAY_BASELINE;
 
   useEffect(() => setMenuOpen(false), [pathname]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch("/api/site-visits", { cache: "no-store" })
+      .then(async (response) => {
+        const raw = await response.text();
+        const payload = raw
+          ? (JSON.parse(raw) as { overview?: Partial<PublicSiteVisitOverview> })
+          : null;
+        if (!response.ok || !payload?.overview) return null;
+        return payload.overview;
+      })
+      .then((overview) => {
+        if (cancelled || !overview) return;
+        setVisitOverview({ totalVisits: overview.totalVisits ?? 0 });
+      })
+      .catch(() => {
+        if (!cancelled) setVisitOverview({ totalVisits: 0 });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    const now = Date.now();
+    const lastRecordedAt = recentSiteVisitRecords.get(pathname) ?? 0;
+    if (now - lastRecordedAt < SITE_VISIT_DEDUPE_MS) return;
+    recentSiteVisitRecords.set(pathname, now);
+
+    const storageKey = "shadowing-jp-visitor-id";
+    let anonymousSessionId = window.sessionStorage.getItem(storageKey);
+    if (!anonymousSessionId) {
+      anonymousSessionId = crypto.randomUUID();
+      window.sessionStorage.setItem(storageKey, anonymousSessionId);
+    }
+
+    let cancelled = false;
+
+    fetch("/api/site-visits", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ path: pathname, anonymousSessionId }),
+    })
+      .then(() => fetch("/api/site-visits", { cache: "no-store" }))
+      .then(async (response) => {
+        const raw = await response.text();
+        const payload = raw
+          ? (JSON.parse(raw) as { overview?: Partial<PublicSiteVisitOverview> })
+          : null;
+        if (!response.ok || !payload?.overview) return null;
+        return payload.overview;
+      })
+      .then((overview) => {
+        if (cancelled || !overview) return;
+        setVisitOverview({ totalVisits: overview.totalVisits ?? 0 });
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
 
   return (
     <div className="flex min-h-dvh flex-col pb-16 md:pb-0">
@@ -179,7 +259,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:py-8">{children}</main>
 
       <footer className="mt-8 border-t border-border/70">
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-4 py-8 text-center sm:flex-row sm:justify-between sm:text-left">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-2 px-4 py-5 text-center sm:flex-row sm:justify-between sm:text-left">
           <div className="flex items-center gap-2.5">
             <Image
               src="/logo-mark-256.webp"
@@ -194,7 +274,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <p className="text-xs text-muted">Shadowing mỗi ngày — cùng cộng đồng nói tiếng Nhật tự tin hơn</p>
             </div>
           </div>
-          <p className="text-xs text-muted">Phi lợi nhuận · 一緒に頑張りましょう</p>
+          <div className="flex flex-col items-center gap-1 sm:items-end">
+            <p className="text-xs text-muted">Phi lợi nhuận · 一緒に頑張りましょう</p>
+            <p
+              className="text-xs text-muted tabular-nums"
+              aria-label={`${displayTotalVisits} total website visits`}
+            >
+              {displayTotalVisits.toLocaleString()} lượt truy cập
+            </p>
+          </div>
         </div>
         <div className="border-t border-border/50 px-4 py-3 text-center text-[11px] text-muted">
           © {new Date().getFullYear()} Shadowing JP

@@ -23,12 +23,15 @@ import { AppShell } from "@/components/layout/AppShell";
 import { FullScreenLoading } from "@/components/ui/loading";
 import { LessonCard } from "@/components/lesson/LessonCard";
 import { N2CourseLessonGrid } from "@/components/lesson/N2CourseLessonGrid";
+import { useLessonEngagementStats } from "@/components/lesson/useLessonEngagementStats";
 import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { topicHue } from "@/lib/topic-style";
 import { optimizedImageSrc } from "@/lib/optimized-image";
 import { isN2Course } from "@/lib/n2-course";
+import type { AppState } from "@/lib/store/state";
+import type { Lesson } from "@/lib/types";
 
 export default function CoursePage() {
   const params = useParams<{ id: string }>();
@@ -85,13 +88,17 @@ export default function CoursePage() {
       <section className="mt-3 overflow-hidden rounded-[1.35rem] border border-border shadow-[var(--shadow-md)] sm:rounded-[2rem]">
         <div className="flex flex-col md:flex-row">
           {imageSrc ? (
-            <div className="relative h-36 w-full shrink-0 sm:h-52 md:h-auto md:w-64 lg:w-72">
+            <div className="relative h-52 w-full shrink-0 bg-white sm:h-56 md:h-auto md:w-64 lg:w-72">
               <Image
                 src={imageSrc}
                 alt={title}
                 fill
                 sizes="(max-width: 768px) 100vw, (max-width: 1024px) 16rem, 18rem"
-                className={showN2Filters ? "bg-white object-contain p-2" : "object-cover"}
+                className={
+                  showN2Filters
+                    ? "object-contain p-2"
+                    : "object-contain object-center p-2 md:object-cover md:p-0"
+                }
                 quality={72}
               />
             </div>
@@ -183,21 +190,30 @@ export default function CoursePage() {
       ) : showN2Filters ? (
         <N2CourseLessonGrid lessons={lessons} state={state} />
       ) : (
-        <div className="stagger mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {lessons.map((l, i) => (
-            <div key={l.id} style={{ ["--i" as string]: i }}>
-              <LessonCard
-                lesson={l}
-                status={lessonStatus(state, l.id)}
-                passed={passedCountForLesson(state, l.id)}
-                total={sentencesForLesson(state, l.id).length}
-                lastAttemptAt={lastAttemptAtForLesson(state, l.id)}
-                averageScore={lessonAverageScore(state, l.id)}
-              />
-            </div>
-          ))}
-        </div>
+        <CourseLessonCards lessons={lessons} state={state} />
       )}
     </AppShell>
+  );
+}
+
+function CourseLessonCards({ lessons, state }: { lessons: Lesson[]; state: AppState }) {
+  const engagementStats = useLessonEngagementStats(lessons.map((lesson) => lesson.id));
+
+  return (
+    <div className="stagger mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {lessons.map((l, i) => (
+        <div key={l.id} style={{ ["--i" as string]: i }}>
+          <LessonCard
+            lesson={l}
+            status={lessonStatus(state, l.id)}
+            passed={passedCountForLesson(state, l.id)}
+            total={sentencesForLesson(state, l.id).length}
+            lastAttemptAt={lastAttemptAtForLesson(state, l.id)}
+            averageScore={lessonAverageScore(state, l.id)}
+            engagement={engagementStats[l.id]}
+          />
+        </div>
+      ))}
+    </div>
   );
 }

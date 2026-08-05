@@ -1,8 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { AppShell } from "@/components/layout/AppShell";
+import { AdminConsoleShell } from "@/components/admin/AdminConsoleShell";
 import { AdminOnlyNotice } from "@/components/lesson/AdminOnlyNotice";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -116,13 +115,10 @@ export default function AdminUsersPage() {
   if (!canView) return <AdminOnlyNotice />;
 
   return (
-    <AppShell>
+    <AdminConsoleShell>
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <Link href="/" className="text-sm text-muted hover:text-fg">
-            ダッシュボードへ
-          </Link>
-          <h1 className="mt-1 text-2xl font-bold">ユーザー管理</h1>
+          <h1 className="text-2xl font-bold">ユーザー管理</h1>
           <p className="text-muted">
             ユーザー一覧を確認し、コース・レッスン編集権限を付与できます。
           </p>
@@ -233,6 +229,6 @@ export default function AdminUsersPage() {
           </div>
         )}
       </Card>
-    </AppShell>
+    </AdminConsoleShell>
   );
 }

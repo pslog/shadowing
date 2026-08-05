@@ -175,6 +175,140 @@ create table if not exists public.lesson_progress (
 );
 
 -- ---------------------------------------------------------------------------
+--  lesson_views  (lightweight lesson view analytics)
+-- ---------------------------------------------------------------------------
+create table if not exists public.lesson_views (
+  id uuid primary key default gen_random_uuid(),
+  lesson_id uuid not null references public.lessons(id) on delete cascade,
+  user_id uuid references public.profiles(id) on delete set null,
+  anonymous_session_id text,
+  path text,
+  referrer text,
+  user_agent text,
+  created_at timestamptz not null default now()
+);
+create index if not exists lesson_views_lesson_created_idx
+  on public.lesson_views(lesson_id, created_at desc);
+create index if not exists lesson_views_user_created_idx
+  on public.lesson_views(user_id, created_at desc);
+create index if not exists lesson_views_anonymous_session_idx
+  on public.lesson_views(anonymous_session_id);
+
+drop view if exists public.lesson_view_stats;
+create view public.lesson_view_stats
+with (security_invoker = false) as
+with view_rollup as (
+  select
+    lesson_id,
+    count(*)::int as total_views,
+    count(distinct user_id)::int as signed_in_viewers,
+    count(distinct anonymous_session_id)::int as anonymous_viewers,
+    min(created_at) as first_viewed_at,
+    max(created_at) as last_viewed_at
+  from public.lesson_views
+  group by lesson_id
+),
+attempt_rollup as (
+  select
+    lesson_id,
+    count(*)::int as shadowing_attempts,
+    count(distinct user_id)::int as shadowing_users
+  from public.sentence_attempts
+  group by lesson_id
+),
+completion_rollup as (
+  select
+    lesson_id,
+    count(*) filter (where status = 'completed')::int as completed_users
+  from public.lesson_progress
+  group by lesson_id
+)
+select
+  l.id as lesson_id,
+  l.title as lesson_title,
+  l.slug as lesson_slug,
+  l.course_id,
+  l.topic,
+  l.level,
+  coalesce(v.total_views, 0)::int as total_views,
+  coalesce(v.signed_in_viewers, 0)::int as signed_in_viewers,
+  coalesce(v.anonymous_viewers, 0)::int as anonymous_viewers,
+  coalesce(a.shadowing_attempts, 0)::int as shadowing_attempts,
+  coalesce(a.shadowing_users, 0)::int as shadowing_users,
+  coalesce(c.completed_users, 0)::int as completed_users,
+  v.first_viewed_at,
+  v.last_viewed_at
+from public.lessons l
+left join view_rollup v on v.lesson_id = l.id
+left join attempt_rollup a on a.lesson_id = l.id
+left join completion_rollup c on c.lesson_id = l.id;
+
+create or replace view public.lesson_view_overview
+with (security_invoker = false) as
+with view_summary as (
+  select
+    count(*)::int as total_views,
+    count(distinct lesson_id)::int as viewed_lesson_count,
+    count(distinct user_id)::int as signed_in_viewers,
+    count(distinct anonymous_session_id)::int as anonymous_viewers,
+    min(created_at) as first_viewed_at,
+    max(created_at) as last_viewed_at
+  from public.lesson_views
+),
+attempt_summary as (
+  select count(distinct user_id)::int as shadowing_users
+  from public.sentence_attempts
+),
+completion_summary as (
+  select count(distinct user_id)::int as completed_users
+  from public.lesson_progress
+  where status = 'completed'
+)
+select
+  v.total_views,
+  v.viewed_lesson_count,
+  v.signed_in_viewers,
+  v.anonymous_viewers,
+  v.first_viewed_at,
+  v.last_viewed_at,
+  coalesce(a.shadowing_users, 0)::int as shadowing_users,
+  coalesce(c.completed_users, 0)::int as completed_users
+from view_summary v
+cross join attempt_summary a
+cross join completion_summary c;
+
+-- ---------------------------------------------------------------------------
+--  site_visits  (site-wide page visit analytics)
+-- ---------------------------------------------------------------------------
+create table if not exists public.site_visits (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references public.profiles(id) on delete set null,
+  anonymous_session_id text,
+  path text,
+  referrer text,
+  user_agent text,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists site_visits_created_idx
+  on public.site_visits(created_at desc);
+create index if not exists site_visits_user_created_idx
+  on public.site_visits(user_id, created_at desc);
+create index if not exists site_visits_anonymous_session_idx
+  on public.site_visits(anonymous_session_id);
+
+create or replace view public.site_visit_overview
+with (security_invoker = true)
+as
+select
+  count(*)::int as total_visits,
+  count(distinct user_id)::int as signed_in_visitors,
+  count(distinct anonymous_session_id)::int as anonymous_visitors,
+  min(created_at) as first_visited_at,
+  max(created_at) as last_visited_at
+from public.site_visits;
+
+-- ---------------------------------------------------------------------------
 --  daily_missions
 -- ---------------------------------------------------------------------------
 create table if not exists public.daily_missions (
@@ -315,6 +449,8 @@ alter table public.lesson_sentences  enable row level security;
 alter table public.sentence_attempts enable row level security;
 alter table public.saved_vocab       enable row level security;
 alter table public.lesson_progress   enable row level security;
+alter table public.lesson_views      enable row level security;
+alter table public.site_visits       enable row level security;
 alter table public.daily_missions    enable row level security;
 alter table public.xp_events         enable row level security;
 
@@ -339,6 +475,9 @@ drop policy if exists "sentences admin all" on public.lesson_sentences;
 drop policy if exists "attempts self" on public.sentence_attempts;
 drop policy if exists "saved_vocab self" on public.saved_vocab;
 drop policy if exists "progress self" on public.lesson_progress;
+drop policy if exists "lesson_views insert readable lesson" on public.lesson_views;
+drop policy if exists "lesson_views admin read" on public.lesson_views;
+drop policy if exists "site_visits admin read" on public.site_visits;
 drop policy if exists "missions self" on public.daily_missions;
 drop policy if exists "xp self" on public.xp_events;
 
@@ -408,6 +547,18 @@ create policy "saved_vocab self" on public.saved_vocab
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "progress self" on public.lesson_progress
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "lesson_views insert readable lesson" on public.lesson_views
+  for insert with check (
+    (user_id is null or user_id = auth.uid())
+    and exists (
+      select 1 from public.lessons l
+      where l.id = lesson_id and (l.is_public = true or l.user_id = auth.uid())
+    )
+  );
+create policy "lesson_views admin read" on public.lesson_views
+  for select using (public.current_user_is_admin());
+create policy "site_visits admin read" on public.site_visits
+  for select using (public.current_user_is_admin());
 create policy "missions self" on public.daily_missions
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "xp self" on public.xp_events

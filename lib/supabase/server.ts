@@ -4,10 +4,16 @@
 
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
-import { hasSupabaseEnv } from "./client";
+
+function hasSupabaseServerEnv(): boolean {
+  return Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  );
+}
 
 export async function createClient() {
-  if (!hasSupabaseEnv()) return null;
+  if (!hasSupabaseServerEnv()) return null;
 
   const cookieStore = await cookies();
 

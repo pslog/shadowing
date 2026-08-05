@@ -59,6 +59,14 @@ interface FreshResult {
   transcript: string;
 }
 
+interface LessonViewStats {
+  totalViews: number;
+  shadowingUsers: number;
+}
+
+const LESSON_VIEW_DEDUPE_MS = 2_000;
+const recentLessonViewRecords = new Map<string, number>();
+
 function MissionCompleteDialog({
   outcome,
   onClose,
@@ -404,6 +412,7 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
   const [missionAlert, setMissionAlert] = useState<AttemptOutcome | null>(null);
   const [scoring, setScoring] = useState(false);
   const [recorderKey, setRecorderKey] = useState(0);
+  const [lessonViewStats, setLessonViewStats] = useState<LessonViewStats | null>(null);
   const lessonAudioRef = useRef<HTMLAudioElement | null>(null);
   const sentenceAudioRef = useRef<HTMLAudioElement | null>(null);
   const inlineScoreRef = useRef<HTMLDivElement | null>(null);
@@ -423,6 +432,50 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
     if (!lesson || sentences.length > 0 || !usingSupabase) return;
     void ensureLessonSentences(lesson.id);
   }, [ensureLessonSentences, lesson, sentences.length, usingSupabase]);
+
+  const lessonIdForView = lesson?.id;
+
+  useEffect(() => {
+    if (!lessonIdForView || !usingSupabase) return;
+
+    const now = Date.now();
+    const lastRecordedAt = recentLessonViewRecords.get(lessonIdForView) ?? 0;
+    if (now - lastRecordedAt < LESSON_VIEW_DEDUPE_MS) return;
+    recentLessonViewRecords.set(lessonIdForView, now);
+
+    void fetch("/api/lesson-views", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lessonId: lessonIdForView }),
+    });
+  }, [lessonIdForView, usingSupabase]);
+
+  useEffect(() => {
+    if (!lesson || !usingSupabase) {
+      setLessonViewStats(null);
+      return;
+    }
+
+    let cancelled = false;
+    fetch(`/api/lesson-views?lessonId=${encodeURIComponent(lesson.id)}`, {
+      cache: "no-store",
+    })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload) => {
+        if (cancelled || !payload?.lesson) return;
+        setLessonViewStats({
+          totalViews: payload.lesson.totalViews ?? 0,
+          shadowingUsers: payload.lesson.shadowingUsers ?? 0,
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setLessonViewStats(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [lesson, usingSupabase]);
 
   if (lesson && sentences.length === 0 && usingSupabase) {
     return (
@@ -621,6 +674,25 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
               <Badge tone={lessonDone ? "success" : "warning"}>
                 {lessonDone ? "完了" : "学習中"}
               </Badge>
+              <span
+                className="inline-flex h-7 items-center gap-2 rounded-full border border-border/70 bg-card/85 px-2.5 text-[11px] font-extrabold text-muted shadow-sm backdrop-blur"
+                aria-label={`${lessonViewStats?.totalViews ?? 0} views, ${
+                  lessonViewStats?.shadowingUsers ?? 0
+                } shadowing users`}
+              >
+                <span className="inline-flex items-center gap-1 tabular-nums" title="Views">
+                  <Icon name="eye" size={12} />
+                  {(lessonViewStats?.totalViews ?? 0).toLocaleString()}
+                </span>
+                <span className="h-3 w-px bg-border" aria-hidden="true" />
+                <span
+                  className="inline-flex items-center gap-1 tabular-nums"
+                  title="Shadowing users"
+                >
+                  <Icon name="users" size={12} />
+                  {(lessonViewStats?.shadowingUsers ?? 0).toLocaleString()}
+                </span>
+              </span>
             </div>
             <h1 lang="ja" className="text-2xl font-extrabold leading-tight sm:text-3xl">
               {lesson.title}

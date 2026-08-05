@@ -5,6 +5,7 @@ import { Icon } from "@/components/ui/icon";
 import { lessonHue } from "@/lib/topic-style";
 import { lessonHref } from "@/lib/store/selectors";
 import type { Lesson, LessonStatus } from "@/lib/types";
+import type { LessonEngagementStats } from "./useLessonEngagementStats";
 
 const STATUS: Record<
   LessonStatus,
@@ -22,6 +23,7 @@ export function LessonCard({
   total,
   lastAttemptAt,
   averageScore,
+  engagement,
   href,
 }: {
   lesson: Lesson;
@@ -30,6 +32,7 @@ export function LessonCard({
   total: number;
   lastAttemptAt?: string | null;
   averageScore?: number | null;
+  engagement?: LessonEngagementStats;
   href?: string;
 }) {
   const s = STATUS[status];
@@ -38,6 +41,8 @@ export function LessonCard({
   const completed = status === "completed";
   const d = lastAttemptAt ? new Date(lastAttemptAt) : null;
   const lastPracticed = d ? `${d.getMonth() + 1}月${d.getDate()}日` : null;
+  const totalViews = engagement?.totalViews ?? 0;
+  const shadowingUsers = engagement?.shadowingUsers ?? 0;
   const scoreTone =
     averageScore == null
       ? null
@@ -48,45 +53,59 @@ export function LessonCard({
   return (
     <div
       className={[
-        "card card-interactive flex flex-col gap-3 overflow-hidden p-0",
+        "card card-interactive flex flex-col gap-2.5 overflow-hidden p-0",
         completed ? "ring-2 ring-[var(--success)]/40" : "",
       ].join(" ")}
       style={{ ["--tile-c" as string]: completed ? "var(--success)" : hue }}
     >
       <div
-        className="relative px-4 pb-3.5 pt-4 sm:px-5 sm:pb-4 sm:pt-5"
+        className="relative px-4 pb-3.5 pt-4 sm:px-5"
         style={{
           background: `linear-gradient(135deg, color-mix(in srgb, ${
             completed ? "var(--success)" : hue
-          } 22%, transparent), transparent 70%)`,
+          } 18%, transparent), transparent 72%)`,
         }}
       >
         <div className="flex items-start justify-between gap-3">
-          <span
-            className="tile-icon h-9 w-9 shrink-0 sm:h-10 sm:w-10"
-            style={{ ["--tile-c" as string]: completed ? "var(--success)" : hue }}
+          <h3
+            lang="ja"
+            className="min-w-0 flex-1 text-[1rem] font-extrabold leading-snug sm:text-base"
           >
-            <Icon name={completed ? "trophy" : "book"} size={20} />
-          </span>
-          <Badge tone={s.tone}>
-            {completed && <Icon name="check" size={12} strokeWidth={2.5} />}
-            {s.label}
-          </Badge>
+            {lesson.title}
+          </h3>
+          <Badge tone={s.tone}>{s.label}</Badge>
         </div>
-        <h3 lang="ja" className="mt-2.5 line-clamp-2 text-[0.95rem] font-bold leading-snug sm:mt-3 sm:text-base">
-          {lesson.title}
-        </h3>
-        <div className="mt-2 flex flex-wrap items-center gap-1.5">
-          {lesson.topic && (
-            <span
-              className="rounded-full px-2 py-0.5 text-xs font-semibold text-white"
-              style={{ background: hue }}
-            >
-              {lesson.topic}
+
+        <div className="mt-2.5 flex items-center justify-between gap-3">
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+            {lesson.topic && (
+              <span
+                className="rounded-full px-2 py-0.5 text-xs font-semibold text-white"
+                style={{ background: hue }}
+              >
+                {lesson.topic}
+              </span>
+            )}
+            {lesson.level && <Badge>{lesson.level}</Badge>}
+          </div>
+
+          <div
+            className="inline-flex h-7 shrink-0 items-center gap-2 rounded-full border border-border/70 bg-card/85 px-2.5 text-[11px] font-extrabold text-muted shadow-sm backdrop-blur"
+            aria-label={`${totalViews} views, ${shadowingUsers} shadowing users`}
+          >
+            <span className="inline-flex items-center gap-1 tabular-nums" title="Views">
+              <Icon name="eye" size={12} />
+              {totalViews.toLocaleString()}
             </span>
-          )}
-          {lesson.level && <Badge>{lesson.level}</Badge>}
-          {lesson.is_public && <Badge>公式</Badge>}
+            <span className="h-3 w-px bg-border" aria-hidden="true" />
+            <span
+              className="inline-flex items-center gap-1 tabular-nums"
+              title="Shadowing users"
+            >
+              <Icon name="users" size={12} />
+              {shadowingUsers.toLocaleString()}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -102,7 +121,7 @@ export function LessonCard({
                 style={{ background: scoreTone ?? "var(--muted)" }}
               >
                 <Icon name="star" size={11} filled />
-                平均 {averageScore}点
+                平均{averageScore}点
               </span>
             )}
           </div>

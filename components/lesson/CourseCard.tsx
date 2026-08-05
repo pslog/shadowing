@@ -7,19 +7,28 @@ import { optimizedImageSrc } from "@/lib/optimized-image";
 import type { Course } from "@/lib/types";
 import type { CourseStats } from "@/lib/store/selectors";
 
+export interface CourseEngagementStats {
+  totalViews: number;
+  shadowingUsers: number;
+}
+
 export function CourseCard({
   course,
   stats,
+  engagement,
   href,
 }: {
   course: Course;
   stats: CourseStats;
+  engagement?: CourseEngagementStats;
   href: string;
 }) {
   const hue = course.accent ?? topicHue(course.topic);
   const imageSrc = optimizedImageSrc(course.image_url);
   const done = stats.total > 0 && stats.completed >= stats.total;
   const pct = stats.total > 0 ? (stats.completed / stats.total) * 100 : 0;
+  const totalViews = engagement?.totalViews ?? 0;
+  const shadowingUsers = engagement?.shadowingUsers ?? 0;
   const scoreTone =
     stats.averageScore == null
       ? null
@@ -74,20 +83,39 @@ export function CourseCard({
       </div>
 
       <div className="flex min-w-0 flex-col py-1">
-        <div className="flex flex-wrap items-center gap-1.5">
-          {course.level && <Badge>{course.level}</Badge>}
-          <Badge tone={done ? "success" : "primary"}>
-            {done ? "全完了" : `${stats.total}レッスン`}
-          </Badge>
-          {stats.averageScore != null && (
-            <span
-              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums text-white"
-              style={{ background: scoreTone ?? "var(--muted)" }}
-            >
-              <Icon name="star" size={11} filled />
-              平均 {stats.averageScore}点
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+            {course.level && <Badge>{course.level}</Badge>}
+            <Badge tone={done ? "success" : "primary"}>
+              {done ? "全完了" : `${stats.total}レッスン`}
+            </Badge>
+            {stats.averageScore != null && (
+              <span
+                className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums text-white"
+                style={{ background: scoreTone ?? "var(--muted)" }}
+              >
+                <Icon name="star" size={11} filled />
+                平均 {stats.averageScore}点
+              </span>
+            )}
+          </div>
+          <span
+            className="inline-flex h-7 shrink-0 items-center gap-2 rounded-full border border-border/70 bg-card/85 px-2.5 text-[11px] font-extrabold text-muted shadow-sm backdrop-blur"
+            aria-label={`${totalViews} views, ${shadowingUsers} shadowing users`}
+          >
+            <span className="inline-flex items-center gap-1 tabular-nums" title="Views">
+              <Icon name="eye" size={12} />
+              {totalViews.toLocaleString()}
             </span>
-          )}
+            <span className="h-3 w-px bg-border" aria-hidden="true" />
+            <span
+              className="inline-flex items-center gap-1 tabular-nums"
+              title="Shadowing users"
+            >
+              <Icon name="users" size={12} />
+              {shadowingUsers.toLocaleString()}
+            </span>
+          </span>
         </div>
 
         <h3 lang="ja" className="mt-2 line-clamp-2 text-base font-extrabold leading-snug sm:text-lg">

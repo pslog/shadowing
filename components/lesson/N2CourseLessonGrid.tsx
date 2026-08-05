@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 import { N2_MONDAI_LABELS, n2LessonMeta } from "@/lib/n2-course";
 import { useData } from "@/lib/store/DataProvider";
+import { useLessonEngagementStats } from "./useLessonEngagementStats";
 import {
   lastAttemptAtForLesson,
   lessonAverageScore,
@@ -137,6 +138,10 @@ export function N2CourseLessonGrid({
         return meta?.mondai === mondai && meta.exam === exam;
       })
     : [];
+  const engagementStats = useLessonEngagementStats(
+    filteredLessons.map((lesson) => lesson.id),
+    readyToShow && filteredLessons.length > 0,
+  );
   const selectedMondaiLabel = mondai ? N2_MONDAI_LABELS[mondai] : "未選択";
   const selectedExamLabel = exam ?? "未選択";
   const visibleExams = useMemo(() => {
@@ -305,6 +310,7 @@ export function N2CourseLessonGrid({
                 total={sentencesForLesson(state, lesson.id).length}
                 lastAttemptAt={lastAttemptAtForLesson(state, lesson.id)}
                 averageScore={lessonAverageScore(state, lesson.id)}
+                engagement={engagementStats[lesson.id]}
                 href={`${lessonHref(lesson)}${lessonFilterQuery}`}
               />
             </div>
