@@ -3,6 +3,7 @@ import { Noto_Sans_JP, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { DataProvider } from "@/lib/store/DataProvider";
 import { Aurora } from "@/components/layout/Aurora";
+import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { getSiteUrl, SITE_DESCRIPTION, SITE_NAME } from "@/lib/seo";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -106,6 +107,7 @@ export default function RootLayout({
         />
         <Aurora />
         <DataProvider>{children}</DataProvider>
+        <GoogleAnalytics />
       </body>
     </html>
   );
