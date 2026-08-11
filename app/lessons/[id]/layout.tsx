@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { pageMetadata } from "@/lib/seo";
+import { requestMessages } from "@/lib/seo-locale";
 import { lessonSeoBySlug } from "@/lib/seo-content";
 
 type Props = {
@@ -9,7 +10,10 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const lesson = await lessonSeoBySlug(id);
+  const [lesson, { locale, m }] = await Promise.all([
+    lessonSeoBySlug(id),
+    requestMessages(),
+  ]);
   const description = [
     lesson?.firstSentence?.ja_text,
     lesson?.firstSentence?.vi_translation,
@@ -19,12 +23,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return pageMetadata({
     title: lesson
-      ? `${lesson.title} - 日本語シャドーイング練習`
-      : "レッスン詳細",
-    description:
-      description ||
-      "日本語シャドーイングのレッスン詳細。一文ずつ音声を聞き、声に出して発音を練習できます。",
+      ? m.meta.lessonDetailTitle(lesson.title)
+      : m.meta.lessonDetailFallbackTitle,
+    description: description || m.meta.lessonDetailFallbackDescription,
     path: `/lessons/${id}`,
+    locale,
   });
 }
 

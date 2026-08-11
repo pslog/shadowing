@@ -1,11 +1,16 @@
 import type { Metadata } from "next";
 import { privatePageMetadata } from "@/lib/seo";
+import { requestMessages } from "@/lib/seo-locale";
 
-export const metadata: Metadata = privatePageMetadata({
-  title: "ダッシュボード",
-  description: "Shadowing JPの学習ダッシュボード。",
-  path: "/dashboard",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const { locale, m } = await requestMessages();
+  return privatePageMetadata({
+    title: m.meta.dashboardTitle,
+    description: m.meta.dashboardDescription,
+    path: "/dashboard",
+    locale,
+  });
+}
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return children;

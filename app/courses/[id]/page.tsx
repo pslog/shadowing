@@ -30,6 +30,7 @@ import { Icon } from "@/components/ui/icon";
 import { topicHue } from "@/lib/topic-style";
 import { optimizedImageSrc } from "@/lib/optimized-image";
 import { isN2Course } from "@/lib/n2-course";
+import { useI18n } from "@/components/i18n/useI18n";
 import type { AppState } from "@/lib/store/state";
 import type { Lesson } from "@/lib/types";
 
@@ -38,14 +39,15 @@ export default function CoursePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { state, ready } = useData();
+  const { dictionary: m, href } = useI18n();
 
   useEffect(() => {
     if (params.id !== "jlpt-n2-kai") return;
     const query = searchParams.toString();
     router.replace(
-      `/courses/jlpt-n2-choukai${query ? `?${query}` : ""}${window.location.hash}`,
+      href(`/courses/jlpt-n2-choukai${query ? `?${query}` : ""}${window.location.hash}`),
     );
-  }, [params.id, router, searchParams]);
+  }, [href, params.id, router, searchParams]);
 
   if (!ready) return <FullScreenLoading />;
 
@@ -58,10 +60,10 @@ export default function CoursePage() {
     return (
       <AppShell>
         <div className="space-y-3">
-          <Link href="/courses" className="text-sm text-muted hover:text-fg">
-            ← コース一覧
+          <Link href={href("/courses")} className="text-sm text-muted hover:text-fg">
+            {m.courses.backToCourses}
           </Link>
-          <h1 className="text-2xl font-bold">コースが見つかりません</h1>
+          <h1 className="text-2xl font-bold">{m.courses.notFound}</h1>
         </div>
       </AppShell>
     );
@@ -70,7 +72,7 @@ export default function CoursePage() {
   const lessons = lessonsForCourse(state, courseKey);
   const stats = courseStats(state, courseKey);
   const next = nextLessonInCourse(state, courseKey);
-  const title = course?.title ?? "その他のレッスン";
+  const title = course?.title ?? m.courses.uncategorizedTitle;
   const description = course?.description ?? null;
   const imageSrc = optimizedImageSrc(course?.image_url);
   const hue = course?.accent ?? topicHue(course?.topic ?? null);
@@ -81,8 +83,8 @@ export default function CoursePage() {
 
   return (
     <AppShell>
-      <Link href="/courses" className="text-sm text-muted hover:text-fg">
-        ← コース一覧
+      <Link href={href("/courses")} className="text-sm text-muted hover:text-fg">
+        {m.courses.backToCourses}
       </Link>
 
       <section className="mt-3 overflow-hidden rounded-[1.35rem] border border-border shadow-[var(--shadow-md)] sm:rounded-[2rem]">
@@ -123,7 +125,7 @@ export default function CoursePage() {
               {course?.topic && <Badge tone="primary">{course.topic}</Badge>}
               {course?.level && <Badge>{course.level}</Badge>}
               <Badge tone={allDone ? "success" : "primary"}>
-                {allDone ? "全完了" : "学習中"}
+                {allDone ? m.common.allDone : m.common.inProgress}
               </Badge>
             </div>
             <h1 lang="ja" className="text-[1.45rem] font-extrabold leading-tight sm:text-3xl">
@@ -136,15 +138,15 @@ export default function CoursePage() {
             <div className="mt-4">
               <div className="mb-1.5 flex items-center justify-between text-xs font-semibold">
                 <span className="tabular-nums text-fg">
-                  {stats.completed}/{stats.total} レッスン完了
+                  {stats.completed}/{stats.total} {m.courses.lessonsCompleted}
                 </span>
                 {stats.averageScore != null && (
                   <span className="tabular-nums text-muted">
-                    平均{" "}
+                    {m.common.average}{" "}
                     <span className="text-base font-extrabold text-primary">
                       {stats.averageScore}
                     </span>
-                    点
+                    {m.common.scoreSuffix}
                   </span>
                 )}
               </div>
@@ -158,25 +160,25 @@ export default function CoursePage() {
 
             {next && (
               <Link
-                href={showN2Filters ? "#n2-filter" : lessonHref(next)}
+                href={showN2Filters ? "#n2-filter" : href(lessonHref(next))}
                 className={buttonClasses("primary", "md", "mt-4 w-full sm:w-auto")}
               >
                 <Icon name={showN2Filters ? "target" : allDone ? "retry" : "arrow-right"} size={16} />
                 {showN2Filters
-                  ? "条件を選択する"
+                  ? m.courses.selectCondition
                   : allDone
-                  ? "もう一度練習"
+                  ? m.common.practiceAgain
                   : stats.completed > 0
-                    ? "続きから"
-                    : "学習を始める"}
+                    ? m.common.continue
+                    : m.courses.startLearning}
                 </Link>
             )}
             {course && isAdmin(state) && (
               <Link
-                href={`/courses/${course.slug ?? course.id}/edit`}
+                href={href(`/courses/${course.slug ?? course.id}/edit`)}
                 className={buttonClasses("secondary", "md", next ? "ml-2 mt-4" : "mt-4")}
               >
-                    コース編集
+                    {m.courses.editCourse}
               </Link>
             )}
           </div>
@@ -185,7 +187,7 @@ export default function CoursePage() {
 
       {lessons.length === 0 ? (
         <p className="mt-8 text-center text-muted">
-          このコースにはまだレッスンがありません。
+          {m.courses.empty}
         </p>
       ) : showN2Filters ? (
         <N2CourseLessonGrid lessons={lessons} state={state} />

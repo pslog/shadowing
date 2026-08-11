@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
 import { pageMetadata } from "@/lib/seo";
+import { requestMessages } from "@/lib/seo-locale";
 
-export const metadata: Metadata = pageMetadata({
-  title: "紹介",
-  description:
-    "Shadowing JPの学習方針と作者紹介。日本語を学ぶコミュニティのために、非営利で毎日の小さな発話練習を支えます。",
-  path: "/about",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const { locale, m } = await requestMessages();
+  return pageMetadata({
+    title: m.meta.aboutTitle,
+    description: m.meta.aboutDescription,
+    path: "/about",
+    locale,
+  });
+}
 
 export default function AboutLayout({ children }: { children: React.ReactNode }) {
   return children;

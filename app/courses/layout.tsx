@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
 import { pageMetadata } from "@/lib/seo";
+import { requestMessages } from "@/lib/seo-locale";
 
-export const metadata: Metadata = pageMetadata({
-  title: "コース",
-  description:
-    "日本語シャドーイングのコース一覧。日常会話、仕事、旅行など幅広いテーマを一文ずつ聞いて発音練習できます。",
-  path: "/courses",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const { locale, m } = await requestMessages();
+  return pageMetadata({
+    title: m.meta.coursesTitle,
+    description: m.meta.coursesDescription,
+    path: "/courses",
+    locale,
+  });
+}
 
 export default function CoursesLayout({ children }: { children: React.ReactNode }) {
   return children;

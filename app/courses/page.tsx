@@ -18,9 +18,11 @@ import { buttonClasses } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import type { Course } from "@/lib/types";
 import { useLessonEngagementStats } from "@/components/lesson/useLessonEngagementStats";
+import { useI18n } from "@/components/i18n/useI18n";
 
 export default function CoursesPage() {
   const { state, ready } = useData();
+  const { dictionary: m, href } = useI18n();
 
   const courses = visibleCourses(state);
   const ungrouped = uncategorizedLessons(state);
@@ -57,8 +59,8 @@ export default function CoursesPage() {
           id: UNCATEGORIZED_COURSE_ID,
           user_id: "",
           slug: null,
-          title: "その他のレッスン",
-          description: "コースに属さないレッスン。",
+          title: m.courses.uncategorizedTitle,
+          description: m.courses.uncategorizedDescription,
           topic: null,
           level: null,
           accent: "#64748b",
@@ -73,15 +75,15 @@ export default function CoursesPage() {
     <AppShell>
       <div className="mb-5 flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">コース</h1>
+          <h1 className="text-2xl font-bold">{m.courses.title}</h1>
           <p className="text-muted">
-            コースを選んで、関連するレッスンを順番に練習しましょう。
+            {m.courses.subtitle}
           </p>
         </div>
         {isAdmin(state) && (
-          <Link href="/courses/new" className={buttonClasses("primary")}>
+          <Link href={href("/courses/new")} className={buttonClasses("primary")}>
             <Icon name="plus" size={16} />
-            コース作成
+            {m.courses.create}
           </Link>
         )}
       </div>
@@ -103,7 +105,7 @@ export default function CoursesPage() {
               course={uncategorized}
               stats={courseStats(state, UNCATEGORIZED_COURSE_ID)}
               engagement={engagementForLessonIds(ungroupedLessonIds)}
-              href={`/courses/${UNCATEGORIZED_COURSE_ID}`}
+              href={href(`/courses/${UNCATEGORIZED_COURSE_ID}`)}
             />
           </div>
         )}

@@ -24,6 +24,8 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { Avatar } from "@/components/ui/avatar";
 import { CalendarHeatmap } from "@/components/progress/CalendarHeatmap";
+import { useI18n } from "@/components/i18n/useI18n";
+import type { Dictionary } from "@/lib/i18n";
 
 interface LeaderboardUser {
   id: string;
@@ -40,11 +42,11 @@ interface LeaderboardPayload {
   ranks: { userId: string; rank: number }[];
 }
 
-const SKILL_LABEL_JA: Record<Skill, string> = {
-  pronunciation: "発音",
-  speed: "スピード",
-  intonation: "イントネーション",
-};
+function skillLabel(t: Dictionary["progress"], skill: Skill): string {
+  if (skill === "pronunciation") return t.skillPronunciation;
+  if (skill === "speed") return t.skillSpeed;
+  return t.skillIntonation;
+}
 
 const MARKER_POSITIONS = [
   { x: 10, y: 82 },
@@ -117,10 +119,14 @@ function MountainRoadmap({
   levels,
   currentLevel,
   totalXp,
+  t,
+  localeTag,
 }: {
   levels: LevelMilestone[];
   currentLevel: number;
   totalXp: number;
+  t: Dictionary["progress"];
+  localeTag: string;
 }) {
   const displayLevels = levels.filter((item) => item.level <= 10);
   const activeIndex = Math.min(Math.max(currentLevel, 1), 10) - 1;
@@ -129,7 +135,7 @@ function MountainRoadmap({
   return (
     <Card>
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <CardTitle>レベルロードマップ</CardTitle>
+        <CardTitle>{t.roadmapTitle}</CardTitle>
         <span className="rounded-full bg-surface px-3 py-1 text-xs font-bold text-muted">
           Lv.{currentLevel}
         </span>
@@ -168,7 +174,7 @@ function MountainRoadmap({
 
         <div className="absolute left-5 top-5 flex items-center gap-2 rounded-2xl border border-white/55 bg-card/85 px-3 py-2 text-sm font-extrabold shadow-[var(--shadow-sm)] backdrop-blur-md">
           <Icon name="trophy" size={16} className="text-[var(--c-amber)]" />
-          富士山
+          {t.roadmapMountain}
         </div>
         <div
           className="absolute -translate-x-1/2 -translate-y-1/2"
@@ -178,7 +184,7 @@ function MountainRoadmap({
             <Icon name="star" size={18} filled />
           </div>
           <span className="-ml-5 mt-2 block rounded-full border border-white/60 bg-card/95 px-2.5 py-1 text-[11px] font-bold text-primary shadow-sm backdrop-blur">
-            現在地
+            {t.roadmapHere}
           </span>
         </div>
       </div>
@@ -198,7 +204,7 @@ function MountainRoadmap({
                     ? "border-[var(--c-emerald)]/35 bg-[var(--c-emerald)]/10"
                     : "border-border bg-surface/70",
               ].join(" ")}
-              title={`${item.minXp.toLocaleString("ja-JP")} XP`}
+              title={`${item.minXp.toLocaleString(localeTag)} XP`}
             >
               <p
                 className={[
@@ -236,9 +242,13 @@ const MEDAL: Record<number, { bg: string; fg: string }> = {
 function LeaderboardList({
   users,
   currentUserId,
+  t,
+  localeTag,
 }: {
   users: LeaderboardUser[];
   currentUserId: string | null;
+  t: Dictionary["progress"];
+  localeTag: string;
 }) {
   const podium = users.slice(0, 3);
   const rest = users.slice(3);
@@ -246,21 +256,17 @@ function LeaderboardList({
   return (
     <Card>
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <CardTitle>仲間のランキング</CardTitle>
+        <CardTitle>{t.leaderboardTitle}</CardTitle>
         <span className="rounded-full bg-surface px-3 py-1 text-xs font-bold text-muted">
           Top {users.length || "-"}
         </span>
       </div>
-      <p className="mt-1 text-xs leading-5 text-muted">
-        競争ではなく、一緒に続ける仲間。みんなの積み重ねが励みになります。
-      </p>
+      <p className="mt-1 text-xs leading-5 text-muted">{t.leaderboardBody}</p>
 
       {users.length === 0 ? (
         <div className="mt-4 rounded-2xl border border-dashed border-border bg-surface p-4">
-          <p className="text-sm font-bold">まだランキングデータがありません</p>
-          <p className="mt-1 text-xs leading-5 text-muted">
-            文をPassすると、XPランキングに反映されます。
-          </p>
+          <p className="text-sm font-bold">{t.leaderboardEmptyTitle}</p>
+          <p className="mt-1 text-xs leading-5 text-muted">{t.leaderboardEmptyBody}</p>
         </div>
       ) : (
         <div className="mt-4 space-y-3">
@@ -271,6 +277,8 @@ function LeaderboardList({
                 rank={i + 1}
                 isMe={user.id === currentUserId}
                 key={user.id}
+                t={t}
+                localeTag={localeTag}
               />
             ))}
           </div>
@@ -283,6 +291,8 @@ function LeaderboardList({
                   rank={i + 4}
                   isMe={user.id === currentUserId}
                   key={user.id}
+                  t={t}
+                  localeTag={localeTag}
                 />
               ))}
             </div>
@@ -297,10 +307,14 @@ function PodiumUser({
   user,
   rank,
   isMe,
+  t,
+  localeTag,
 }: {
   user: LeaderboardUser;
   rank: number;
   isMe: boolean;
+  t: Dictionary["progress"];
+  localeTag: string;
 }) {
   const medal = MEDAL[rank - 1];
   return (
@@ -334,22 +348,25 @@ function PodiumUser({
             <span className="truncate">{user.displayName}</span>
             {isMe && (
               <span className="shrink-0 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-primary">
-                あなた
+                {t.you}
               </span>
             )}
           </p>
           <p className="mt-1 flex flex-wrap items-center gap-x-2 text-xs font-semibold text-muted">
             <span>Lv.{user.level}</span>
-            <span>{user.passed}文Pass</span>
+            <span>
+              {user.passed}
+              {t.passSuffix}
+            </span>
             <span className="inline-flex items-center gap-0.5 text-[var(--warning)]">
               <Icon name="flame" size={11} filled />
-              {user.streak}日
+              {user.streak}
             </span>
           </p>
         </div>
         <div className="shrink-0 text-right">
           <p className="text-base font-black leading-none tabular-nums text-fg">
-            {user.totalXp.toLocaleString("ja-JP")}
+            {user.totalXp.toLocaleString(localeTag)}
           </p>
           <p className="mt-0.5 text-[10px] font-bold text-muted">XP</p>
         </div>
@@ -362,10 +379,14 @@ function LeaderboardRow({
   user,
   rank,
   isMe,
+  t,
+  localeTag,
 }: {
   user: LeaderboardUser;
   rank: number;
   isMe: boolean;
+  t: Dictionary["progress"];
+  localeTag: string;
 }) {
   return (
     <div
@@ -388,16 +409,17 @@ function LeaderboardRow({
           <span className="truncate">{user.displayName}</span>
           {isMe && (
             <span className="shrink-0 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-primary">
-              あなた
+              {t.you}
             </span>
           )}
         </p>
         <p className="mt-0.5 text-xs text-muted">
-          Lv.{user.level} · {user.passed}文Pass · {user.streak}日
+          Lv.{user.level} · {user.passed}
+          {t.passSuffix} · {user.streak}
         </p>
       </div>
       <p className="shrink-0 text-sm font-black tabular-nums">
-        {user.totalXp.toLocaleString("ja-JP")}
+        {user.totalXp.toLocaleString(localeTag)}
         <span className="ml-0.5 text-[10px] text-muted">XP</span>
       </p>
     </div>
@@ -406,6 +428,8 @@ function LeaderboardRow({
 
 export default function ProgressPage() {
   const { state, ready } = useData();
+  const { locale, localeTag, dictionary } = useI18n();
+  const t = dictionary.progress;
   const profile = state.profile;
   const [leaderboard, setLeaderboard] = useState<LeaderboardPayload | null>(null);
 
@@ -429,7 +453,7 @@ export default function ProgressPage() {
   const mission = todayMission(state);
   const totalXp = profile?.total_xp ?? 0;
   const lp = levelProgress(totalXp);
-  const roadmap = useMemo(() => visibleLevelMap(lp.level), [lp.level]);
+  const roadmap = useMemo(() => visibleLevelMap(lp.level, locale), [locale, lp.level]);
   const myRank = profile
     ? (leaderboard?.ranks.find((rank) => rank.userId === profile.id)?.rank ?? null)
     : null;
@@ -437,21 +461,21 @@ export default function ProgressPage() {
   const sentenceEstimate = Math.max(1, Math.ceil(lp.toNext / 5));
   const nextLevelHint =
     lp.toNext <= 100 && !mission.completed
-      ? "今日のミッション完了で届く可能性があります。"
-      : `目安は約${sentenceEstimate}文Pass。ミッション完了のXPも大きいです。`;
+      ? t.focusNextLevelClose
+      : t.focusNextLevelEstimate(sentenceEstimate);
 
   if (!ready) return <FullScreenLoading />;
 
   return (
     <AppShell>
       <div className="animate-in">
-        <p className="text-sm font-bold text-primary">進捗</p>
+        <p className="text-sm font-bold text-primary">{t.eyebrow}</p>
         <h1 className="mt-1 text-2xl font-bold">
-          {profile ? `${levelTitle(lp.level)} · Lv.${lp.level}` : "ゲスト閲覧中"}
+          {profile
+            ? `${levelTitle(lp.level, locale)} · Lv.${lp.level}`
+            : t.guestTitle}
         </h1>
-        <p className="mt-1.5 max-w-xl text-sm text-muted">
-          大事なのは点数より習慣。毎日少しずつPassを積み重ね、身につけた反射を実際の場面で使える力に変えていきましょう。
-        </p>
+        <p className="mt-1.5 max-w-xl text-sm text-muted">{t.intro}</p>
       </div>
 
       <section className="mt-4">
@@ -461,28 +485,28 @@ export default function ProgressPage() {
               <div className="flex flex-wrap items-start justify-between gap-5">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/70">
-                    現在地
+                    {t.currentPosition}
                   </p>
                   <p className="mt-2 text-5xl font-extrabold leading-none sm:text-6xl">
                     Lv.{lp.level}
                   </p>
                   <p className="mt-1.5 text-base font-bold text-white/90">
-                    {levelTitle(lp.level)}
+                    {levelTitle(lp.level, locale)}
                   </p>
                 </div>
                 <div className="rounded-2xl bg-white/15 px-3.5 py-2.5 text-right backdrop-blur">
-                  <p className="text-xs text-white/75">総XP</p>
+                  <p className="text-xs text-white/75">{t.totalXp}</p>
                   <p className="text-xl font-extrabold tabular-nums">
-                    {totalXp.toLocaleString("ja-JP")}
+                    {totalXp.toLocaleString(localeTag)}
                   </p>
                 </div>
               </div>
 
               <div className="mt-5">
                 <div className="flex items-end justify-between gap-3 text-sm">
-                  <span className="font-bold">Lv.{lp.level + 1}まで</span>
+                  <span className="font-bold">{t.toNextLevel(lp.level + 1)}</span>
                   <span className="font-extrabold tabular-nums">
-                    あと{lp.toNext.toLocaleString("ja-JP")} XP
+                    {t.remainingXp(lp.toNext.toLocaleString(localeTag))}
                   </span>
                 </div>
                 <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-white/20">
@@ -492,26 +516,26 @@ export default function ProgressPage() {
                   />
                 </div>
                 <p className="mt-2 text-xs text-white/75 tabular-nums">
-                  {lp.intoLevel.toLocaleString("ja-JP")} /{" "}
-                  {lp.perLevel.toLocaleString("ja-JP")} XP
+                  {lp.intoLevel.toLocaleString(localeTag)} /{" "}
+                  {lp.perLevel.toLocaleString(localeTag)} XP
                 </p>
               </div>
             </div>
 
             <div className="grid gap-2.5 p-3.5 sm:grid-cols-3">
               <MiniMetric
-                label="現在のストリーク"
-                value={`${profile?.current_streak ?? 0}日`}
+                label={t.metricStreak}
+                value={`${profile?.current_streak ?? 0}${dictionary.common.days}`}
                 icon="flame"
               />
               <MiniMetric
-                label="XPランキング"
+                label={t.metricRank}
                 value={myRank ? `#${myRank}` : "-"}
                 icon="trending"
               />
               <MiniMetric
-                label="優先スキル"
-                value={weak ? SKILL_LABEL_JA[weak] : "-"}
+                label={t.metricWeakSkill}
+                value={weak ? skillLabel(t, weak) : "-"}
                 icon="target"
               />
             </div>
@@ -519,27 +543,25 @@ export default function ProgressPage() {
 
           <div className="grid content-start gap-2.5">
             <FocusRow
-              label="今日の最優先"
+              label={t.focusToday}
               value={
                 mission.completed
-                  ? "ミッション完了。余裕があれば短い文を復習しましょう。"
-                  : `あと${missionLeft}文Passでストリークを維持できます。`
+                  ? t.focusTodayDone
+                  : t.focusTodayLeft(missionLeft)
               }
               icon="flame"
               tone="var(--c-amber)"
             />
             <FocusRow
-              label="次のレベル"
+              label={t.focusNextLevel}
               value={nextLevelHint}
               icon="star"
               tone="var(--c-violet)"
             />
             <FocusRow
-              label="スコア改善"
+              label={t.focusScore}
               value={
-                weak
-                  ? `${SKILL_LABEL_JA[weak]}を短い文で集中的に練習しましょう。`
-                  : "まずは数回録音して、弱点を見える化しましょう。"
+                weak ? t.focusScoreWeak(skillLabel(t, weak)) : t.focusScoreNone
               }
               icon="target"
               tone="var(--c-sky)"
@@ -549,10 +571,22 @@ export default function ProgressPage() {
 
         <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,0.85fr)_minmax(300px,1.15fr)]">
           <div className="grid gap-2.5 sm:grid-cols-2">
-            <MiniMetric label="完了レッスン" value={totalCompletedLessons(state)} icon="trophy" />
-            <MiniMetric label="Passした文" value={totalPassedSentences(state)} icon="check" />
-            <MiniMetric label="平均スコア" value={avg ?? "-"} icon="gauge" />
-            <MiniMetric label="次レベル進捗" value={`${lp.pct}%`} icon="sparkles" />
+            <MiniMetric
+              label={t.metricLessonsDone}
+              value={totalCompletedLessons(state)}
+              icon="trophy"
+            />
+            <MiniMetric
+              label={t.metricSentencesPassed}
+              value={totalPassedSentences(state)}
+              icon="check"
+            />
+            <MiniMetric label={t.metricAverage} value={avg ?? "-"} icon="gauge" />
+            <MiniMetric
+              label={t.metricNextLevelPct}
+              value={`${lp.pct}%`}
+              icon="sparkles"
+            />
           </div>
           <CalendarHeatmap
             stats={dailyPassStats(state, 30)}
@@ -564,10 +598,18 @@ export default function ProgressPage() {
 
       <section className="mt-6">
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(300px,0.75fr)]">
-          <MountainRoadmap levels={roadmap} currentLevel={lp.level} totalXp={totalXp} />
+          <MountainRoadmap
+            levels={roadmap}
+            currentLevel={lp.level}
+            totalXp={totalXp}
+            t={t}
+            localeTag={localeTag}
+          />
           <LeaderboardList
             users={leaderboard?.topXp ?? []}
             currentUserId={profile?.id ?? null}
+            t={t}
+            localeTag={localeTag}
           />
         </div>
       </section>

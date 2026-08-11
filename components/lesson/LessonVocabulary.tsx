@@ -7,6 +7,7 @@ import { useData } from "@/lib/store/DataProvider";
 import { isVocabSaved, vocabKey } from "@/lib/store/selectors";
 import { createClient } from "@/lib/supabase/client";
 import { Icon } from "@/components/ui/icon";
+import { useI18n } from "@/components/i18n/useI18n";
 
 interface VocabStat {
   saved_count: number;
@@ -28,6 +29,8 @@ export function LessonVocabulary({
   lessonId: string;
 }) {
   const { state, toggleSavedVocab } = useData();
+  const { dictionary, href } = useI18n();
+  const t = dictionary.vocabulary;
   const items = vocabulary ?? [];
   const canSave = Boolean(state.profile);
   const [stats, setStats] = useState<Map<string, VocabStat>>(new Map());
@@ -82,18 +85,19 @@ export function LessonVocabulary({
       <div className="flex items-center justify-between gap-3 border-b border-border bg-surface/70 px-5 py-3">
         <h2 className="flex items-center gap-2 text-lg font-extrabold">
           <Icon name="book" size={18} />
-          重要語彙
+          {t.title}
         </h2>
         <div className="flex shrink-0 items-center gap-2">
           <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold tabular-nums text-primary">
-            {items.length}語
+            {items.length}
+            {t.countSuffix}
           </span>
           <Link
-            href="/review"
+            href={href("/review")}
             className="focus-ring inline-flex items-center gap-1 rounded-full border border-border bg-surface px-2.5 py-1 text-xs font-bold text-muted transition-colors hover:border-primary/40 hover:text-primary"
           >
             <Icon name="bookmark" size={13} />
-            単語帳
+            {t.notebook}
           </Link>
         </div>
       </div>
@@ -137,7 +141,7 @@ export function LessonVocabulary({
                         type="button"
                         onClick={() => toggleSavedVocab(v, lessonId)}
                         aria-pressed={saved}
-                        title={saved ? "単語帳から削除" : "単語帳に保存"}
+                        title={saved ? t.remove : t.save}
                         className={[
                           "focus-ring flex h-full items-center gap-1.5 px-2.5 transition-colors",
                           saved
@@ -151,7 +155,7 @@ export function LessonVocabulary({
                     ) : (
                       <span
                         className="flex h-full items-center gap-1.5 px-2.5 text-muted"
-                        title={`${savedCount}人が単語帳に保存`}
+                        title={t.savedByCount(savedCount)}
                       >
                         <Icon name="bookmark" size={14} />
                         {savedCount}
@@ -161,7 +165,7 @@ export function LessonVocabulary({
                 )}
                 {popular && (
                   <span className="rounded-full bg-[var(--warning-soft)] px-1.5 py-0.5 text-[9px] font-bold text-[var(--warning)]">
-                    人気
+                    {t.popular}
                   </span>
                 )}
               </div>

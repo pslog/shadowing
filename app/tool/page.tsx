@@ -11,6 +11,7 @@ import { FullScreenLoading } from "@/components/ui/loading";
 import { Icon } from "@/components/ui/icon";
 import { useRequireProfile } from "@/lib/store/useRequireProfile";
 import { isAdminProfile } from "@/lib/store/selectors";
+import { useI18n } from "@/components/i18n/useI18n";
 
 type Platform = "youtube" | "tiktok" | "facebook";
 
@@ -50,13 +51,13 @@ function embedUrlFor(video: SourceVideo) {
   )}&show_text=false`;
 }
 
-function formatPublished(value: string | null) {
-  if (!value) return "Chưa có ngày";
+function formatPublished(value: string | null, localeTag: string, noDate: string) {
+  if (!value) return noDate;
 
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
 
-  return new Intl.DateTimeFormat("vi-VN", {
+  return new Intl.DateTimeFormat(localeTag, {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -74,6 +75,8 @@ function videoKey(video: SourceVideo) {
 
 export default function ToolPage() {
   const { profile, ready } = useRequireProfile();
+  const { localeTag, dictionary, href } = useI18n();
+  const t = dictionary.tool;
   const [rawUrl, setRawUrl] = useState("");
   const [submittedUrl, setSubmittedUrl] = useState("");
   const [videos, setVideos] = useState<SourceVideo[]>([]);
@@ -97,7 +100,7 @@ export default function ToolPage() {
   async function loadSourceVideos() {
     const nextUrl = normalizeUrl(rawUrl);
     if (!nextUrl) {
-      setError("Nhập link channel/profile/page trước.");
+      setError(t.errorNoUrl);
       return;
     }
 
@@ -117,24 +120,18 @@ export default function ToolPage() {
       };
 
       if (!response.ok) {
-        throw new Error(payload.error ?? "Không tải được danh sách video.");
+        throw new Error(payload.error ?? t.errorLoadFailed);
       }
 
       const nextVideos = payload.videos ?? [];
       setVideos(nextVideos);
       setLoadState("loaded");
       if (nextVideos.length === 0) {
-        setError(
-          "Không tìm thấy video public nào. TikTok/Facebook có thể chặn profile riêng tư hoặc nội dung cần đăng nhập.",
-        );
+        setError(t.errorNoPublic);
       }
     } catch (loadError) {
       setLoadState("error");
-      setError(
-        loadError instanceof Error
-          ? loadError.message
-          : "Không tải được danh sách video.",
-      );
+      setError(loadError instanceof Error ? loadError.message : t.errorLoadFailed);
     }
   }
 
@@ -153,18 +150,15 @@ export default function ToolPage() {
     <AppShell>
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <Link href="/" className="text-sm text-muted hover:text-fg">
-            Về dashboard
+          <Link href={href("/")} className="text-sm text-muted hover:text-fg">
+            {t.backToDashboard}
           </Link>
-          <h1 className="mt-1 text-2xl font-bold">Tool kiểm tra video channel</h1>
-          <p className="max-w-3xl text-muted">
-            Dán link YouTube channel, TikTok profile hoặc Facebook page để tải video
-            public và mở player trực tiếp trên page.
-          </p>
+          <h1 className="mt-1 text-2xl font-bold">{t.title}</h1>
+          <p className="max-w-3xl text-muted">{t.subtitle}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Badge tone="primary">{videos.length} video</Badge>
-          <Badge tone="neutral">{loadedCount} player đã tải</Badge>
+          <Badge tone="primary">{t.videoCount(videos.length)}</Badge>
+          <Badge tone="neutral">{t.loadedCount(loadedCount)}</Badge>
           {platforms.map((platform) => (
             <Badge key={platform} tone="neutral">
               {platformLabel[platform]}
@@ -174,7 +168,7 @@ export default function ToolPage() {
       </div>
 
       <Card className="mb-5">
-        <CardTitle>Link nguồn</CardTitle>
+        <CardTitle>{t.sourceTitle}</CardTitle>
         <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_auto]">
           <input
             value={rawUrl}
@@ -191,7 +185,7 @@ export default function ToolPage() {
             disabled={loadState === "loading"}
           >
             <Icon name="play" size={16} />
-            {loadState === "loading" ? "Đang tải..." : "Tải video"}
+            {loadState === "loading" ? t.loading : t.loadVideos}
           </Button>
         </div>
         {error && (
@@ -208,7 +202,7 @@ export default function ToolPage() {
             disabled={videos.length === 0 || loadedCount === videos.length}
           >
             <Icon name="play" size={16} />
-            Tải toàn bộ player
+            {t.loadAllPlayers}
           </Button>
           <div className="grid grid-cols-2 gap-2">
             {(["compact", "wide"] as const).map((mode) => (
@@ -218,39 +212,34 @@ export default function ToolPage() {
                 variant={layoutMode === mode ? "primary" : "outline"}
                 onClick={() => setLayoutMode(mode)}
               >
-                {mode === "compact" ? "Lưới" : "Rộng"}
+                {mode === "compact" ? t.layoutGrid : t.layoutWide}
               </Button>
             ))}
           </div>
-          <p className="text-sm text-muted">
-            Player được lazy-load để page nhẹ hơn; bấm từng video hoặc tải tất cả
-            khi cần check đồng loạt.
-          </p>
+          <p className="text-sm text-muted">{t.lazyHint}</p>
         </div>
       </Card>
 
       {loadState === "idle" ? (
         <Card>
-          <CardTitle>Danh sách video</CardTitle>
+          <CardTitle>{t.idleTitle}</CardTitle>
           <div className="mt-4 grid min-h-[28rem] place-items-center rounded-xl border border-dashed border-border bg-surface/60 p-8 text-center">
             <div>
               <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-primary/10 text-primary">
                 <Icon name="play" size={20} />
               </div>
-              <p className="font-semibold">Nhập link nguồn để tải video.</p>
-              <p className="mt-1 text-sm text-muted">
-                Hỗ trợ YouTube, TikTok và Facebook public.
-              </p>
+              <p className="font-semibold">{t.idleBody}</p>
+              <p className="mt-1 text-sm text-muted">{t.idleHint}</p>
             </div>
           </div>
         </Card>
       ) : loadState === "loading" ? (
         <Card>
-          <CardTitle>Đang tải</CardTitle>
+          <CardTitle>{t.loadingTitle}</CardTitle>
           <div className="mt-4 grid min-h-[28rem] place-items-center rounded-xl border border-border bg-surface/60 p-8 text-center">
             <div>
               <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-              <p className="font-semibold">Đang đọc video từ nguồn...</p>
+              <p className="font-semibold">{t.loadingBody}</p>
               <p className="mt-1 max-w-md break-all text-sm text-muted">
                 {submittedUrl}
               </p>
@@ -271,7 +260,7 @@ export default function ToolPage() {
                   <Badge tone="primary">{platformLabel[video.platform]}</Badge>
                   <div className="min-w-0">
                     <p className="line-clamp-1 text-sm font-semibold">{video.title}</p>
-                    <p className="text-xs text-muted">{formatPublished(video.publishedAt)}</p>
+                    <p className="text-xs text-muted">{formatPublished(video.publishedAt, localeTag, t.noDate)}</p>
                   </div>
                 </div>
                 <div className="relative aspect-video bg-black">
@@ -318,7 +307,7 @@ export default function ToolPage() {
                     rel="noreferrer"
                     className="min-w-0 truncate text-sm font-semibold text-primary hover:underline"
                   >
-                    Mở trên {platformLabel[video.platform]}
+                    {t.openOn(platformLabel[video.platform])}
                   </a>
                   {!loaded && (
                     <Button
@@ -328,7 +317,7 @@ export default function ToolPage() {
                       onClick={() => loadPlayer(video)}
                     >
                       <Icon name="play" size={14} />
-                      Tải player
+                      {t.loadPlayer}
                     </Button>
                   )}
                 </div>
@@ -338,12 +327,10 @@ export default function ToolPage() {
         </div>
       ) : (
         <Card>
-          <CardTitle>Không có video</CardTitle>
+          <CardTitle>{t.emptyTitle}</CardTitle>
           <div className="mt-4 rounded-xl border border-border bg-surface/60 p-8 text-center">
-            <p className="font-semibold">Chưa tìm thấy video public để hiển thị.</p>
-            <p className="mt-1 text-sm text-muted">
-              Thử link profile/page public hoặc link video trực tiếp.
-            </p>
+            <p className="font-semibold">{t.emptyBody}</p>
+            <p className="mt-1 text-sm text-muted">{t.emptyHint}</p>
           </div>
         </Card>
       )}

@@ -15,11 +15,14 @@ import {
   sentencesForLesson,
 } from "@/lib/store/selectors";
 import { AdminOnlyNotice } from "@/components/lesson/AdminOnlyNotice";
+import { useI18n } from "@/components/i18n/useI18n";
 
 export default function EditLessonPage() {
   const params = useParams<{ id: string }>();
   const { profile, ready } = useRequireProfile();
   const { state } = useData();
+  const { dictionary, href } = useI18n();
+  const t = dictionary.lessonForm;
 
   if (!ready || !profile) return <FullScreenLoading />;
   if (!isAdmin(state)) return <AdminOnlyNotice />;
@@ -31,11 +34,11 @@ export default function EditLessonPage() {
     return (
       <AppShell>
         <div className="space-y-3">
-          <Link href="/courses" className="text-sm text-muted hover:text-fg">
-            ← レッスン
+          <Link href={href("/courses")} className="text-sm text-muted hover:text-fg">
+            {t.backToLessons}
           </Link>
-          <h1 className="text-2xl font-bold">レッスンが見つかりません</h1>
-          <p className="text-muted">削除されたか、URLが間違っている可能性があります。</p>
+          <h1 className="text-2xl font-bold">{t.notFound}</h1>
+          <p className="text-muted">{t.notFoundBody}</p>
         </div>
       </AppShell>
     );
@@ -44,11 +47,14 @@ export default function EditLessonPage() {
   return (
     <AppShell>
       <div className="mb-5">
-        <Link href={lessonHref(lesson)} className="text-sm text-muted hover:text-fg">
-          ← レッスン詳細
+        <Link
+          href={href(lessonHref(lesson))}
+          className="text-sm text-muted hover:text-fg"
+        >
+          {t.backToLesson}
         </Link>
-        <h1 className="mt-1 text-2xl font-bold">レッスンを編集</h1>
-        <p className="text-muted">タイトル、音声URL、スクリプト、メモを更新できます。</p>
+        <h1 className="mt-1 text-2xl font-bold">{t.editTitle}</h1>
+        <p className="text-muted">{t.editBody}</p>
       </div>
       <EditLessonForm lesson={{ ...lesson, sentences }} />
 

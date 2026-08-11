@@ -9,6 +9,7 @@ import {
 } from "@/lib/store/selectors";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/components/i18n/useI18n";
 
 /**
  * Shown when every sentence in a lesson has been passed. Recaps the lesson
@@ -21,6 +22,8 @@ import { Button } from "@/components/ui/button";
  */
 export function LessonReview({ lessonId }: { lessonId: string }) {
   const { state } = useData();
+  const { dictionary } = useI18n();
+  const t = dictionary.lessonReview;
   const sentences = sentencesForLesson(state, lessonId);
   const average = lessonAverageScore(state, lessonId);
 
@@ -75,19 +78,17 @@ export function LessonReview({ lessonId }: { lessonId: string }) {
           <div>
             <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.22em] text-white/75">
               <Icon name="trophy" size={14} />
-              レッスン完了
+              {t.eyebrow}
             </p>
-            <h2 className="mt-1 text-2xl font-extrabold">通して聞き返す</h2>
-            <p className="mt-1 text-sm text-white/82">
-              自分の録音を順番に一気に再生します。
-            </p>
+            <h2 className="mt-1 text-2xl font-extrabold">{t.title}</h2>
+            <p className="mt-1 text-sm text-white/82">{t.body}</p>
           </div>
           <div className="shrink-0 text-center">
             <div className="text-4xl font-extrabold tabular-nums leading-none">
               {average ?? "—"}
             </div>
             <div className="mt-1 text-[11px] font-bold uppercase tracking-wider text-white/75">
-              平均点
+              {t.average}
             </div>
           </div>
         </div>
@@ -101,7 +102,7 @@ export function LessonReview({ lessonId }: { lessonId: string }) {
           className="w-full"
         >
           <Icon name={isRunning ? "stop" : "volume"} size={18} filled={isRunning} />
-          {isRunning ? "停止" : "通しで再生"}
+          {isRunning ? t.stop : t.playAll}
         </Button>
 
         <div className="mt-3 space-y-1.5">
@@ -137,7 +138,9 @@ export function LessonReview({ lessonId }: { lessonId: string }) {
                 </p>
                 <span className="shrink-0 text-sm font-extrabold tabular-nums text-primary">
                   {it.score ?? "—"}
-                  <span className="text-[11px] font-bold text-muted">点</span>
+                  <span className="text-[11px] font-bold text-muted">
+                    {dictionary.common.points}
+                  </span>
                 </span>
               </button>
             );
@@ -145,9 +148,7 @@ export function LessonReview({ lessonId }: { lessonId: string }) {
         </div>
 
         {noAudio && (
-          <p className="px-1 pt-2 text-center text-xs text-muted">
-            録音の再生はこのセッション中のみ可能です（再読み込みで消えます）。
-          </p>
+          <p className="px-1 pt-2 text-center text-xs text-muted">{t.sessionOnly}</p>
         )}
       </div>
     </section>

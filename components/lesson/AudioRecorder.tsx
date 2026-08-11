@@ -5,6 +5,7 @@ import { Icon } from "@/components/ui/icon";
 import { buttonClasses } from "@/components/ui/button";
 import { useRecorder, type RecordResult } from "@/lib/speech/useRecorder";
 import { cn } from "@/lib/cn";
+import { useI18n } from "@/components/i18n/useI18n";
 
 export function AudioRecorder({
   disabled,
@@ -22,6 +23,8 @@ export function AudioRecorder({
   /** Inline mode: suppress the "browser unsupported" note so the parent can place it. */
   hideNotes?: boolean;
 }) {
+  const { dictionary } = useI18n();
+  const t = dictionary.recorder;
   const { status, interim, error, sttSupported, start, stop } = useRecorder();
   const [busy, setBusy] = useState(false);
   const recording = status === "recording";
@@ -46,7 +49,7 @@ export function AudioRecorder({
           type="button"
           onClick={recording ? handleStop : start}
           disabled={disabled || processing}
-          aria-label={recording ? "録音を停止" : "録音を開始"}
+          aria-label={recording ? t.stopRecording : t.startRecording}
           className={buttonClasses(recording ? "danger" : "primary", "md", className)}
         >
           {processing ? (
@@ -54,7 +57,7 @@ export function AudioRecorder({
           ) : (
             <Icon name={recording ? "stop" : "mic"} size={18} filled={recording} />
           )}
-          {processing ? "処理中" : recording ? "停止" : "録音"}
+          {processing ? t.processing : recording ? t.stop : t.record}
         </button>
 
         {recording && interim && (
@@ -68,7 +71,7 @@ export function AudioRecorder({
         {error && <p className="basis-full text-center text-sm text-danger">{error}</p>}
         {!sttSupported && !hideNotes && (
           <p className="basis-full text-center text-xs text-[var(--warning)]">
-            このブラウザは音声認識に非対応です。ChromeまたはEdgeを推奨します。
+            {t.sttUnsupportedShort}
           </p>
         )}
       </>
@@ -101,7 +104,7 @@ export function AudioRecorder({
           type="button"
           onClick={recording ? handleStop : start}
           disabled={disabled || processing}
-          aria-label={recording ? "録音を停止" : "録音を開始"}
+          aria-label={recording ? t.stopRecording : t.startRecording}
           className={cn(
             "focus-ring relative grid place-items-center rounded-full text-white transition-all duration-200 active:scale-95 disabled:opacity-60",
             compact ? "h-18 w-18" : "h-24 w-24",
@@ -123,12 +126,12 @@ export function AudioRecorder({
 
       <p className={cn("font-medium", compact ? "text-xs" : "text-sm")}>
         {processing
-          ? "処理中..."
+          ? t.processingLong
           : recording
             ? compact
-              ? "話し終わったら停止"
-              : "聞いています...話し終わったら停止してください"
-            : "押して録音"}
+              ? t.listeningCompact
+              : t.listening
+            : t.pressToRecord}
       </p>
 
       {recording && interim && (
@@ -149,9 +152,7 @@ export function AudioRecorder({
             sttSupported ? "text-muted" : "text-[var(--warning)]",
           )}
         >
-          {sttSupported
-            ? "ブラウザの音声認識で日本語（ja-JP）を認識します。"
-            : "このブラウザは音声認識に対応していません。採点は推定で行います。ChromeまたはEdgeを使うと文字起こしできます。"}
+          {sttSupported ? t.sttSupported : t.sttUnsupported}
         </p>
       )}
     </div>

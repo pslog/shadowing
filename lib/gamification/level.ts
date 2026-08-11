@@ -1,5 +1,7 @@
 // Level & title logic for general Japanese shadowing.
 
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+
 export interface LevelMilestone {
   level: number;
   minXp: number;
@@ -22,6 +24,24 @@ export const LEVEL_MILESTONES: LevelMilestone[] = [
   { level: 30, minXp: 52000, title: "表現力の達人" },
   { level: 50, minXp: 140000, title: "シャドーイングレジェンド" },
 ];
+
+/** Vietnamese rank names, keyed by the milestone level they belong to. */
+const LEVEL_TITLES_VI: Record<number, string> = {
+  1: "Nhập môn nhịp điệu",
+  2: "Bắt được âm",
+  3: "Nói theo được",
+  4: "Nhịp điệu ổn định",
+  5: "Miệng đã quen",
+  6: "Phản xạ câu ngắn",
+  7: "Ngữ điệu tiến bộ",
+  8: "Tốc độ tự nhiên",
+  9: "Phát âm ổn định",
+  10: "Vững hội thoại",
+  15: "Shadowing nâng cao",
+  20: "Bậc thầy nói tiếng Nhật",
+  30: "Cao thủ biểu đạt",
+  50: "Huyền thoại Shadowing",
+};
 
 function xpForLevel(level: number): number {
   const known = LEVEL_MILESTONES.find((item) => item.level === level);
@@ -74,15 +94,20 @@ export function levelProgress(totalXp: number): {
   };
 }
 
-export function levelTitle(level: number): string {
-  return (
-    [...LEVEL_MILESTONES]
-      .reverse()
-      .find((item) => level >= item.level)?.title ?? "リズム入門"
-  );
+export function levelTitle(level: number, locale: Locale = DEFAULT_LOCALE): string {
+  const milestone =
+    [...LEVEL_MILESTONES].reverse().find((item) => level >= item.level) ??
+    LEVEL_MILESTONES[0];
+  if (locale === "vi") {
+    return LEVEL_TITLES_VI[milestone.level] ?? milestone.title;
+  }
+  return milestone.title;
 }
 
-export function visibleLevelMap(currentLevel: number): LevelMilestone[] {
+export function visibleLevelMap(
+  currentLevel: number,
+  locale: Locale = DEFAULT_LOCALE,
+): LevelMilestone[] {
   const nearby = new Set<number>();
   for (let level = 1; level <= 10; level += 1) nearby.add(level);
   [15, 20, 30, 50].forEach((level) => nearby.add(level));
@@ -99,6 +124,6 @@ export function visibleLevelMap(currentLevel: number): LevelMilestone[] {
   return [...nearby].sort((a, b) => a - b).map((level) => ({
     level,
     minXp: xpForLevel(level),
-    title: levelTitle(level),
+    title: levelTitle(level, locale),
   }));
 }

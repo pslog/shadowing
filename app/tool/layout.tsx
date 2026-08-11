@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
 import { privatePageMetadata } from "@/lib/seo";
+import { requestMessages } from "@/lib/seo-locale";
 
-export const metadata: Metadata = privatePageMetadata({
-  title: "Tool kiểm tra video channel",
-  description:
-    "Trang admin để tải danh sách video public từ YouTube, TikTok, Facebook và kiểm tra player trực tiếp.",
-  path: "/tool",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const { locale, m } = await requestMessages();
+  return privatePageMetadata({
+    title: m.meta.toolTitle,
+    description: m.meta.toolDescription,
+    path: "/tool",
+    locale,
+  });
+}
 
 export default function ToolLayout({ children }: { children: React.ReactNode }) {
   return children;

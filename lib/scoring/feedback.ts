@@ -1,5 +1,7 @@
 // Short, encouraging feedback. One message only to avoid overwhelming users.
 
+import { DEFAULT_LOCALE, type Locale, messages } from "@/lib/i18n";
+
 export interface FeedbackScores {
   pronunciation: number;
   speed: number;
@@ -8,6 +10,8 @@ export interface FeedbackScores {
   intonation: number | null;
   total: number;
   hasTranscript?: boolean;
+  /** Locale of the learner at the time of the attempt. */
+  locale?: Locale;
 }
 
 const MIN_PRONUNCIATION_FOR_PASS = 91;
@@ -19,16 +23,15 @@ export function generateFeedback({
   intonation,
   total,
   hasTranscript = true,
+  locale = DEFAULT_LOCALE,
 }: FeedbackScores): string {
-  if (!hasTranscript)
-    return "音声を認識できませんでした。静かな場所でもう一度録音してみましょう。";
-  if (coverage < 80)
-    return "文の一部が抜けています。短く区切って、最後まで声に出してみましょう。";
-  if (pronunciation < MIN_PRONUNCIATION_FOR_PASS)
-    return "発音がPass基準に届いていません。音を聞いてから、同じ順番でよりはっきりまねてください。";
-  if (total >= 90) return "とても良いです。この文は自然に聞こえます。";
-  if (total >= 80)
-    return "Passです。もう少し練習すると、さらに自然に話せます。";
+  const t = (messages[locale] ?? messages[DEFAULT_LOCALE]).score;
+
+  if (!hasTranscript) return t.feedbackNoTranscript;
+  if (coverage < 80) return t.feedbackCoverage;
+  if (pronunciation < MIN_PRONUNCIATION_FOR_PASS) return t.feedbackPronunciation;
+  if (total >= 90) return t.feedbackGreat;
+  if (total >= 80) return t.feedbackPassed;
 
   // Only coach on dimensions we actually measured.
   const dims: Array<{ key: "pron" | "speed" | "inton"; value: number }> = [
@@ -38,11 +41,9 @@ export function generateFeedback({
   if (intonation != null) dims.push({ key: "inton", value: intonation });
   const lowest = dims.reduce((a, b) => (b.value < a.value ? b : a));
 
-  if (lowest.key === "pron")
-    return "一番の課題は発音です。原文をもう一度聞いて、音をはっきり出してみましょう。";
-  if (lowest.key === "speed")
-    return "一番の課題は速度です。原文と比べて速すぎる、または遅すぎる可能性があります。";
-  return "一番の課題はイントネーションです。文の区切りと上がり下がりに注意しましょう。";
+  if (lowest.key === "pron") return t.feedbackLowPronunciation;
+  if (lowest.key === "speed") return t.feedbackLowSpeed;
+  return t.feedbackLowIntonation;
 }
 
 /** Extra nudge shown under the score when the user is close but failed. */
@@ -50,13 +51,14 @@ export function almostFeedback(
   total: number,
   passScore: number,
   pronunciation?: number,
+  locale: Locale = DEFAULT_LOCALE,
 ): string {
+  const t = (messages[locale] ?? messages[DEFAULT_LOCALE]).score;
   if (
     typeof pronunciation === "number" &&
     pronunciation < MIN_PRONUNCIATION_FOR_PASS
   ) {
-    return "発音が91点以上になるまで、もう一度試してみましょう。";
+    return t.almostRetry;
   }
-  const gap = passScore - total;
-  return `Passまであと${gap}点です。もう一度試してみましょう。`;
+  return t.almostGap(passScore - total);
 }

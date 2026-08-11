@@ -12,6 +12,7 @@ import { Icon } from "@/components/ui/icon";
 import { useData } from "@/lib/store/DataProvider";
 import { isAdminProfile } from "@/lib/store/selectors";
 import { useRequireProfile } from "@/lib/store/useRequireProfile";
+import { useI18n } from "@/components/i18n/useI18n";
 
 interface LessonViewOverview {
   totalViews: number;
@@ -44,9 +45,9 @@ interface LessonViewsPayload {
   lessons: LessonViewRow[];
 }
 
-function formatDate(value: string | null) {
+function formatDate(value: string | null, localeTag: string) {
   if (!value) return "-";
-  return new Intl.DateTimeFormat("ja-JP", {
+  return new Intl.DateTimeFormat(localeTag, {
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
@@ -57,6 +58,8 @@ function formatDate(value: string | null) {
 export default function AdminLessonViewsPage() {
   const { profile, ready } = useRequireProfile();
   const { usingSupabase } = useData();
+  const { localeTag, dictionary, href } = useI18n();
+  const t = dictionary.adminViews;
   const [data, setData] = useState<LessonViewsPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -105,23 +108,19 @@ export default function AdminLessonViewsPage() {
     <AdminConsoleShell>
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold">レッスン閲覧統計</h1>
-          <p className="text-muted">
-            どのレッスンが見られているか、全体の閲覧数と人気順を確認します。
-          </p>
+          <h1 className="text-2xl font-bold">{t.title}</h1>
+          <p className="text-muted">{t.subtitle}</p>
         </div>
         <Button type="button" variant="secondary" onClick={() => void loadStats()}>
           <Icon name="retry" size={16} />
-          更新
+          {t.refresh}
         </Button>
       </div>
 
       {!usingSupabase && (
         <Card className="mb-4">
-          <CardTitle>Supabaseが必要です</CardTitle>
-          <p className="mt-2 text-sm text-muted">
-            閲覧統計はSupabaseのlesson_viewsテーブルに保存されます。
-          </p>
+          <CardTitle>{t.supabaseTitle}</CardTitle>
+          <p className="mt-2 text-sm text-muted">{t.supabaseBody}</p>
         </Card>
       )}
 
@@ -133,37 +132,37 @@ export default function AdminLessonViewsPage() {
 
       <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
-          <CardTitle>総閲覧数</CardTitle>
+          <CardTitle>{t.totalViews}</CardTitle>
           <p className="mt-2 text-3xl font-black tabular-nums">
             {data?.overview.totalViews ?? "-"}
           </p>
         </Card>
         <Card>
-          <CardTitle>閲覧されたレッスン</CardTitle>
+          <CardTitle>{t.viewedLessons}</CardTitle>
           <p className="mt-2 text-3xl font-black tabular-nums">
             {data?.overview.viewedLessonCount ?? "-"}
           </p>
         </Card>
         <Card>
-          <CardTitle>ログイン閲覧者</CardTitle>
+          <CardTitle>{t.signedInViewers}</CardTitle>
           <p className="mt-2 text-3xl font-black tabular-nums">
             {data?.overview.totalSignedInViewers ?? "-"}
           </p>
         </Card>
         <Card>
-          <CardTitle>ゲスト閲覧者</CardTitle>
+          <CardTitle>{t.guestViewers}</CardTitle>
           <p className="mt-2 text-3xl font-black tabular-nums">
             {data?.overview.totalAnonymousViewers ?? "-"}
           </p>
         </Card>
         <Card>
-          <CardTitle>Shadowing参加者</CardTitle>
+          <CardTitle>{t.shadowingUsers}</CardTitle>
           <p className="mt-2 text-3xl font-black tabular-nums">
             {data?.overview.totalShadowingUsers ?? "-"}
           </p>
         </Card>
         <Card>
-          <CardTitle>完了ユーザー</CardTitle>
+          <CardTitle>{t.completedUsers}</CardTitle>
           <p className="mt-2 text-3xl font-black tabular-nums">
             {data?.overview.totalCompletedUsers ?? "-"}
           </p>
@@ -172,12 +171,12 @@ export default function AdminLessonViewsPage() {
 
       {topLesson && (
         <Card className="mb-5 border-primary/20 bg-primary/7">
-          <CardTitle>現在よく見られているレッスン</CardTitle>
+          <CardTitle>{t.topLessonTitle}</CardTitle>
           <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-lg font-extrabold">{topLesson.title}</p>
               <p className="mt-1 text-sm text-muted">
-                最終閲覧 {formatDate(topLesson.lastViewedAt)}
+                {t.lastViewed} {formatDate(topLesson.lastViewedAt, localeTag)}
               </p>
             </div>
             <Badge tone="primary" className="w-fit">
@@ -189,29 +188,27 @@ export default function AdminLessonViewsPage() {
 
       <Card className="overflow-hidden p-0">
         <div className="border-b border-border px-5 py-4">
-          <CardTitle>レッスン別閲覧数</CardTitle>
-          <p className="mt-1 text-sm text-muted">
-            view数が多い順。未閲覧レッスンも下に表示されます。
-          </p>
+          <CardTitle>{t.tableTitle}</CardTitle>
+          <p className="mt-1 text-sm text-muted">{t.tableSubtitle}</p>
         </div>
 
         {loading ? (
-          <div className="p-5 text-sm text-muted">統計を読み込み中...</div>
+          <div className="p-5 text-sm text-muted">{t.loading}</div>
         ) : !data || data.lessons.length === 0 ? (
-          <div className="p-5 text-sm text-muted">統計データがまだありません。</div>
+          <div className="p-5 text-sm text-muted">{t.empty}</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[840px] text-left text-sm">
               <thead className="border-b border-border bg-surface/70 text-xs uppercase text-muted">
                 <tr>
-                  <th className="px-5 py-3 font-semibold">レッスン</th>
-                  <th className="px-5 py-3 font-semibold">分類</th>
+                  <th className="px-5 py-3 font-semibold">{t.colLesson}</th>
+                  <th className="px-5 py-3 font-semibold">{t.colCategory}</th>
                   <th className="px-5 py-3 text-right font-semibold">Views</th>
                   <th className="px-5 py-3 text-right font-semibold">Login</th>
                   <th className="px-5 py-3 text-right font-semibold">Guest</th>
                   <th className="px-5 py-3 text-right font-semibold">Shadowing</th>
                   <th className="px-5 py-3 text-right font-semibold">Complete</th>
-                  <th className="px-5 py-3 font-semibold">最終閲覧</th>
+                  <th className="px-5 py-3 font-semibold">{t.colLastViewed}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -219,7 +216,7 @@ export default function AdminLessonViewsPage() {
                   <tr key={lesson.lessonId} className="align-middle">
                     <td className="px-5 py-4">
                       <Link
-                        href={`/lessons/${lesson.slug ?? lesson.lessonId}`}
+                        href={href(`/lessons/${lesson.slug ?? lesson.lessonId}`)}
                         className="font-semibold hover:text-primary"
                       >
                         {lesson.title}
@@ -248,7 +245,7 @@ export default function AdminLessonViewsPage() {
                       {lesson.completedUsers.toLocaleString()}
                     </td>
                     <td className="px-5 py-4 text-muted">
-                      {formatDate(lesson.lastViewedAt)}
+                      {formatDate(lesson.lastViewedAt, localeTag)}
                     </td>
                   </tr>
                 ))}

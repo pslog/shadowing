@@ -11,6 +11,8 @@ import { AppShell } from "@/components/layout/AppShell";
 import { FullScreenLoading } from "@/components/ui/loading";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
+import { useI18n } from "@/components/i18n/useI18n";
+import type { Dictionary } from "@/lib/i18n";
 
 type Filter = "all" | "unlearned" | "learned";
 
@@ -21,6 +23,8 @@ interface VocabStat {
 
 export default function ReviewPage() {
   const { state, ready, setVocabLearned, removeSavedVocab } = useData();
+  const { dictionary, href } = useI18n();
+  const t = dictionary.review;
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const [deck, setDeck] = useState<SavedVocab[] | null>(null);
@@ -84,12 +88,10 @@ export default function ReviewPage() {
           <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-primary">
             <Icon name="bookmark" size={28} filled />
           </div>
-          <h1 className="mt-4 text-xl font-extrabold">単語帳</h1>
-          <p className="mt-2 text-sm text-muted">
-            ログインすると単語を保存して、フラッシュカードで復習できます。
-          </p>
-          <Link href="/login" className={`${buttonClasses("primary")} mt-5`}>
-            ログイン
+          <h1 className="mt-4 text-xl font-extrabold">{t.title}</h1>
+          <p className="mt-2 text-sm text-muted">{t.guestBody}</p>
+          <Link href={href("/login")} className={`${buttonClasses("primary")} mt-5`}>
+            {dictionary.common.login}
           </Link>
         </div>
       </AppShell>
@@ -103,6 +105,7 @@ export default function ReviewPage() {
           deck={deck}
           onExit={() => setDeck(null)}
           onLearned={(id, learned) => setVocabLearned(id, learned)}
+          t={t}
         />
       </AppShell>
     );
@@ -117,10 +120,10 @@ export default function ReviewPage() {
             <div>
               <h1 className="flex items-center gap-2 text-2xl font-extrabold sm:text-3xl">
                 <Icon name="bookmark" size={24} filled />
-                単語帳
+                {t.title}
               </h1>
               <p className="mt-2 text-sm text-muted">
-                保存した単語 {all.length}語 · 習得済み {learnedCount}語
+                {t.summary(all.length, learnedCount)}
               </p>
             </div>
             {all.length > 0 && (
@@ -135,10 +138,10 @@ export default function ReviewPage() {
                   }
                 >
                   <Icon name="play" size={16} />
-                  未習得を復習
+                  {t.reviewUnlearned}
                 </Button>
                 <Button variant="secondary" onClick={() => setDeck(all)}>
-                  すべて復習
+                  {t.reviewAll}
                 </Button>
               </div>
             )}
@@ -148,12 +151,12 @@ export default function ReviewPage() {
         {all.length === 0 ? (
           <div className="card p-8 text-center text-muted">
             <p className="text-sm">
-              まだ保存した単語がありません。レッスンを開いて{" "}
-              <span className="font-semibold text-fg">重要語彙</span>{" "}
-              のブックマークを押すと保存できます。
+              {t.emptyBody}{" "}
+              <span className="font-semibold text-fg">{t.emptyHighlight}</span>{" "}
+              {t.emptyTail}
             </p>
-            <Link href="/courses" className={`${buttonClasses("primary")} mt-4`}>
-              レッスンへ
+            <Link href={href("/courses")} className={`${buttonClasses("primary")} mt-4`}>
+              {t.goToLessons}
             </Link>
           </div>
         ) : (
@@ -162,9 +165,9 @@ export default function ReviewPage() {
               <div className="flex gap-1.5">
                 {(
                   [
-                    ["all", `すべて (${all.length})`],
-                    ["unlearned", `未習得 (${all.length - learnedCount})`],
-                    ["learned", `習得済み (${learnedCount})`],
+                    ["all", t.filterAll(all.length)],
+                    ["unlearned", t.filterUnlearned(all.length - learnedCount)],
+                    ["learned", t.filterLearned(learnedCount)],
                   ] as [Filter, string][]
                 ).map(([key, label]) => (
                   <button
@@ -186,7 +189,7 @@ export default function ReviewPage() {
                 type="search"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="単語・意味を検索…"
+                placeholder={t.searchPlaceholder}
                 className="focus-ring h-10 w-full rounded-xl border border-border bg-surface px-3 text-sm sm:w-56"
               />
             </div>
@@ -203,11 +206,13 @@ export default function ReviewPage() {
                   }}
                   onToggleLearned={() => setVocabLearned(v.id, !v.learned)}
                   onRemove={() => removeSavedVocab(v.id)}
+                  t={t}
+                  localizedHref={href}
                 />
               ))}
               {filtered.length === 0 && (
                 <li className="px-4 py-6 text-center text-sm text-muted">
-                  該当する単語がありません。
+                  {t.noMatch}
                 </li>
               )}
             </ul>
@@ -224,12 +229,16 @@ function VocabRow({
   lessonHrefFor,
   onToggleLearned,
   onRemove,
+  t,
+  localizedHref,
 }: {
   item: SavedVocab;
   stat?: VocabStat;
   lessonHrefFor: (lessonId: string | null) => string | null;
   onToggleLearned: () => void;
   onRemove: () => void;
+  t: Dictionary["review"];
+  localizedHref: (href: string) => string;
 }) {
   const href = lessonHrefFor(item.lesson_id);
   return (
@@ -242,14 +251,14 @@ function VocabRow({
             </span>
             {item.learned && (
               <span className="rounded-full bg-[var(--success-soft)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--success)]">
-                習得済み
+                {t.learnedTag}
               </span>
             )}
             {stat && stat.saved_count > 0 && (
               <span className="inline-flex items-center gap-2 text-[11px] text-muted">
                 <span
                   className="inline-flex items-center gap-1"
-                  title={`${stat.saved_count}人が単語帳に保存`}
+                  title={t.savedByCount(stat.saved_count)}
                 >
                   <Icon name="bookmark" size={11} />
                   {stat.saved_count}
@@ -257,7 +266,7 @@ function VocabRow({
                 {stat.learned_count > 0 && (
                   <span
                     className="inline-flex items-center gap-1 text-[var(--success)]"
-                    title={`${stat.learned_count}人が習得`}
+                    title={t.learnedByCount(stat.learned_count)}
                   >
                     <Icon name="check" size={11} />
                     {stat.learned_count}
@@ -274,10 +283,10 @@ function VocabRow({
           </p>
           {href && (
             <Link
-              href={href}
+              href={localizedHref(href)}
               className="mt-0.5 inline-flex text-[11px] font-semibold text-primary hover:underline"
             >
-              → レッスンを見る
+              {t.openLesson}
             </Link>
           )}
         </div>
@@ -292,7 +301,7 @@ function VocabRow({
         <button
           type="button"
           onClick={onToggleLearned}
-          title={item.learned ? "未習得に戻す" : "習得済みにする"}
+          title={item.learned ? t.markUnlearned : t.markLearned}
           className={[
             "focus-ring grid h-8 w-8 place-items-center rounded-lg transition-colors",
             item.learned
@@ -305,7 +314,7 @@ function VocabRow({
         <button
           type="button"
           onClick={onRemove}
-          title="削除"
+          title={t.remove}
           className="focus-ring grid h-8 w-8 place-items-center rounded-lg text-muted transition-colors hover:bg-[var(--danger-soft)] hover:text-[var(--danger)]"
         >
           <span aria-hidden className="text-lg leading-none">
@@ -321,10 +330,12 @@ function Flashcards({
   deck,
   onExit,
   onLearned,
+  t,
 }: {
   deck: SavedVocab[];
   onExit: () => void;
   onLearned: (id: string, learned: boolean) => void;
+  t: Dictionary["review"];
 }) {
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
@@ -346,12 +357,10 @@ function Flashcards({
         <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-[var(--success-soft)] text-[var(--success)]">
           <Icon name="trophy" size={28} filled />
         </div>
-        <h1 className="mt-4 text-xl font-extrabold">完了！</h1>
-        <p className="mt-2 text-sm text-muted">
-          {total}語中 {done}語を復習しました。
-        </p>
+        <h1 className="mt-4 text-xl font-extrabold">{t.deckDoneTitle}</h1>
+        <p className="mt-2 text-sm text-muted">{t.deckDoneBody(done, total)}</p>
         <Button onClick={onExit} className="mt-5">
-          単語帳へ戻る
+          {t.backToNotebook}
         </Button>
       </div>
     );
@@ -365,7 +374,7 @@ function Flashcards({
           onClick={onExit}
           className="text-sm text-muted hover:text-fg"
         >
-          ← 単語帳
+          {t.backShort}
         </button>
         <span className="text-sm font-bold tabular-nums text-muted">
           {index + 1} / {total}
@@ -376,7 +385,7 @@ function Flashcards({
         key={index}
         type="button"
         onClick={() => setFlipped((f) => !f)}
-        aria-label={flipped ? "単語に戻す" : "意味を表示"}
+        aria-label={flipped ? t.flipToWord : t.flipToMeaning}
         className="card-enter focus-ring block w-full"
         style={{ perspective: "1400px" }}
       >
@@ -391,7 +400,7 @@ function Flashcards({
           >
             <div className="pointer-events-none absolute inset-x-8 top-0 h-px brand-gradient" />
             <span className="absolute right-4 top-3 text-[11px] font-bold uppercase tracking-widest text-muted">
-              単語
+              {t.faceWord}
             </span>
             <p lang="ja" className="text-4xl font-extrabold text-fg">
               {card.word}
@@ -412,9 +421,9 @@ function Flashcards({
               className="focus-ring inline-flex items-center gap-1.5 rounded-full bg-surface px-3 py-1 text-xs font-bold text-primary"
             >
               <Icon name="volume" size={14} />
-              聞く
+              {t.listen}
             </span>
-            <p className="mt-3 text-xs text-muted">タップして意味を表示</p>
+            <p className="mt-3 text-xs text-muted">{t.tapToFlip}</p>
           </div>
 
           {/* Back: reading, meaning, example */}
@@ -427,7 +436,7 @@ function Flashcards({
             }}
           >
             <span className="absolute right-4 top-3 text-[11px] font-bold uppercase tracking-widest text-muted">
-              意味
+              {t.faceMeaning}
             </span>
             <p lang="ja" className="text-lg font-bold text-primary">
               {card.reading}
@@ -446,11 +455,11 @@ function Flashcards({
       <div className="flex items-center justify-between gap-3">
         <Button variant="secondary" onClick={() => next(false)} className="flex-1">
           <Icon name="retry" size={16} />
-          未習得
+          {t.notLearned}
         </Button>
         <Button onClick={() => next(true)} className="flex-1">
           <Icon name="check" size={16} />
-          習得済み
+          {t.learned}
         </Button>
       </div>
     </div>

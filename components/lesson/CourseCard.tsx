@@ -1,9 +1,12 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 import { topicHue } from "@/lib/topic-style";
 import { optimizedImageSrc } from "@/lib/optimized-image";
+import { useI18n } from "@/components/i18n/useI18n";
 import type { Course } from "@/lib/types";
 import type { CourseStats } from "@/lib/store/selectors";
 
@@ -23,6 +26,7 @@ export function CourseCard({
   engagement?: CourseEngagementStats;
   href: string;
 }) {
+  const { dictionary: m, href: localizedHref } = useI18n();
   const hue = course.accent ?? topicHue(course.topic);
   const imageSrc = optimizedImageSrc(course.image_url);
   const done = stats.total > 0 && stats.completed >= stats.total;
@@ -38,7 +42,7 @@ export function CourseCard({
 
   return (
     <Link
-      href={href}
+      href={localizedHref(href)}
       prefetch={false}
       className={[
         "card card-interactive group grid min-h-36 grid-cols-[5.5rem_minmax(0,1fr)] gap-3 overflow-hidden p-3 sm:grid-cols-[7rem_minmax(0,1fr)] sm:gap-4",
@@ -87,7 +91,7 @@ export function CourseCard({
           <div className="flex min-w-0 flex-wrap items-center gap-1.5">
             {course.level && <Badge>{course.level}</Badge>}
             <Badge tone={done ? "success" : "primary"}>
-              {done ? "全完了" : `${stats.total}レッスン`}
+              {done ? m.common.allDone : `${stats.total}${m.common.lessons}`}
             </Badge>
             {stats.averageScore != null && (
               <span
@@ -95,22 +99,22 @@ export function CourseCard({
                 style={{ background: scoreTone ?? "var(--muted)" }}
               >
                 <Icon name="star" size={11} filled />
-                平均 {stats.averageScore}点
+                {m.common.average} {stats.averageScore}{m.common.scoreSuffix}
               </span>
             )}
           </div>
           <span
             className="inline-flex h-7 shrink-0 items-center gap-2 rounded-full border border-border/70 bg-card/85 px-2.5 text-[11px] font-extrabold text-muted shadow-sm backdrop-blur"
-            aria-label={`${totalViews} views, ${shadowingUsers} shadowing users`}
+            aria-label={`${totalViews} ${m.common.views}, ${shadowingUsers} ${m.common.shadowingUsers}`}
           >
-            <span className="inline-flex items-center gap-1 tabular-nums" title="Views">
+            <span className="inline-flex items-center gap-1 tabular-nums" title={m.common.views}>
               <Icon name="eye" size={12} />
               {totalViews.toLocaleString()}
             </span>
             <span className="h-3 w-px bg-border" aria-hidden="true" />
             <span
               className="inline-flex items-center gap-1 tabular-nums"
-              title="Shadowing users"
+              title={m.common.shadowingUsers}
             >
               <Icon name="users" size={12} />
               {shadowingUsers.toLocaleString()}
@@ -130,7 +134,7 @@ export function CourseCard({
         <div className="mt-auto pt-3">
           <div className="mb-1.5 flex items-center justify-between gap-2 text-xs">
             <span className="font-bold text-fg tabular-nums">
-              {stats.completed}/{stats.total} 完了
+              {stats.completed}/{stats.total} {m.lessonCard.completedSuffix}
             </span>
             <span className="font-semibold text-muted tabular-nums">
               {Math.round(pct)}%
@@ -143,7 +147,7 @@ export function CourseCard({
             />
           </div>
           <span className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-primary">
-            開く
+            {m.common.open}
             <Icon
               name="arrow-right"
               size={15}

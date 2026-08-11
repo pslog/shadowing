@@ -1,19 +1,19 @@
+"use client";
+
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { lessonHue } from "@/lib/topic-style";
 import { lessonHref } from "@/lib/store/selectors";
+import { useI18n } from "@/components/i18n/useI18n";
 import type { Lesson, LessonStatus } from "@/lib/types";
 import type { LessonEngagementStats } from "./useLessonEngagementStats";
 
-const STATUS: Record<
-  LessonStatus,
-  { label: string; tone: "neutral" | "primary" | "success" }
-> = {
-  not_started: { label: "未学習", tone: "neutral" },
-  in_progress: { label: "学習中", tone: "primary" },
-  completed: { label: "完了", tone: "success" },
+const STATUS_TONE: Record<LessonStatus, "neutral" | "primary" | "success"> = {
+  not_started: "neutral",
+  in_progress: "primary",
+  completed: "success",
 };
 
 export function LessonCard({
@@ -35,12 +35,18 @@ export function LessonCard({
   engagement?: LessonEngagementStats;
   href?: string;
 }) {
-  const s = STATUS[status];
+  const { dictionary: m, href: localizedHref } = useI18n();
+  const statusLabel =
+    status === "not_started"
+      ? m.common.notStarted
+      : status === "completed"
+        ? m.common.completed
+        : m.common.inProgress;
   const pct = total > 0 ? (passed / total) * 100 : 0;
   const hue = lessonHue(lesson.topic, lesson.title);
   const completed = status === "completed";
   const d = lastAttemptAt ? new Date(lastAttemptAt) : null;
-  const lastPracticed = d ? `${d.getMonth() + 1}月${d.getDate()}日` : null;
+  const lastPracticed = d ? `${d.getMonth() + 1}/${d.getDate()}` : null;
   const totalViews = engagement?.totalViews ?? 0;
   const shadowingUsers = engagement?.shadowingUsers ?? 0;
   const scoreTone =
@@ -73,7 +79,7 @@ export function LessonCard({
           >
             {lesson.title}
           </h3>
-          <Badge tone={s.tone}>{s.label}</Badge>
+          <Badge tone={STATUS_TONE[status]}>{statusLabel}</Badge>
         </div>
 
         <div className="mt-2.5 flex items-center justify-between gap-3">
@@ -91,16 +97,16 @@ export function LessonCard({
 
           <div
             className="inline-flex h-7 shrink-0 items-center gap-2 rounded-full border border-border/70 bg-card/85 px-2.5 text-[11px] font-extrabold text-muted shadow-sm backdrop-blur"
-            aria-label={`${totalViews} views, ${shadowingUsers} shadowing users`}
+            aria-label={`${totalViews} ${m.common.views}, ${shadowingUsers} ${m.common.shadowingUsers}`}
           >
-            <span className="inline-flex items-center gap-1 tabular-nums" title="Views">
+            <span className="inline-flex items-center gap-1 tabular-nums" title={m.common.views}>
               <Icon name="eye" size={12} />
               {totalViews.toLocaleString()}
             </span>
             <span className="h-3 w-px bg-border" aria-hidden="true" />
             <span
               className="inline-flex items-center gap-1 tabular-nums"
-              title="Shadowing users"
+              title={m.common.shadowingUsers}
             >
               <Icon name="users" size={12} />
               {shadowingUsers.toLocaleString()}
@@ -113,7 +119,8 @@ export function LessonCard({
         <div>
           <div className="mb-2 flex items-center justify-between gap-2 text-xs">
             <span className="font-bold text-fg tabular-nums">
-              {passed}/{total} 文
+              {passed}/{total}
+              {m.common.sentences}
             </span>
             {averageScore != null && (
               <span
@@ -121,7 +128,7 @@ export function LessonCard({
                 style={{ background: scoreTone ?? "var(--muted)" }}
               >
                 <Icon name="star" size={11} filled />
-                平均{averageScore}点
+                {m.lessonCard.averagePrefix}{averageScore}{m.common.scoreSuffix}
               </span>
             )}
           </div>
@@ -132,16 +139,16 @@ export function LessonCard({
             />
           </div>
           <p className="mt-1.5 text-xs text-muted tabular-nums">
-            {Math.round(pct)}% 完了
+            {Math.round(pct)}% {m.lessonCard.percentCompleted}
             {lesson.duration_seconds
-              ? ` · 約${Math.round(lesson.duration_seconds / 60)}分`
+              ? ` · ${Math.round(lesson.duration_seconds / 60)}${m.common.minuteApprox}`
               : ""}
-            {lastPracticed ? ` · 最終 ${lastPracticed}` : ""}
+            {lastPracticed ? ` · ${m.common.last} ${lastPracticed}` : ""}
           </p>
         </div>
 
         <Link
-          href={href ?? lessonHref(lesson)}
+          href={localizedHref(href ?? lessonHref(lesson))}
           prefetch={false}
           className={buttonClasses(
             status === "completed" ? "secondary" : "primary",
@@ -150,10 +157,10 @@ export function LessonCard({
           )}
         >
           {status === "not_started"
-            ? "開始"
+            ? m.common.start
             : status === "completed"
-              ? "もう一度練習"
-              : "続きから"}
+              ? m.common.practiceAgain
+              : m.common.continue}
           <Icon name="arrow-right" size={16} />
         </Link>
       </div>

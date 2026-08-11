@@ -39,6 +39,8 @@ import { ScoreResult } from "./ScoreResult";
 import { LessonReview } from "./LessonReview";
 import { LessonVocabulary } from "./LessonVocabulary";
 import { Furigana } from "./Furigana";
+import { useI18n } from "@/components/i18n/useI18n";
+import type { Dictionary } from "@/lib/i18n";
 
 function attemptToScore(a: SentenceAttempt): ScoreBreakdown {
   return {
@@ -70,9 +72,13 @@ const recentLessonViewRecords = new Map<string, number>();
 function MissionCompleteDialog({
   outcome,
   onClose,
+  t,
+  dayLabel,
 }: {
   outcome: AttemptOutcome;
   onClose: () => void;
+  t: Dictionary["player"];
+  dayLabel: string;
 }) {
   if (typeof document === "undefined") return null;
 
@@ -96,31 +102,29 @@ function MissionCompleteDialog({
           id="mission-complete-title"
           className="mt-4 text-2xl font-extrabold text-fg"
         >
-          ミッション達成！
+          {t.missionDialogTitle}
         </p>
-        <p className="mt-2 text-sm leading-6 text-muted">
-          今日の学習リズムを守りました。明日も少しだけ声に出して、
-          みんなと一緒にストリークをつなげましょう。
-        </p>
+        <p className="mt-2 text-sm leading-6 text-muted">{t.missionDialogBody}</p>
         <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
           <div className="rounded-xl bg-surface px-3 py-2">
             <p className="text-xs font-bold text-muted">Streak</p>
             <p className="mt-0.5 text-lg font-extrabold text-[var(--success)]">
-              {outcome.currentStreak}日
+              {outcome.currentStreak}
+              {dayLabel}
             </p>
           </div>
           <div className="rounded-xl bg-surface px-3 py-2">
-            <p className="text-xs font-bold text-muted">Bonus</p>
+            <p className="text-xs font-bold text-muted">{t.bonus}</p>
             <p className="mt-0.5 text-lg font-extrabold text-primary">+100 XP</p>
           </div>
         </div>
         {outcome.leveledUp && (
           <p className="mt-3 rounded-xl bg-primary/10 px-3 py-2 text-sm font-bold text-primary">
-            Level {outcome.newLevel}にアップ！
+            {t.levelUp(outcome.newLevel)}
           </p>
         )}
         <Button onClick={onClose} className="mt-5 w-full">
-          続ける
+          {t.continueButton}
         </Button>
       </div>
     </div>,
@@ -138,25 +142,27 @@ const TRANSCRIPT_TOKEN_STYLE: Record<ScoreAlignmentToken["status"], string> = {
 function TranscriptComparison({
   transcript,
   textAlignment,
+  t,
 }: {
   transcript: string;
   textAlignment?: ScoreAlignmentToken[];
+  t: Dictionary["player"];
 }) {
   const hasTranscript = transcript.trim().length > 0;
   const displayAlignment = textAlignment?.length ? textAlignment : undefined;
 
   return (
     <div className="mx-auto mt-3 max-w-2xl text-left">
-      <p className="text-xs font-extrabold text-muted">認識された発話</p>
+      <p className="text-xs font-extrabold text-muted">{t.recognized}</p>
       <p
         lang="ja"
         className="mt-1.5 rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold leading-8 text-fg"
       >
         {!hasTranscript
-          ? "（認識できませんでした）"
+          ? t.notRecognized
           : displayAlignment?.length
             ? displayAlignment.map((token, i) => (
-                <TranscriptToken token={token} key={`${i}-${token.status}`} />
+                <TranscriptToken token={token} key={`${i}-${token.status}`} t={t} />
               ))
             : transcript}
       </p>
@@ -164,7 +170,13 @@ function TranscriptComparison({
   );
 }
 
-function TranscriptToken({ token }: { token: ScoreAlignmentToken }) {
+function TranscriptToken({
+  token,
+  t,
+}: {
+  token: ScoreAlignmentToken;
+  t: Dictionary["player"];
+}) {
   const visibleText = token.status === "missing" ? token.target : token.spoken;
   if (!visibleText) return null;
 
@@ -176,12 +188,12 @@ function TranscriptToken({ token }: { token: ScoreAlignmentToken }) {
       ].join(" ")}
       title={
         token.status === "substitution" && token.target
-          ? `正: ${token.target}`
+          ? t.tokenCorrect(token.target)
           : token.status === "missing"
-            ? "抜け"
+            ? t.tokenMissing
             : token.status === "extra"
-              ? "余分"
-              : "一致"
+              ? t.tokenExtra
+              : t.tokenMatch
       }
     >
       {visibleText}
@@ -199,6 +211,7 @@ function DialogueScript({
   onPractice,
   onTimeUpdate,
   onStop,
+  t,
 }: {
   sentences: LessonSentence[];
   activeIndex: number;
@@ -209,6 +222,7 @@ function DialogueScript({
   onPractice: (index: number) => void;
   onTimeUpdate: (e: React.SyntheticEvent<HTMLAudioElement>) => void;
   onStop: () => void;
+  t: Dictionary["player"];
 }) {
   return (
     <section className="overflow-hidden rounded-[1.75rem] border border-border bg-card shadow-[var(--shadow-md)]">
@@ -218,9 +232,9 @@ function DialogueScript({
           <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/75">
             Step 1
           </p>
-          <h2 className="mt-1 text-2xl font-extrabold">会話全体を読む</h2>
+          <h2 className="mt-1 text-2xl font-extrabold">{t.step1Title}</h2>
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/82">
-            日本語だけを通して読んで、会話の流れを先につかみます。
+            {t.step1Body}
           </p>
         </div>
       </div>
@@ -230,7 +244,7 @@ function DialogueScript({
           <div className="mb-3 rounded-xl border border-border bg-surface/80 p-3">
             <div className="mb-2 flex items-center gap-2 text-sm font-bold">
               <Icon name="volume" size={16} />
-              会話音声
+              {t.lessonAudio}
             </div>
             <audio
               ref={audioRef}
@@ -248,7 +262,7 @@ function DialogueScript({
                 rel="noreferrer"
                 className="mt-2 inline-flex text-xs font-semibold text-primary hover:underline"
               >
-                再生できない場合はDriveで開く
+                {t.openDrive}
               </a>
             )}
           </div>
@@ -276,7 +290,7 @@ function DialogueScript({
                       ? "bg-[var(--success)] text-white"
                       : "border border-border bg-surface text-muted group-hover:border-primary/40 group-hover:text-primary",
                 ].join(" ")}
-                aria-label={`${i + 1}番の文を練習`}
+                aria-label={t.practiceSentence(i + 1)}
               >
                 {passed ? "✓" : i + 1}
               </button>
@@ -291,16 +305,16 @@ function DialogueScript({
               >
                 <div className="mb-1.5 flex flex-wrap items-center gap-2">
                   <span className="text-[11px] font-bold text-muted">
-                    発話 {i + 1}
+                    {t.utterance(i + 1)}
                   </span>
                   {active && (
                       <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[11px] font-bold text-primary">
-                      練習中
+                      {t.practicing}
                     </span>
                   )}
                   {passed && !active && (
                       <span className="rounded-full bg-[var(--success-soft)] px-1.5 py-0.5 text-[11px] font-bold text-[var(--success)]">
-                      Pass済み
+                      {t.passedTag}
                     </span>
                   )}
                 </div>
@@ -323,17 +337,21 @@ function SentenceNumberNav({
   bestScoreForSentence,
   passedForSentence,
   onSelect,
+  t,
+  pointsLabel,
 }: {
   sentences: LessonSentence[];
   activeIndex: number;
   bestScoreForSentence: (id: string) => number | null;
   passedForSentence: (id: string) => boolean;
   onSelect: (index: number) => void;
+  t: Dictionary["player"];
+  pointsLabel: string;
 }) {
   return (
     <div className="rounded-2xl border border-border bg-surface/80 px-3 py-2.5">
       <div className="flex flex-wrap items-center gap-1.5">
-        <span className="mr-1 text-xs font-bold text-muted">文</span>
+        <span className="mr-1 text-xs font-bold text-muted">{t.sentenceShort}</span>
         {sentences.map((sentence, i) => {
           const active = i === activeIndex;
           const passed = passedForSentence(sentence.id);
@@ -343,7 +361,11 @@ function SentenceNumberNav({
               key={sentence.id}
               type="button"
               onClick={() => onSelect(i)}
-              title={bestScore != null ? `${i + 1}: ${bestScore}点` : `${i + 1}`}
+              title={
+                bestScore != null
+                  ? `${i + 1}: ${bestScore}${pointsLabel}`
+                  : `${i + 1}`
+              }
               className={[
                 "focus-ring grid h-9 min-w-9 place-items-center rounded-lg px-2 text-xs font-extrabold tabular-nums transition-all active:scale-95",
                 active
@@ -352,7 +374,7 @@ function SentenceNumberNav({
                     ? "bg-[var(--success)] text-white"
                     : "border border-border bg-card text-muted hover:border-primary/40 hover:text-primary",
               ].join(" ")}
-              aria-label={`${i + 1}番の文`}
+              aria-label={t.sentenceNumber(i + 1)}
             >
               {i + 1}
             </button>
@@ -366,9 +388,11 @@ function SentenceNumberNav({
 function InlineScore({
   score,
   improvement,
+  t,
 }: {
   score: ScoreBreakdown;
   improvement: number | null;
+  t: Dictionary["player"];
 }) {
   return (
     <div className="mt-3 rounded-xl border border-border bg-surface px-3 py-2.5">
@@ -384,20 +408,28 @@ function InlineScore({
           </span>
           <div>
             <p className="text-sm font-extrabold">
-              {score.passed ? "Pass" : "もう少し"}
+              {score.passed ? t.pass : t.almost}
             </p>
             {typeof improvement === "number" && improvement > 0 && (
               <p className="text-xs font-semibold text-[var(--success)]">
-                前回より+{improvement}点
+                {t.improvement(improvement)}
               </p>
             )}
           </div>
         </div>
         <div className="flex gap-1.5 text-[11px] font-bold tabular-nums text-muted">
-          <span>発音 {score.pronunciation}</span>
-          <span>網羅 {score.coverage ?? "—"}</span>
-          <span>速度 {score.speed}</span>
-          <span>抑揚 {score.intonation ?? "—"}</span>
+          <span>
+            {t.dimPronunciation} {score.pronunciation}
+          </span>
+          <span>
+            {t.dimCoverage} {score.coverage ?? "—"}
+          </span>
+          <span>
+            {t.dimSpeed} {score.speed}
+          </span>
+          <span>
+            {t.dimIntonation} {score.intonation ?? "—"}
+          </span>
         </div>
       </div>
     </div>
@@ -407,6 +439,8 @@ function InlineScore({
 export function LessonPlayer({ lessonId }: { lessonId: string }) {
   const { state, recordAttempt, ensureLessonSentences, usingSupabase } = useData();
   const searchParams = useSearchParams();
+  const { locale, dictionary: m, href } = useI18n();
+  const t = m.player;
   const [index, setIndex] = useState(0);
   const [fresh, setFresh] = useState<FreshResult | null>(null);
   const [missionAlert, setMissionAlert] = useState<AttemptOutcome | null>(null);
@@ -481,7 +515,7 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
     return (
       <div className="card p-6 text-center text-muted">
         <span className="mx-auto mb-3 block h-7 w-7 animate-spin rounded-full border-2 border-border border-t-primary" />
-        <p className="text-sm font-semibold">読み込み中...</p>
+        <p className="text-sm font-semibold">{t.loading}</p>
       </div>
     );
   }
@@ -489,9 +523,9 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
   if (!lesson || sentences.length === 0) {
     return (
       <div className="card p-6 text-center text-muted">
-        レッスンが見つかりません。{" "}
-        <Link href="/courses" className="text-primary underline">
-          一覧へ戻る
+        {t.notFound}{" "}
+        <Link href={href("/courses")} className="text-primary underline">
+          {t.backToList}
         </Link>
       </div>
     );
@@ -627,6 +661,7 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
         userDurationSeconds: r.durationSeconds,
         intonationSimilarity,
         passScore: current.pass_score,
+        locale,
       });
 
       const outcome = recordAttempt({
@@ -652,7 +687,7 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
     }
   }
 
-  const celebrations = buildCelebrations(fresh?.outcome);
+  const celebrations = buildCelebrations(t, fresh?.outcome);
   const hasNext = index < total - 1;
   const progressPct = (passed / total) * 100;
 
@@ -662,6 +697,8 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
         <MissionCompleteDialog
           outcome={missionAlert}
           onClose={() => setMissionAlert(null)}
+          t={t}
+          dayLabel={m.common.days}
         />
       )}
       <section className="relative overflow-hidden rounded-[2rem] border border-primary/15 bg-card p-5 shadow-[var(--shadow-md)] sm:p-6">
@@ -672,22 +709,25 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
               {lesson.topic && <Badge tone="primary">{lesson.topic}</Badge>}
               {lesson.level && <Badge>{lesson.level}</Badge>}
               <Badge tone={lessonDone ? "success" : "warning"}>
-                {lessonDone ? "完了" : "学習中"}
+                {lessonDone ? t.statusDone : t.statusLearning}
               </Badge>
               <span
                 className="inline-flex h-7 items-center gap-2 rounded-full border border-border/70 bg-card/85 px-2.5 text-[11px] font-extrabold text-muted shadow-sm backdrop-blur"
-                aria-label={`${lessonViewStats?.totalViews ?? 0} views, ${
+                aria-label={`${lessonViewStats?.totalViews ?? 0} ${m.common.views}, ${
                   lessonViewStats?.shadowingUsers ?? 0
-                } shadowing users`}
+                } ${m.common.shadowingUsers}`}
               >
-                <span className="inline-flex items-center gap-1 tabular-nums" title="Views">
+                <span
+                  className="inline-flex items-center gap-1 tabular-nums"
+                  title={m.common.views}
+                >
                   <Icon name="eye" size={12} />
                   {(lessonViewStats?.totalViews ?? 0).toLocaleString()}
                 </span>
                 <span className="h-3 w-px bg-border" aria-hidden="true" />
                 <span
                   className="inline-flex items-center gap-1 tabular-nums"
-                  title="Shadowing users"
+                  title={m.common.shadowingUsers}
                 >
                   <Icon name="users" size={12} />
                   {(lessonViewStats?.shadowingUsers ?? 0).toLocaleString()}
@@ -697,47 +737,45 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
             <h1 lang="ja" className="text-2xl font-extrabold leading-tight sm:text-3xl">
               {lesson.title}
             </h1>
-            <p className="mt-2 text-sm text-muted">
-              左で日本語の会話全文を読み、右で一文ずつシャドーイングします。
-            </p>
+            <p className="mt-2 text-sm text-muted">{t.intro}</p>
             <button
               type="button"
               onClick={() => goTo(index, true)}
               className="focus-ring mt-4 inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-white shadow-[var(--shadow-glow)] transition-all hover:brightness-110 active:scale-[0.97]"
             >
-              Shadowingへ
+              {t.goShadowing}
               <Icon name="arrow-right" size={16} />
             </button>
             {isAdmin(state) && (
               <Link
-                href={`${lessonHref(lesson)}/edit`}
+                href={href(`${lessonHref(lesson)}/edit`)}
                 className={`${buttonClasses("ghost")} mt-4 ml-2`}
               >
-                編集
+                {m.common.edit}
               </Link>
             )}
           </div>
 
           <div className="w-full rounded-3xl border border-border bg-surface/80 p-4 lg:w-80">
             <div className="mb-2 flex items-center justify-between text-sm">
-              <span className="font-semibold">進捗</span>
+              <span className="font-semibold">{t.progress}</span>
               <span className="font-bold tabular-nums text-primary">
-                {passed}/{total}文
+                {t.sentencesOf(passed, total)}
               </span>
             </div>
             <ProgressBar value={progressPct} />
             <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
               <div className="rounded-2xl bg-card px-2 py-2">
                 <p className="font-bold text-fg">{total}</p>
-                <p className="text-muted">全文</p>
+                <p className="text-muted">{t.statAll}</p>
               </div>
               <div className="rounded-2xl bg-card px-2 py-2">
                 <p className="font-bold text-[var(--success)]">{passed}</p>
-                <p className="text-muted">Pass</p>
+                <p className="text-muted">{t.statPass}</p>
               </div>
               <div className="rounded-2xl bg-card px-2 py-2">
                 <p className="font-bold text-primary">{index + 1}</p>
-                <p className="text-muted">現在</p>
+                <p className="text-muted">{t.statCurrent}</p>
               </div>
             </div>
           </div>
@@ -757,6 +795,7 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
           onStop={() => {
             stopAtRef.current = null;
           }}
+          t={t}
         />
 
         <section id="shadowing-panel" className="min-w-0 scroll-mt-24 space-y-4">
@@ -768,9 +807,7 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
                     Step 2
                   </p>
                   <h2 className="mt-1 text-2xl font-extrabold">Shadowing</h2>
-                  <p className="mt-1 text-sm text-muted">
-                    聞く、まねる、録音する。1文ずつ進めます。
-                  </p>
+                  <p className="mt-1 text-sm text-muted">{t.step2Body}</p>
                 </div>
                 <Badge tone={currentPassed ? "success" : "primary"}>
                   {index + 1}/{total}
@@ -787,6 +824,8 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
                 }
                 passedForSentence={(id) => isSentencePassed(state, id)}
                 onSelect={goTo}
+                t={t}
+                pointsLabel={m.common.points}
               />
 
               <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-surface text-center">
@@ -801,7 +840,7 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
                     ].join(" ")}
                   >
                     <Icon name={currentPassed ? "check" : "mic"} size={14} />
-                    {currentPassed ? "Pass済み" : "この文をまねして話す"}
+                    {currentPassed ? t.passedTag : t.speakThis}
                   </span>
                   <p lang="ja" className="mx-auto mt-2.5 max-w-2xl text-[0.92rem] font-bold leading-[2.1] sm:text-base sm:leading-[2.2] [&_rt]:text-[0.55em] [&_rt]:font-medium [&_rt]:text-muted">
                     <Furigana sentence={current} />
@@ -817,7 +856,7 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
                       type="button"
                       onClick={() => goTo(index - 1)}
                       disabled={index === 0}
-                      aria-label="前の文"
+                      aria-label={t.prevSentence}
                       className="focus-ring grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-border bg-card text-muted transition-colors enabled:hover:border-primary/40 enabled:hover:text-primary disabled:opacity-40"
                     >
                       <Icon name="arrow-left" size={18} />
@@ -828,7 +867,7 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
                       className="min-w-[8.5rem]"
                     >
                       <Icon name="volume" size={18} />
-                      {mediaUrl ? "この文を聞く" : "TTSで聞く"}
+                      {mediaUrl ? t.listenSentence : t.listenTts}
                     </Button>
                     {canRecord ? (
                       <AudioRecorder
@@ -841,28 +880,28 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
                       />
                     ) : (
                       <Link
-                        href="/login"
+                        href={href("/login")}
                         className={buttonClasses("primary", "md", "min-w-[8.5rem]")}
                       >
                         <Icon name="mic" size={18} />
-                        ログインして録音
+                        {t.loginToRecord}
                       </Link>
                     )}
                     <button
                       type="button"
                       onClick={() => goTo(index + 1)}
                       disabled={!hasNext}
-                      aria-label="次の文"
+                      aria-label={t.nextSentence}
                       className="focus-ring grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-border bg-card text-muted transition-colors enabled:hover:border-primary/40 enabled:hover:text-primary disabled:opacity-40"
                     >
                       <Icon name="arrow-right" size={18} />
                     </button>
                     <span className="basis-full text-center text-[11px] font-bold text-muted">
-                      録音して採点 · 目標 {current.pass_score}点
+                      {t.scoreTargetHint(current.pass_score)}
                     </span>
                     {!sttSupported && (
                       <p className="basis-full text-center text-[11px] text-[var(--warning)]">
-                        このブラウザは音声認識に非対応です。ChromeまたはEdgeを推奨します。
+                        {t.sttUnsupported}
                       </p>
                     )}
                   </div>
@@ -871,11 +910,11 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
                 {(scoring || fresh?.audioUrl || displayScore) && (
                   <div className="border-t border-border bg-card/55 px-4 py-3 text-left">
                     {scoring && (
-                      <p className="text-center text-xs text-muted">採点中...</p>
+                      <p className="text-center text-xs text-muted">{t.scoring}</p>
                     )}
                     {fresh?.audioUrl && (
                       <div className="mx-auto mt-2.5 max-w-md">
-                        <p className="mb-1 text-xs text-muted">録音を聞き直す:</p>
+                        <p className="mb-1 text-xs text-muted">{t.replayRecording}</p>
                         <audio src={fresh.audioUrl} controls className="h-10 w-full" />
                       </div>
                     )}
@@ -883,11 +922,12 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
                       <TranscriptComparison
                         transcript={fresh.transcript}
                         textAlignment={fresh.score.textAlignment}
+                        t={t}
                       />
                     )}
                     {displayScore && (
                       <div ref={inlineScoreRef}>
-                        <InlineScore score={displayScore} improvement={improvement} />
+                        <InlineScore score={displayScore} improvement={improvement} t={t} />
                       </div>
                     )}
                   </div>
@@ -920,9 +960,9 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
 
           {lessonDone && (
             <div className="flex justify-end">
-              <Link href={courseHref} className={buttonClasses("primary")}>
+              <Link href={href(courseHref)} className={buttonClasses("primary")}>
                 <Icon name="trophy" size={16} />
-                完了 · 一覧へ戻る
+                {t.finishBackToList}
               </Link>
             </div>
           )}
@@ -939,18 +979,18 @@ interface Celebration {
   text: string;
 }
 
-function buildCelebrations(outcome?: AttemptOutcome): Celebration[] {
+function buildCelebrations(
+  t: Dictionary["player"],
+  outcome?: AttemptOutcome,
+): Celebration[] {
   if (!outcome) return [];
   const out: Celebration[] = [];
   if (outcome.missionCompletedNow)
-    out.push({
-      icon: "flame",
-      text: "今日のストリーク達成！ミッション完了 · +100 XP",
-    });
+    out.push({ icon: "flame", text: t.celebrateMission });
   if (outcome.leveledUp)
-    out.push({ icon: "sparkles", text: `Level ${outcome.newLevel}にアップ！` });
+    out.push({ icon: "sparkles", text: t.levelUp(outcome.newLevel) });
   if (outcome.lessonCompletedNow)
-    out.push({ icon: "trophy", text: "レッスン完了 · +50 XPボーナス" });
+    out.push({ icon: "trophy", text: t.celebrateLesson });
   if (
     !outcome.missionCompletedNow &&
     !outcome.leveledUp &&

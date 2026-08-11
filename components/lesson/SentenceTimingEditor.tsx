@@ -6,6 +6,7 @@ import { lessonById, sentencesForLesson } from "@/lib/store/selectors";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
+import { useI18n } from "@/components/i18n/useI18n";
 
 interface Row {
   id: string;
@@ -25,6 +26,8 @@ const show = (x: number | null) =>
  */
 export function SentenceTimingEditor({ lessonId }: { lessonId: string }) {
   const { state, updateSentenceTiming } = useData();
+  const { dictionary } = useI18n();
+  const t = dictionary.timingEditor;
   const lesson = lessonById(state, lessonId);
   const sentences = sentencesForLesson(state, lessonId);
 
@@ -43,10 +46,8 @@ export function SentenceTimingEditor({ lessonId }: { lessonId: string }) {
   if (!lesson?.media_url) {
     return (
       <Card>
-        <CardTitle>文のタイミング調整</CardTitle>
-        <p className="mt-2 text-sm text-muted">
-          このレッスンには音声（media_url）がないため調整できません。
-        </p>
+        <CardTitle>{t.title}</CardTitle>
+        <p className="mt-2 text-sm text-muted">{t.noMedia}</p>
       </Card>
     );
   }
@@ -87,15 +88,13 @@ export function SentenceTimingEditor({ lessonId }: { lessonId: string }) {
   return (
     <Card className="space-y-3">
       <div className="flex items-center justify-between gap-3">
-        <CardTitle>文のタイミング調整</CardTitle>
+        <CardTitle>{t.title}</CardTitle>
         <Button onClick={save} size="sm">
           <Icon name="check" size={15} />
-          タイミングを保存
+          {t.save}
         </Button>
       </div>
-      <p className="text-xs text-muted">
-        音声をスクラブして位置を確認 → 各文の「区間再生」で確認し、必要なら開始/終了（秒）を微調整、または現在位置を取り込みます。
-      </p>
+      <p className="text-xs text-muted">{t.hint}</p>
 
       <audio
         ref={audioRef}
@@ -126,11 +125,11 @@ export function SentenceTimingEditor({ lessonId }: { lessonId: string }) {
                   set(i, { start: e.target.value === "" ? null : Number(e.target.value) })
                 }
                 className={field}
-                aria-label="開始秒"
+                aria-label={t.startAria}
               />
               <button
                 type="button"
-                title="現在位置を開始に"
+                title={t.setStart}
                 onClick={() => set(i, { start: audioRef.current?.currentTime ?? r.start })}
                 className="focus-ring rounded-lg border border-border px-1.5 py-1 text-xs hover:bg-card"
               >
@@ -145,11 +144,11 @@ export function SentenceTimingEditor({ lessonId }: { lessonId: string }) {
                   set(i, { end: e.target.value === "" ? null : Number(e.target.value) })
                 }
                 className={field}
-                aria-label="終了秒"
+                aria-label={t.endAria}
               />
               <button
                 type="button"
-                title="現在位置を終了に"
+                title={t.setEnd}
                 onClick={() => set(i, { end: audioRef.current?.currentTime ?? r.end })}
                 className="focus-ring rounded-lg border border-border px-1.5 py-1 text-xs hover:bg-card"
               >
@@ -157,7 +156,7 @@ export function SentenceTimingEditor({ lessonId }: { lessonId: string }) {
               </button>
               <Button variant="secondary" size="sm" onClick={() => playSlice(r)}>
                 <Icon name="play" size={14} />
-                区間
+                {t.playSlice}
               </Button>
             </div>
           </div>
@@ -165,9 +164,7 @@ export function SentenceTimingEditor({ lessonId }: { lessonId: string }) {
       </div>
 
       {savedAt && (
-        <p className="text-xs font-semibold text-[var(--success)]">
-          保存しました。
-        </p>
+        <p className="text-xs font-semibold text-[var(--success)]">{t.saved}</p>
       )}
     </Card>
   );

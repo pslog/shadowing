@@ -1,8 +1,27 @@
 import type { Metadata } from "next";
+import {
+  DEFAULT_LOCALE,
+  LOCALES,
+  type Locale,
+  messages,
+  withLocale,
+} from "@/lib/i18n";
 
 export const SITE_NAME = "Shadowing JP";
-export const SITE_DESCRIPTION =
-  "シャドーイングで「話せる」日本語へ。一文ずつ声に出して会話の反射を鍛え、毎日少しずつ習慣に。仲間と高め合う非営利の日本語学習コミュニティです。";
+export const SITE_DESCRIPTION = messages[DEFAULT_LOCALE].meta.siteDescription;
+
+const OG_LOCALE: Record<Locale, string> = {
+  vi: "vi_VN",
+  ja: "ja_JP",
+};
+
+/** `alternates.languages` map pointing at every locale variant of `path`. */
+function languageAlternates(path: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const locale of LOCALES) out[locale] = withLocale(path, locale);
+  out["x-default"] = withLocale(path, DEFAULT_LOCALE);
+  return out;
+}
 
 export function getSiteUrl(): string {
   const raw =
@@ -23,25 +42,30 @@ export function pageMetadata({
   title,
   description,
   path,
+  locale = DEFAULT_LOCALE,
   noIndex = false,
 }: {
   title: string;
   description: string;
+  /** Locale-less path, e.g. `/courses`. Locale prefixes are added here. */
   path: string;
+  locale?: Locale;
   noIndex?: boolean;
 }): Metadata {
+  const localizedPath = withLocale(path, locale);
   return {
     title,
     description,
     alternates: {
-      canonical: path,
+      canonical: localizedPath,
+      languages: languageAlternates(path),
     },
     openGraph: {
       title,
       description,
-      url: path,
+      url: localizedPath,
       siteName: SITE_NAME,
-      locale: "ja_JP",
+      locale: OG_LOCALE[locale],
       type: "website",
     },
     twitter: {
@@ -80,15 +104,18 @@ export function privatePageMetadata({
   title,
   description = SITE_DESCRIPTION,
   path,
+  locale = DEFAULT_LOCALE,
 }: {
   title: string;
   description?: string;
   path: string;
+  locale?: Locale;
 }): Metadata {
   return pageMetadata({
     title,
     description,
     path,
+    locale,
     noIndex: true,
   });
 }

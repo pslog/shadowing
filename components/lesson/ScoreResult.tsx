@@ -1,3 +1,6 @@
+"use client";
+
+import { useI18n } from "@/components/i18n/useI18n";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/cn";
@@ -91,6 +94,7 @@ export function ScoreResult({
   passScore: number;
   improvement?: number | null;
 }) {
+  const { locale, dictionary: m } = useI18n();
   const passed = score.passed;
   return (
     <div className="card p-6">
@@ -103,11 +107,12 @@ export function ScoreResult({
               Pass
             </Badge>
           ) : (
-            <Badge tone="warning">もう少し</Badge>
+            <Badge tone="warning">{m.player.almost}</Badge>
           )}
           {typeof improvement === "number" && improvement > 0 && (
             <p className="mt-1.5 flex items-center gap-1 text-sm font-semibold text-[var(--success)]">
-              <Icon name="trending" size={15} />前回より+{improvement}点
+              <Icon name="trending" size={15} />
+              {m.player.improvement(improvement)}
             </p>
           )}
           <p className={cn("mt-1.5 text-sm", !passed && "text-muted")}>
@@ -117,22 +122,26 @@ export function ScoreResult({
       </div>
 
       <div className="mt-5 grid grid-cols-3 gap-4">
-        <Dim label="発音" value={score.pronunciation} hue="var(--c-indigo)" />
-        <Dim label="網羅" value={score.coverage} hue="var(--c-emerald)" />
-        <Dim label="速度" value={score.speed} hue="var(--c-sky)" />
+        <Dim
+          label={m.player.dimPronunciation}
+          value={score.pronunciation}
+          hue="var(--c-indigo)"
+        />
+        <Dim label={m.player.dimCoverage} value={score.coverage} hue="var(--c-emerald)" />
+        <Dim label={m.player.dimSpeed} value={score.speed} hue="var(--c-sky)" />
       </div>
       <div className="mt-4">
         <Dim
-          label="イントネーション"
+          label={m.player.dimIntonation}
           value={score.intonation}
           hue="var(--c-violet)"
-          note="未計測"
+          note={m.score.unmeasured}
         />
       </div>
 
       {!passed && (
         <p className="mt-4 rounded-xl bg-[var(--warning-soft)] px-4 py-2.5 text-sm text-[var(--warning)]">
-          {almostFeedback(score.total, passScore, score.pronunciation)}
+          {almostFeedback(score.total, passScore, score.pronunciation, locale)}
         </p>
       )}
     </div>

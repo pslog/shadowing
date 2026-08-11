@@ -6,6 +6,7 @@ import { LessonCard } from "@/components/lesson/LessonCard";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 import { N2_MONDAI_LABELS, n2LessonMeta } from "@/lib/n2-course";
+import { useI18n } from "@/components/i18n/useI18n";
 import { useData } from "@/lib/store/DataProvider";
 import { useLessonEngagementStats } from "./useLessonEngagementStats";
 import {
@@ -104,6 +105,9 @@ export function N2CourseLessonGrid({
   state: AppState;
 }) {
   const { ensureLessonSentences, usingSupabase } = useData();
+  const { dictionary, href: localizedHref } = useI18n();
+  const t = dictionary.n2;
+  const mondaiLabel = (key: string) => t.mondaiLabels[key] ?? N2_MONDAI_LABELS[key];
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [showAllExams, setShowAllExams] = useState(false);
@@ -142,8 +146,8 @@ export function N2CourseLessonGrid({
     filteredLessons.map((lesson) => lesson.id),
     readyToShow && filteredLessons.length > 0,
   );
-  const selectedMondaiLabel = mondai ? N2_MONDAI_LABELS[mondai] : "未選択";
-  const selectedExamLabel = exam ?? "未選択";
+  const selectedMondaiLabel = mondai ? mondaiLabel(mondai) : t.unselected;
+  const selectedExamLabel = exam ?? t.unselected;
   const visibleExams = useMemo(() => {
     if (showAllExams) return exams;
     return [...new Set([...(exam ? [exam] : []), ...exams])].slice(0, 8);
@@ -157,7 +161,11 @@ export function N2CourseLessonGrid({
     if (nextExam) params.set("exam", examToParam(nextExam));
     else params.delete("exam");
     const query = params.toString();
-    window.history.pushState(null, "", `${pathname}${query ? `?${query}` : ""}#n2-filter`);
+    window.history.pushState(
+      null,
+      "",
+      `${localizedHref(pathname)}${query ? `?${query}` : ""}#n2-filter`,
+    );
   }
 
   const lessonFilterQuery = readyToShow
@@ -185,19 +193,21 @@ export function N2CourseLessonGrid({
               >
                 <Icon name="target" size={15} />
               </span>
-              <h2 className="text-lg font-extrabold leading-tight sm:text-base">練習範囲</h2>
+              <h2 className="text-lg font-extrabold leading-tight sm:text-base">
+                {t.scopeTitle}
+              </h2>
               <span className="w-full text-sm leading-snug text-muted sm:w-auto">
                 {readyToShow
                   ? `${selectedMondaiLabel} / ${selectedExamLabel}`
-                  : "問題形式と受験年月を選択"}
+                  : t.selectPrompt}
               </span>
             </div>
 
             <div className="flex flex-wrap items-center gap-2 lg:justify-end">
               <Badge tone={readyToShow ? "success" : "warning"}>
                 {readyToShow
-                  ? `表示中 ${filteredLessons.length}/${sortedLessons.length} レッスン`
-                  : `${sortedLessons.length} レッスンから選択`}
+                  ? t.showing(filteredLessons.length, sortedLessons.length)
+                  : t.chooseFrom(sortedLessons.length)}
               </Badge>
               {(mondai || exam) && (
                 <button
@@ -205,7 +215,7 @@ export function N2CourseLessonGrid({
                   onClick={() => updateFilter(null, null)}
                   className="focus-ring inline-flex min-h-10 touch-manipulation items-center justify-center rounded-xl border border-border bg-surface px-3 text-sm font-bold text-muted transition hover:border-primary/40 hover:text-fg active:scale-[0.98]"
                 >
-                  選択を解除
+                  {t.clearSelection}
                 </button>
               )}
             </div>
@@ -215,8 +225,10 @@ export function N2CourseLessonGrid({
         <div className="grid gap-5 p-4 sm:p-5">
           <div className="rounded-2xl border border-border/70 bg-surface/55 p-3 sm:border-0 sm:bg-transparent sm:p-0">
             <div className="mb-2 flex items-center justify-between gap-3">
-              <h3 className="text-sm font-extrabold">問題形式</h3>
-              <span className="text-xs font-bold text-muted">必須</span>
+              <h3 className="text-sm font-extrabold">{t.mondaiTitle}</h3>
+              <span className="text-xs font-bold text-muted">
+                {dictionary.common.required}
+              </span>
             </div>
             <div className="grid grid-cols-1 gap-2 min-[430px]:grid-cols-2 sm:flex sm:flex-wrap">
               {Object.keys(N2_MONDAI_LABELS).map((key) => (
@@ -224,7 +236,7 @@ export function N2CourseLessonGrid({
                   key={key}
                   active={mondai === key}
                   count={mondaiCounts.get(key) ?? 0}
-                  label={N2_MONDAI_LABELS[key]}
+                  label={mondaiLabel(key)}
                   onClick={() => updateFilter(key, exam)}
                 />
               ))}
@@ -233,8 +245,10 @@ export function N2CourseLessonGrid({
 
           <div className="rounded-2xl border border-border/70 bg-surface/55 p-3 sm:border-0 sm:bg-transparent sm:p-0">
             <div className="mb-2 flex items-center justify-between gap-3">
-              <h3 className="text-sm font-extrabold">受験年月</h3>
-              <span className="text-xs font-bold text-muted">必須</span>
+              <h3 className="text-sm font-extrabold">{t.examTitle}</h3>
+              <span className="text-xs font-bold text-muted">
+                {dictionary.common.required}
+              </span>
             </div>
             <div className="grid grid-cols-3 gap-2 min-[430px]:grid-cols-4 sm:hidden">
               {visibleExams.map((key) => (
@@ -279,25 +293,23 @@ export function N2CourseLessonGrid({
           >
             <Icon name="book" size={22} />
           </span>
-          <p className="mt-3 font-extrabold text-fg">まだレッスンは表示していません。</p>
+          <p className="mt-3 font-extrabold text-fg">{t.emptyTitle}</p>
           <p className="mx-auto mt-1 max-w-xl text-sm leading-relaxed text-muted">
-            上の「問題形式」と「受験年月」を両方選択してください。選択後、この場所に該当するレッスン一覧が表示されます。
+            {t.emptyBody}
           </p>
           <div className="mt-4 flex flex-wrap justify-center gap-2 text-xs font-bold text-muted">
             <span className="rounded-full border border-border bg-card px-3 py-1">
-              例: 問題1 課題理解
+              {t.exampleMondai}
             </span>
             <span className="rounded-full border border-border bg-card px-3 py-1">
-              例: 2012/12
+              {t.exampleExam}
             </span>
           </div>
         </div>
       ) : filteredLessons.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border bg-surface p-8 text-center">
-          <p className="font-bold text-fg">該当するレッスンがありません。</p>
-          <p className="mt-1 text-sm text-muted">
-            問題形式または受験年月を変更してください。
-          </p>
+          <p className="font-bold text-fg">{t.noMatchTitle}</p>
+          <p className="mt-1 text-sm text-muted">{t.noMatchBody}</p>
         </div>
       ) : (
         <div className="stagger grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">

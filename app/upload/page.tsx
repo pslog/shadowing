@@ -11,6 +11,7 @@ import { FullScreenLoading } from "@/components/ui/loading";
 import { Icon } from "@/components/ui/icon";
 import { useRequireProfile } from "@/lib/store/useRequireProfile";
 import { isAdminProfile } from "@/lib/store/selectors";
+import { useI18n } from "@/components/i18n/useI18n";
 
 type Platform = "youtube" | "tiktok" | "facebook";
 type UploadStatus = "success" | "error" | "not_configured";
@@ -43,6 +44,8 @@ function formatBytes(size: number) {
 
 export default function UploadPage() {
   const { profile, ready } = useRequireProfile();
+  const { dictionary, href } = useI18n();
+  const t = dictionary.upload;
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [title, setTitle] = useState("");
@@ -82,15 +85,15 @@ export default function UploadPage() {
 
   async function uploadVideo() {
     if (!file) {
-      setError("Chọn file video trước.");
+      setError(t.errorNoFile);
       return;
     }
     if (!title.trim()) {
-      setError("Nhập tiêu đề video.");
+      setError(t.errorNoTitle);
       return;
     }
     if (platforms.length === 0) {
-      setError("Chọn ít nhất một nền tảng.");
+      setError(t.errorNoPlatform);
       return;
     }
 
@@ -116,14 +119,12 @@ export default function UploadPage() {
       };
 
       if (!response.ok) {
-        throw new Error(payload.error ?? "Upload thất bại.");
+        throw new Error(payload.error ?? t.errorFailed);
       }
 
       setResults(payload.results ?? []);
     } catch (uploadError) {
-      setError(
-        uploadError instanceof Error ? uploadError.message : "Upload thất bại.",
-      );
+      setError(uploadError instanceof Error ? uploadError.message : t.errorFailed);
     } finally {
       setUploading(false);
     }
@@ -133,24 +134,21 @@ export default function UploadPage() {
     <AppShell>
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <Link href="/" className="text-sm text-muted hover:text-fg">
-            Về dashboard
+          <Link href={href("/")} className="text-sm text-muted hover:text-fg">
+            {t.backToDashboard}
           </Link>
-          <h1 className="mt-1 text-2xl font-bold">Upload video đa nền tảng</h1>
-          <p className="max-w-3xl text-muted">
-            Chọn một file video, nhập metadata rồi upload lên YouTube, TikTok và
-            Facebook Page từ cùng một màn hình.
-          </p>
+          <h1 className="mt-1 text-2xl font-bold">{t.title}</h1>
+          <p className="max-w-3xl text-muted">{t.subtitle}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Badge tone="primary">{platforms.length} nền tảng</Badge>
+          <Badge tone="primary">{t.platformCount(platforms.length)}</Badge>
           {file && <Badge tone="neutral">{formatBytes(file.size)}</Badge>}
         </div>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
         <Card>
-          <CardTitle>Video</CardTitle>
+          <CardTitle>{t.videoCard}</CardTitle>
           <label className="mt-4 grid min-h-64 cursor-pointer place-items-center rounded-xl border border-dashed border-border bg-surface/60 p-5 text-center transition hover:border-primary/50">
             <input
               type="file"
@@ -175,8 +173,8 @@ export default function UploadPage() {
                 <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-primary/10 text-primary">
                   <Icon name="plus" size={20} />
                 </div>
-                <p className="font-semibold">Chọn file video để upload.</p>
-                <p className="mt-1 text-sm text-muted">MP4/MOV/WebM tùy nền tảng hỗ trợ.</p>
+                <p className="font-semibold">{t.pickFile}</p>
+                <p className="mt-1 text-sm text-muted">{t.pickFileHint}</p>
               </div>
             )}
           </label>
@@ -192,36 +190,36 @@ export default function UploadPage() {
         </Card>
 
         <Card>
-          <CardTitle>Thiết lập upload</CardTitle>
+          <CardTitle>{t.settings}</CardTitle>
           <div className="mt-4 grid gap-4">
             <div>
               <label className="text-sm font-semibold" htmlFor="upload-title">
-                Tiêu đề
+                {t.titleLabel}
               </label>
               <input
                 id="upload-title"
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
                 className="focus-ring mt-2 h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm outline-none"
-                placeholder="Tiêu đề video"
+                placeholder={t.titlePlaceholder}
               />
             </div>
 
             <div>
               <label className="text-sm font-semibold" htmlFor="upload-description">
-                Mô tả
+                {t.descriptionLabel}
               </label>
               <textarea
                 id="upload-description"
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
                 className="focus-ring mt-2 min-h-28 w-full resize-y rounded-xl border border-border bg-surface px-3 py-2 text-sm outline-none"
-                placeholder="Caption, hashtag, ghi chú..."
+                placeholder={t.descriptionPlaceholder}
               />
             </div>
 
             <div>
-              <p className="text-sm font-semibold">Nền tảng</p>
+              <p className="text-sm font-semibold">{t.platformsLabel}</p>
               <div className="mt-2 grid gap-2 sm:grid-cols-3 lg:grid-cols-1">
                 {(["youtube", "tiktok", "facebook"] as const).map((platform) => (
                   <label
@@ -241,7 +239,7 @@ export default function UploadPage() {
             </div>
 
             <div>
-              <p className="text-sm font-semibold">Quyền riêng tư</p>
+              <p className="text-sm font-semibold">{t.privacyLabel}</p>
               <div className="mt-2 grid grid-cols-3 gap-2">
                 {(["private", "unlisted", "public"] as const).map((option) => (
                   <Button
@@ -251,16 +249,14 @@ export default function UploadPage() {
                     onClick={() => setPrivacy(option)}
                   >
                     {option === "private"
-                      ? "Riêng tư"
+                      ? t.privacyPrivate
                       : option === "unlisted"
-                        ? "Ẩn"
-                        : "Public"}
+                        ? t.privacyUnlisted
+                        : t.privacyPublic}
                   </Button>
                 ))}
               </div>
-              <p className="mt-2 text-xs text-muted">
-                TikTok chỉ map public/private; Facebook private sẽ upload dạng chưa publish.
-              </p>
+              <p className="mt-2 text-xs text-muted">{t.privacyHint}</p>
             </div>
 
             {error && (
@@ -277,17 +273,17 @@ export default function UploadPage() {
               className="w-full"
             >
               <Icon name="save" size={18} />
-              {uploading ? "Đang upload..." : "Upload video"}
+              {uploading ? t.uploading : t.submit}
             </Button>
           </div>
         </Card>
       </div>
 
       <Card className="mt-5">
-        <CardTitle>Kết quả</CardTitle>
+        <CardTitle>{t.resultsTitle}</CardTitle>
         {results.length === 0 ? (
           <div className="mt-4 rounded-xl border border-dashed border-border bg-surface/60 p-6 text-center text-sm text-muted">
-            Kết quả từng nền tảng sẽ hiển thị ở đây sau khi upload.
+            {t.resultsEmpty}
           </div>
         ) : (
           <div className="mt-4 grid gap-3">
@@ -301,10 +297,10 @@ export default function UploadPage() {
                     <p className="font-semibold">{platformLabel[result.platform]}</p>
                     <Badge tone={statusTone[result.status]}>
                       {result.status === "success"
-                        ? "Thành công"
+                        ? t.statusSuccess
                         : result.status === "not_configured"
-                          ? "Chưa cấu hình"
-                          : "Lỗi"}
+                          ? t.statusNotConfigured
+                          : t.statusError}
                     </Badge>
                   </div>
                   <p className="mt-1 text-sm text-muted">{result.message}</p>
@@ -319,7 +315,7 @@ export default function UploadPage() {
                     rel="noreferrer"
                     className="inline-flex h-10 items-center justify-center rounded-xl border border-border px-3 text-sm font-semibold hover:bg-card"
                   >
-                    Mở video
+                    {t.openVideo}
                   </a>
                 )}
               </div>

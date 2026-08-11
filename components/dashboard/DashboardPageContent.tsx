@@ -2,7 +2,17 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import { useData } from "@/lib/store/DataProvider";
+import { useI18n } from "@/components/i18n/useI18n";
+import { DailyMissionCard } from "@/components/dashboard/DailyMissionCard";
+import { LevelCard } from "@/components/dashboard/LevelCard";
+import { StreakCard } from "@/components/dashboard/StreakCard";
+import { WeekSummary } from "@/components/dashboard/WeekSummary";
+import { AppShell } from "@/components/layout/AppShell";
+import { CourseCard } from "@/components/lesson/CourseCard";
+import { Icon } from "@/components/ui/icon";
+import { FullScreenLoading } from "@/components/ui/loading";
+import { levelProgress, levelTitle } from "@/lib/gamification/level";
+import { streakActiveToday } from "@/lib/gamification/streak";
 import {
   courseHref,
   courseStats,
@@ -21,21 +31,13 @@ import {
   visibleCourses,
   visibleLessons,
 } from "@/lib/store/selectors";
-import { levelProgress, levelTitle } from "@/lib/gamification/level";
-import { AppShell } from "@/components/layout/AppShell";
-import { FullScreenLoading } from "@/components/ui/loading";
-import { StreakCard } from "@/components/dashboard/StreakCard";
-import { DailyMissionCard } from "@/components/dashboard/DailyMissionCard";
-import { LevelCard } from "@/components/dashboard/LevelCard";
-import { WeekSummary } from "@/components/dashboard/WeekSummary";
-import { Icon } from "@/components/ui/icon";
-import { CourseCard } from "@/components/lesson/CourseCard";
-import { streakActiveToday } from "@/lib/gamification/streak";
+import { useData } from "@/lib/store/DataProvider";
 
 export default function DashboardPage() {
   const { state, ready, ensureLessonSentences, usingSupabase } = useData();
+  const { locale, localeTag, dictionary: m, href } = useI18n();
+  const copy = m.dashboard;
   const profile = state.profile;
-
   const mission = todayMission(state);
   const week = dailyPassStats(state, 7);
   const inProgress = inProgressLesson(state);
@@ -48,9 +50,10 @@ export default function DashboardPage() {
     : (lessons[0] ?? null);
   const startTarget = inProgress ?? recentLessons[0] ?? featuredLesson;
   const keptToday = profile ? streakActiveToday(profile.last_completed_date) : false;
-  const displayName = profile?.display_name ?? "ゲスト";
+  const displayName = profile?.display_name ?? m.common.guest;
   const totalXp = profile?.total_xp ?? 0;
   const currentLevel = levelProgress(totalXp).level;
+  const sentenceLabel = m.common.sentences;
   const sentenceLessonIds = [
     inProgress?.id,
     startTarget?.id,
@@ -73,29 +76,30 @@ export default function DashboardPage() {
         <div className="grid gap-4 lg:grid-cols-3">
           <section className="relative overflow-hidden rounded-3xl brand-gradient p-7 text-white shadow-[var(--shadow-glow)] lg:col-span-2">
             <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full border border-white/15" />
-            <div className="pointer-events-none absolute -right-4 -bottom-24 h-64 w-64 bg-white/10 blur-2xl" />
+            <div className="pointer-events-none absolute -bottom-24 -right-4 h-64 w-64 bg-white/10 blur-2xl" />
 
-            <p className="text-sm font-medium text-white/80">こんにちは</p>
+            <p className="text-sm font-medium text-white/80">{copy.hello}</p>
             <h1 className="mt-1 text-3xl font-extrabold">{displayName}</h1>
             <div className="mt-3 flex flex-wrap gap-2">
               <span className="rounded-full bg-white/15 px-3 py-1 text-sm font-semibold backdrop-blur">
-                {levelTitle(currentLevel)} · Lv.{currentLevel}
+                {levelTitle(currentLevel, locale)} · Lv.{currentLevel}
               </span>
               <span className="rounded-full bg-white/15 px-3 py-1 text-sm font-semibold backdrop-blur">
-                今週: {passedThisWeek(state)}文
+                {copy.week}: {passedThisWeek(state)}
+                {sentenceLabel}
               </span>
             </div>
 
             <p className="mt-5 max-w-md text-white/85">
               {!profile
-                ? "ログインしなくてもレッスンは閲覧できます。録音して採点するときだけログインしてください。"
+                ? copy.guest
                 : mission.completed
-                  ? "今日のミッションは達成済みです。余裕があれば最近のレッスンを復習しましょう。"
-                  : `今日のミッション完了まで、あと${mission.target - mission.passed}文Passしましょう。`}
+                  ? copy.missionDone
+                  : copy.missionLeft(mission.target - mission.passed)}
             </p>
             {inProgress && (
               <p lang="ja" className="mt-1 text-sm text-white/70">
-                学習中: <b>{inProgress.title}</b> (
+                {copy.learning}: <b>{inProgress.title}</b> (
                 {passedCountForLesson(state, inProgress.id)}/
                 {sentencesForLesson(state, inProgress.id).length})
               </p>
@@ -103,28 +107,28 @@ export default function DashboardPage() {
 
             {startTarget ? (
               <Link
-                href={lessonHref(startTarget)}
+                href={href(lessonHref(startTarget))}
                 className="shine mt-6 inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-3 font-bold text-[var(--primary)] shadow-lg transition-transform hover:-translate-y-0.5 active:scale-[0.97]"
               >
                 <Icon name="cap" size={18} />
-                続きから始める
+                {copy.resume}
                 <Icon name="arrow-right" size={18} />
               </Link>
             ) : isAdmin(state) ? (
               <Link
-                href="/lessons/new"
+                href={href("/lessons/new")}
                 className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-3 font-bold text-[var(--primary)] shadow-lg"
               >
                 <Icon name="plus" size={18} />
-                最初のレッスンを作成
+                {copy.createFirst}
               </Link>
             ) : (
               <Link
-                href="/courses"
+                href={href("/courses")}
                 className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-3 font-bold text-[var(--primary)] shadow-lg"
               >
                 <Icon name="cap" size={18} />
-                コースを見る
+                {copy.viewCourses}
               </Link>
             )}
           </section>
@@ -155,13 +159,13 @@ export default function DashboardPage() {
         <section>
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-lg font-bold">
-              {recentLessons.length > 0 ? "続きから学習" : "おすすめコース"}
+              {recentLessons.length > 0 ? copy.recent : copy.recommended}
             </h2>
             <Link
-              href="/courses"
+              href={href("/courses")}
               className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
             >
-              コースを見る <Icon name="chevron-right" size={15} />
+              {copy.viewCourses} <Icon name="chevron-right" size={15} />
             </Link>
           </div>
 
@@ -173,7 +177,7 @@ export default function DashboardPage() {
                 const pct = total > 0 ? Math.round((passed / total) * 100) : 0;
                 const last = lastAttemptAtForLesson(state, lesson.id);
                 const lastDate = last
-                  ? new Date(last).toLocaleDateString("ja-JP", {
+                  ? new Date(last).toLocaleDateString(localeTag, {
                       month: "long",
                       day: "numeric",
                     })
@@ -182,17 +186,22 @@ export default function DashboardPage() {
                 return (
                   <Link
                     key={lesson.id}
-                    href={lessonHref(lesson)}
+                    href={href(lessonHref(lesson))}
                     style={{ ["--i" as string]: i }}
                     className="card card-interactive grid gap-3 p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
                   >
                     <div className="min-w-0">
                       <div className="mb-1.5 flex flex-wrap items-center gap-2 text-xs font-bold text-muted">
-                        <span>{status === "completed" ? "復習" : "続きから"}</span>
+                        <span>{status === "completed" ? copy.review : m.common.continue}</span>
                         <span className="tabular-nums">
-                          {passed}/{total} 文
+                          {passed}/{total}
+                          {sentenceLabel}
                         </span>
-                        {lastDate && <span>最終学習日: {lastDate}</span>}
+                        {lastDate && (
+                          <span>
+                            {copy.last}: {lastDate}
+                          </span>
+                        )}
                       </div>
                       <p lang="ja" className="truncate text-base font-extrabold">
                         {lesson.title}
@@ -205,7 +214,7 @@ export default function DashboardPage() {
                       </div>
                     </div>
                     <span className="inline-flex items-center justify-center gap-1 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white">
-                      再開
+                      {copy.restart}
                       <Icon name="arrow-right" size={15} />
                     </span>
                   </Link>
@@ -221,24 +230,25 @@ export default function DashboardPage() {
               />
               {featuredLesson && (
                 <Link
-                  href={lessonHref(featuredLesson)}
+                  href={href(lessonHref(featuredLesson))}
                   className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-3 text-sm font-bold text-white shadow-[var(--shadow-glow)]"
                 >
-                  最初のレッスンを始める
+                  {copy.firstLesson}
                   <Icon name="arrow-right" size={16} />
                 </Link>
               )}
             </div>
           ) : featuredLesson ? (
             <Link
-              href={lessonHref(featuredLesson)}
+              href={href(lessonHref(featuredLesson))}
               className="card card-interactive flex items-center justify-between gap-3 p-4"
             >
               <span lang="ja" className="min-w-0 truncate font-extrabold">
                 {featuredLesson.title}
               </span>
               <span className="inline-flex items-center gap-1 text-sm font-bold text-primary">
-                始める <Icon name="arrow-right" size={15} />
+                {copy.start}
+                <Icon name="arrow-right" size={15} />
               </span>
             </Link>
           ) : null}

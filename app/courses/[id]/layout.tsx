@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { pageMetadata } from "@/lib/seo";
+import { requestMessages } from "@/lib/seo-locale";
 import { courseSeoBySlug } from "@/lib/seo-content";
 
 type Props = {
@@ -9,17 +10,23 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const course = await courseSeoBySlug(id);
+  const [course, { locale, m }] = await Promise.all([
+    courseSeoBySlug(id),
+    requestMessages(),
+  ]);
   const detail = [course?.level, course?.topic].filter(Boolean).join(" / ");
 
   return pageMetadata({
-    title: course ? `${course.title} - 日本語コース` : "コース詳細",
+    title: course
+      ? m.meta.courseDetailTitle(course.title)
+      : m.meta.courseDetailFallbackTitle,
     description:
       course?.description ||
       (detail
-        ? `${detail}の日本語シャドーイングコース。関連するレッスンを順番に聞いて、発音と会話表現を練習できます。`
-        : "日本語シャドーイングのコース詳細。関連するレッスンを順番に聞いて、発音と会話表現を練習できます。"),
+        ? m.meta.courseDetailDescription(detail)
+        : m.meta.courseDetailFallbackDescription),
     path: `/courses/${id}`,
+    locale,
   });
 }
 

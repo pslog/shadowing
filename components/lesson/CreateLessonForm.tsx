@@ -7,6 +7,7 @@ import { visibleCourses, lessonHref } from "@/lib/store/selectors";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import type { LessonWithSentences } from "@/lib/types";
+import { useI18n } from "@/components/i18n/useI18n";
 
 const TOPICS = [
   "朝会",
@@ -28,13 +29,14 @@ const field =
 export function CreateLessonForm() {
   const { createLesson } = useData();
   const router = useRouter();
+  const { dictionary, href } = useI18n();
 
   return (
     <LessonEditorForm
-      submitLabel="レッスンを保存"
+      submitLabel={dictionary.lessonForm.submitCreate}
       onSave={(input) => {
         const lesson = createLesson(input);
-        router.push(lessonHref(lesson));
+        router.push(href(lessonHref(lesson)));
       }}
     />
   );
@@ -43,14 +45,15 @@ export function CreateLessonForm() {
 export function EditLessonForm({ lesson }: { lesson: LessonWithSentences }) {
   const { updateLesson } = useData();
   const router = useRouter();
+  const { dictionary, href } = useI18n();
 
   return (
     <LessonEditorForm
       lesson={lesson}
-      submitLabel="変更を保存"
+      submitLabel={dictionary.lessonForm.submitUpdate}
       onSave={(input) => {
         const updated = updateLesson({ ...input, id: lesson.id });
-        router.push(lessonHref(updated));
+        router.push(href(lessonHref(updated)));
       }}
     />
   );
@@ -66,6 +69,8 @@ function LessonEditorForm({
   onSave: (input: CreateLessonInput) => void;
 }) {
   const { state } = useData();
+  const { dictionary } = useI18n();
+  const t = dictionary.lessonForm;
   const courses = visibleCourses(state);
   const [title, setTitle] = useState(lesson?.title ?? "");
   const [courseId, setCourseId] = useState<string>(lesson?.course_id ?? "");
@@ -115,9 +120,8 @@ function LessonEditorForm({
   function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!title.trim()) return setError("レッスンタイトルを入力してください。");
-    if (lines.length === 0)
-      return setError("少なくとも1つの日本語文を入力してください。1行が1文です。");
+    if (!title.trim()) return setError(t.errorTitle);
+    if (lines.length === 0) return setError(t.errorScript);
 
     onSave({
       title: title.trim(),
@@ -139,23 +143,23 @@ function LessonEditorForm({
     <form onSubmit={submit} className="space-y-5">
       <Card className="space-y-4">
         <div>
-          <label className="mb-1 block text-sm font-medium">タイトル *</label>
+          <label className="mb-1 block text-sm font-medium">{t.titleLabel}</label>
           <input
             className={field}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="例: APIレビュー会議"
+            placeholder={t.titlePlaceholder}
             lang="ja"
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium">コース</label>
+          <label className="mb-1 block text-sm font-medium">{t.courseLabel}</label>
           <select
             className={field}
             value={courseId}
             onChange={(e) => setCourseId(e.target.value)}
           >
-            <option value="">コースなし（その他）</option>
+            <option value="">{t.courseNone}</option>
             {courses.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.title}
@@ -165,7 +169,7 @@ function LessonEditorForm({
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-sm font-medium">トピック</label>
+            <label className="mb-1 block text-sm font-medium">{t.topicLabel}</label>
             <select
               className={field}
               value={topic}
@@ -177,7 +181,7 @@ function LessonEditorForm({
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium">レベル</label>
+            <label className="mb-1 block text-sm font-medium">{t.levelLabel}</label>
             <select
               className={field}
               value={level}
@@ -190,9 +194,7 @@ function LessonEditorForm({
           </div>
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium">
-            YouTube URL（任意）
-          </label>
+          <label className="mb-1 block text-sm font-medium">{t.youtubeLabel}</label>
           <input
             className={field}
             value={sourceUrl}
@@ -201,9 +203,7 @@ function LessonEditorForm({
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium">
-            音声ファイル（任意）
-          </label>
+          <label className="mb-1 block text-sm font-medium">{t.audioLabel}</label>
           <input
             type="file"
             accept="audio/*"
@@ -211,7 +211,7 @@ function LessonEditorForm({
             className="text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-surface file:px-3 file:py-1.5 file:text-sm"
           />
           {duration != null && (
-            <p className="mt-1 text-xs text-muted">長さ: 約{duration}秒</p>
+            <p className="mt-1 text-xs text-muted">{t.durationHint(duration)}</p>
           )}
         </div>
         <div className="rounded-xl border border-border p-3">
@@ -223,17 +223,15 @@ function LessonEditorForm({
               onChange={(e) => setIsPublic(e.target.checked)}
             />
             <span className="text-sm">
-              <span className="font-medium">公開する（承認済み）</span>
-              <span className="mt-0.5 block text-xs text-muted">
-                オンのときだけ学習者に表示されます。音声に問題があるレッスンはオフにして非公開にできます。
-              </span>
+              <span className="font-medium">{t.publicLabel}</span>
+              <span className="mt-0.5 block text-xs text-muted">{t.publicHint}</span>
             </span>
           </label>
         </div>
       </Card>
 
       <Card className="space-y-3">
-        <CardTitle>日本語スクリプト - 1行につき1文</CardTitle>
+        <CardTitle>{t.scriptTitle}</CardTitle>
         <textarea
           className={`${field} min-h-32 font-[var(--font-jp)]`}
           value={script}
@@ -243,9 +241,7 @@ function LessonEditorForm({
         />
         {lines.length > 0 && (
           <div className="space-y-2">
-            <p className="text-xs text-muted">
-              {lines.length}文 - メモまたは意味（任意）:
-            </p>
+            <p className="text-xs text-muted">{t.notesHint(lines.length)}</p>
             {lines.map((ja, i) => (
               <div
                 key={i}
@@ -261,7 +257,7 @@ function LessonEditorForm({
                   onChange={(e) =>
                     setTranslation((prev) => ({ ...prev, [i]: e.target.value }))
                   }
-                  placeholder="メモまたは意味（任意）"
+                  placeholder={t.notePlaceholder}
                 />
               </div>
             ))}

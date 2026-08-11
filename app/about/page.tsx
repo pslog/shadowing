@@ -5,27 +5,22 @@ import Link from "next/link";
 import { AppShell } from "@/components/layout/AppShell";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { buttonClasses } from "@/components/ui/button";
+import { useI18n } from "@/components/i18n/useI18n";
 
 // 3 trụ cột của dự án (khớp thông điệp ở login + SEO).
 // color = token --c-* để đồng bộ palette (thay vì hardcode hex).
-const PILLARS: { icon: IconName; color: string; title: string; body: string }[] = [
+const PILLARS: { icon: IconName; color: string }[] = [
   {
     icon: "mic",
     color: "var(--c-violet)",
-    title: "Nói được, không chỉ nghe hiểu",
-    body: "Kaiwa tốt bắt đầu từ shadowing: nghe câu thật rồi nói lại từng câu để luyện phản xạ hội thoại, phát âm được chấm ngay để bạn biết đường sửa.",
   },
   {
     icon: "flame",
     color: "var(--c-amber)",
-    title: "Mỗi ngày một ít, thành thói quen",
-    body: "Giữ streak, cố gắng một chút mỗi ngày để việc học thành nếp. Khi phản xạ đã quen, mang bài thoại ra dùng trong tình huống thực tế.",
   },
   {
     icon: "sparkles",
     color: "var(--c-emerald)",
-    title: "Cùng cộng đồng tiến bộ",
-    body: "Học cùng nhau bớt cô đơn và đi xa hơn. Kaiwa vững lên thì việc học và công việc bằng tiếng Nhật cũng thuận lợi hơn.",
   },
 ];
 
@@ -36,6 +31,9 @@ const WEB_CREATORS: { iconSrc: string; name: string }[] = [
 ];
 
 export default function AboutPage() {
+  const { dictionary: m, href } = useI18n();
+  const about = m.about;
+
   return (
     <AppShell>
       <div className="mx-auto max-w-6xl space-y-4 sm:space-y-6">
@@ -53,19 +51,17 @@ export default function AboutPage() {
                 />
                 <div className="inline-flex min-w-0 items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-bold text-primary sm:text-sm">
                   <Icon name="star" size={15} />
-                  <span className="truncate">Một góc học chung cho cộng đồng</span>
+                  <span className="truncate">{about.eyebrow}</span>
                 </div>
               </div>
 
               <h1 className="mt-5 text-2xl font-black leading-tight sm:mt-6 sm:text-4xl sm:leading-[1.15]">
-                Shadowing để{" "}
-                <span className="text-primary">cùng nói tốt hơn</span>, không chỉ nghe hiểu.
+                {about.titleLead}{" "}
+                <span className="text-primary">{about.titleHighlight}</span>, {about.titleTail}
               </h1>
 
               <p className="mt-4 max-w-2xl text-base font-semibold leading-7 text-muted sm:mt-5 sm:text-lg sm:leading-8">
-                Shadowing JP được làm cho những người đang học tiếng Nhật cùng có một
-                nơi luyện nói nhẹ nhàng mỗi ngày: nghe câu thật, nói lại từng chút,
-                giữ thói quen đều hơn và cùng nhau tiến bộ.
+                {about.intro}
               </p>
             </div>
 
@@ -84,9 +80,11 @@ export default function AboutPage() {
 
           <div className="mt-6 border-t border-border pt-4 sm:mt-8 sm:pt-6">
             <div className="grid gap-3 md:grid-cols-3 md:gap-4">
-              {PILLARS.map((p) => (
+              {about.pillars.map((pillar, index) => {
+                const p = PILLARS[index] ?? PILLARS[0];
+                return (
                 <div
-                  key={p.title}
+                  key={p.icon}
                   className="rounded-xl border border-border bg-surface p-4 sm:rounded-2xl sm:p-5"
                 >
                   <span
@@ -99,13 +97,14 @@ export default function AboutPage() {
                     <Icon name={p.icon} size={20} />
                   </span>
                   <h2 className="mt-3 text-[0.95rem] font-black leading-snug sm:text-base">
-                    {p.title}
+                    {pillar.title}
                   </h2>
                   <p className="mt-1.5 text-sm font-medium leading-6 text-muted">
-                    {p.body}
+                    {pillar.body}
                   </p>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </section>
@@ -115,7 +114,7 @@ export default function AboutPage() {
             <div className="relative aspect-[4/3] max-h-64 overflow-hidden bg-surface md:aspect-auto md:max-h-none">
               <Image
                 src="/author/nhat-ha-anime-768.webp"
-                alt="Avatar anime của tác giả Nhật Hà"
+                alt="Nhật Hà"
                 fill
                 sizes="(max-width: 768px) 100vw, 18rem"
                 className="object-cover"
@@ -123,22 +122,16 @@ export default function AboutPage() {
               />
             </div>
             <div className="flex flex-col justify-center p-4 sm:p-8">
-              <p className="text-sm font-black uppercase text-primary">Tác giả</p>
+              <p className="text-sm font-black uppercase text-primary">{about.authorLabel}</p>
               <h2 className="mt-1.5 text-2xl font-black sm:mt-2 sm:text-3xl">Nhật Hà</h2>
               <p className="mt-2 text-sm font-bold leading-6 text-muted sm:text-base">
-                Sinh viên Đại học Ngoại ngữ - Đại học Đà Nẵng
+                {about.authorSchool}
               </p>
               <p className="mt-4 max-w-2xl text-sm leading-7 text-muted sm:mt-5">
-                Hà cũng đang học tiếng Nhật mỗi ngày như nhiều bạn khác: có lúc hào
-                hứng, có lúc bận rộn, có lúc thấy việc luyện nói khó duy trì một mình.
-                Từ trải nghiệm đó, Hà muốn tạo một góc học nhỏ để mọi người có thể
-                nghe, nhắc lại, sửa từng chút và giữ thói quen nói tiếng Nhật đều hơn.
-                Đây không phải một khóa học lớn hay lời hứa học thật nhanh, mà là một
-                đóng góp chân thành cho cộng đồng - nơi ai cần luyện nói cũng có thể
-                vào học cùng, nhẹ nhàng, tử tế và bền bỉ.
+                {about.authorBody}
               </p>
               <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-medium text-muted/75">
-                <span>※Web Creator:</span>
+                <span>※{about.webCreator}:</span>
                 {WEB_CREATORS.map((creator) => (
                   <span key={creator.name} className="inline-flex items-center gap-1">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -153,14 +146,14 @@ export default function AboutPage() {
               </div>
               <div className="mt-4 max-w-2xl">
                 <p className="mb-2 text-[11px] font-black uppercase tracking-[0.18em] text-primary">
-                  Dev note
+                  {about.devNote}
                 </p>
                 <div className="grid gap-2 text-xs leading-5 text-muted sm:grid-cols-2">
                   {[
-                    ["Build style", "Vibe coding with AI coding tools"],
-                    ["Frontend", "Next.js + React"],
-                    ["Hosting", "Vercel app domain - free tier"],
-                    ["Database", "Supabase PostgreSQL - free tier"],
+                    [about.devBuildStyle, about.devBuildStyleValue],
+                    [about.devFrontend, "Next.js + React"],
+                    [about.devHosting, about.devHostingValue],
+                    [about.devDatabase, about.devDatabaseValue],
                   ].map(([label, value]) => (
                     <p
                       key={label}
@@ -171,8 +164,10 @@ export default function AboutPage() {
                     </p>
                   ))}
                   <p className="rounded-xl border border-primary/15 bg-primary/5 px-3 py-2 sm:col-span-2">
-                    <span className="font-black text-primary">Pricing:</span>{" "}
-                    chi phí gần như 0 đồng, nên chúng tôi không có nhu cầu thu tiền bạn.
+                    <span className="font-black text-primary">
+                      {about.pricingLabel}:
+                    </span>{" "}
+                    {about.pricing}
                   </p>
                 </div>
               </div>
@@ -181,12 +176,12 @@ export default function AboutPage() {
         </section>
 
         <section className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card p-5 text-center shadow-[var(--shadow-sm)] sm:rounded-[1.5rem] sm:p-8">
-          <h2 className="text-lg font-black sm:text-xl">Sẵn sàng luyện nói chưa?</h2>
+          <h2 className="text-lg font-black sm:text-xl">{about.ctaTitle}</h2>
           <p className="max-w-md text-sm font-medium leading-6 text-muted">
-            Mở một bài, nghe một câu, nói theo một câu. Bắt đầu từ hôm nay.
+            {about.ctaBody}
           </p>
-          <Link href="/courses" className={buttonClasses("primary", "lg", "mt-1 w-full sm:w-auto")}>
-            Bắt đầu luyện nói
+          <Link href={href("/courses")} className={buttonClasses("primary", "lg", "mt-1 w-full sm:w-auto")}>
+            {about.cta}
             <Icon name="arrow-right" size={18} />
           </Link>
         </section>

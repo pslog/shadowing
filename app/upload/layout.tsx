@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
 import { privatePageMetadata } from "@/lib/seo";
+import { requestMessages } from "@/lib/seo-locale";
 
-export const metadata: Metadata = privatePageMetadata({
-  title: "Upload video đa nền tảng",
-  description:
-    "Trang admin để upload video lên YouTube, TikTok và Facebook Page.",
-  path: "/upload",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const { locale, m } = await requestMessages();
+  return privatePageMetadata({
+    title: m.meta.uploadTitle,
+    description: m.meta.uploadDescription,
+    path: "/upload",
+    locale,
+  });
+}
 
 export default function UploadLayout({ children }: { children: React.ReactNode }) {
   return children;

@@ -4,7 +4,10 @@ import "./globals.css";
 import { DataProvider } from "@/lib/store/DataProvider";
 import { Aurora } from "@/components/layout/Aurora";
 import { GoogleAnalyticsRouteTracker } from "@/components/analytics/GoogleAnalytics";
-import { getSiteUrl, SITE_DESCRIPTION, SITE_NAME } from "@/lib/seo";
+import { LocaleHtmlLang } from "@/components/i18n/LocaleHtmlLang";
+import { getSiteUrl, SITE_NAME } from "@/lib/seo";
+import { requestMessages } from "@/lib/seo-locale";
+import { DEFAULT_LOCALE, LOCALE_TAG } from "@/lib/i18n";
 
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || "G-6T2YMDZRKX";
 
@@ -22,14 +25,18 @@ const notoJp = Noto_Sans_JP({
   preload: false,
 });
 
-export const metadata: Metadata = {
+export async function generateMetadata(): Promise<Metadata> {
+  const { locale, m } = await requestMessages();
+  const title = `${SITE_NAME} - ${m.meta.homeTitle}`;
+
+  return {
   metadataBase: new URL(getSiteUrl()),
   applicationName: SITE_NAME,
   title: {
-    default: `${SITE_NAME} - 日本語シャドーイング`,
+    default: title,
     template: `%s | ${SITE_NAME}`,
   },
-  description: SITE_DESCRIPTION,
+  description: m.meta.siteDescription,
   keywords: [
     "shadowing",
     "日本語",
@@ -44,20 +51,25 @@ export const metadata: Metadata = {
   creator: "Shadowing JP",
   publisher: "Shadowing JP",
   alternates: {
-    canonical: "/",
+    canonical: `/${locale}`,
+    languages: {
+      vi: "/vi",
+      ja: "/ja",
+      "x-default": `/${DEFAULT_LOCALE}`,
+    },
   },
   openGraph: {
-    title: `${SITE_NAME} - 日本語シャドーイング`,
-    description: SITE_DESCRIPTION,
-    url: "/",
+    title,
+    description: m.meta.siteDescription,
+    url: `/${locale}`,
     siteName: SITE_NAME,
-    locale: "ja_JP",
+    locale: locale === "vi" ? "vi_VN" : "ja_JP",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: `${SITE_NAME} - 日本語シャドーイング`,
-    description: SITE_DESCRIPTION,
+    title,
+    description: m.meta.siteDescription,
   },
   robots: {
     index: true,
@@ -71,7 +83,8 @@ export const metadata: Metadata = {
     },
   },
   category: "education",
-};
+  };
+}
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -80,11 +93,16 @@ export const viewport: Viewport = {
   themeColor: "#6360f2",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const { locale, m } = await requestMessages();
+
   return (
-    <html lang="vi" className={`${jakarta.variable} ${notoJp.variable} h-full`}>
+    <html
+      lang={LOCALE_TAG[locale]}
+      className={`${jakarta.variable} ${notoJp.variable} h-full`}
+    >
       <head>
         <script
           async
@@ -113,8 +131,8 @@ export default function RootLayout({
               name: SITE_NAME,
               applicationCategory: "EducationalApplication",
               operatingSystem: "Web",
-              url: getSiteUrl(),
-              description: SITE_DESCRIPTION,
+              url: `${getSiteUrl()}/${locale}`,
+              description: m.meta.siteDescription,
               inLanguage: ["ja", "vi"],
               offers: {
                 "@type": "Offer",
@@ -125,6 +143,7 @@ export default function RootLayout({
           }}
         />
         <Aurora />
+        <LocaleHtmlLang />
         <DataProvider>{children}</DataProvider>
         <GoogleAnalyticsRouteTracker />
       </body>

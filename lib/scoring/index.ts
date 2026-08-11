@@ -7,6 +7,7 @@ import { scoreIntonation } from "./intonation";
 import { scoreTotal } from "./total";
 import { generateFeedback } from "./feedback";
 import type { ScoreBreakdown } from "@/lib/types";
+import { isLocale, type Locale } from "@/lib/i18n";
 
 export interface ScoreRequest {
   targetText: string;
@@ -19,6 +20,8 @@ export interface ScoreRequest {
   /** Pitch-contour similarity 0..1 from the client, or null if not measured. */
   intonationSimilarity?: number | null;
   passScore?: number;
+  /** Locale the coaching feedback string is generated in. */
+  locale?: Locale;
 }
 
 const MIN_PRONUNCIATION_TO_PASS = 91;
@@ -69,6 +72,9 @@ export function scoreAttempt(req: ScoreRequest): ScoreBreakdown {
       intonation,
       total,
       hasTranscript,
+      // The request crosses the API boundary as JSON, so validate rather than
+      // trusting the field's declared type.
+      locale: isLocale(req.locale) ? req.locale : undefined,
     }),
   };
 }

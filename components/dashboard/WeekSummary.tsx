@@ -1,20 +1,27 @@
+"use client";
+
+import { useI18n } from "@/components/i18n/useI18n";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { shortDayLabel, todayKey } from "@/lib/date";
 import type { DayStat } from "@/lib/store/selectors";
 
 export function WeekSummary({ stats }: { stats: DayStat[] }) {
+  const { dictionary: m } = useI18n();
   const total = stats.reduce((s, d) => s + d.count, 0);
   const max = Math.max(1, ...stats.map((d) => d.count));
   const today = todayKey();
+  const sentence = m.common.sentences;
   return (
     <Card>
       <div className="flex items-center justify-between">
         <CardTitle className="flex items-center gap-1.5">
-          <Icon name="trending" size={14} />直近7日
+          <Icon name="trending" size={14} />
+          {m.weekSummary.title}
         </CardTitle>
         <span className="text-sm text-muted">
-          <b className="text-fg">{total}</b>文Pass
+          <b className="text-fg">{total}</b>
+          {m.weekSummary.passSuffix}
         </span>
       </div>
       <div className="mt-5 flex h-28 items-end justify-between gap-2.5">
@@ -35,7 +42,7 @@ export function WeekSummary({ stats }: { stats: DayStat[] }) {
                       ? "0 6px 16px -8px color-mix(in srgb, var(--g2) 90%, transparent)"
                       : "none",
                   }}
-                  title={`${d.count}文`}
+                  title={`${d.count}${sentence}`}
                 />
               </div>
               <span
@@ -45,7 +52,7 @@ export function WeekSummary({ stats }: { stats: DayStat[] }) {
                     : "text-[11px] text-muted"
                 }
               >
-                {shortDayLabel(d.date)}
+                {shortDayLabel(d.date, m.weekdays)}
               </span>
             </div>
           );

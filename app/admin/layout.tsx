@@ -1,11 +1,16 @@
 import type { Metadata } from "next";
 import { privatePageMetadata } from "@/lib/seo";
+import { requestMessages } from "@/lib/seo-locale";
 
-export const metadata: Metadata = privatePageMetadata({
-  title: "管理",
-  description: "Shadowing JPの管理画面。",
-  path: "/admin",
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const { locale, m } = await requestMessages();
+  return privatePageMetadata({
+    title: m.meta.adminTitle,
+    description: m.meta.adminDescription,
+    path: "/admin",
+    locale,
+  });
+}
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return children;

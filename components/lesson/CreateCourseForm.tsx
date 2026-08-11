@@ -6,6 +6,7 @@ import { useData } from "@/lib/store/DataProvider";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import type { Course } from "@/lib/types";
+import { useI18n } from "@/components/i18n/useI18n";
 
 const LEVELS = ["N5", "N4", "N4-N3", "N3", "N3-N2", "N2", "N1"];
 const ACCENTS = [
@@ -23,6 +24,8 @@ const field =
 export function CreateCourseForm({ course }: { course?: Course }) {
   const { createCourse, updateCourse } = useData();
   const router = useRouter();
+  const { dictionary, href } = useI18n();
+  const t = dictionary.courseForm;
 
   const [title, setTitle] = useState(course?.title ?? "");
   const [description, setDescription] = useState(course?.description ?? "");
@@ -36,7 +39,7 @@ export function CreateCourseForm({ course }: { course?: Course }) {
   function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!title.trim()) return setError("コース名を入力してください。");
+    if (!title.trim()) return setError(t.errorName);
 
     const payload = {
       title: title.trim(),
@@ -48,47 +51,49 @@ export function CreateCourseForm({ course }: { course?: Course }) {
       is_public: isPublic,
     };
     const saved = course ? updateCourse({ ...payload, id: course.id }) : createCourse(payload);
-    router.push(`/courses/${saved.slug ?? saved.id}`);
+    router.push(href(`/courses/${saved.slug ?? saved.id}`));
   }
 
   return (
     <form onSubmit={submit} className="space-y-5">
       <Card className="space-y-4">
         <div>
-          <label className="mb-1 block text-sm font-medium">コース名 *</label>
+          <label className="mb-1 block text-sm font-medium">{t.nameLabel}</label>
           <input
             className={field}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="例: 会議で話す日本語"
+            placeholder={t.namePlaceholder}
             lang="ja"
           />
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium">説明</label>
+          <label className="mb-1 block text-sm font-medium">
+            {t.descriptionLabel}
+          </label>
           <textarea
             className={`${field} min-h-20`}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="このコースで学べる内容を簡単に入力してください。"
+            placeholder={t.descriptionPlaceholder}
             lang="ja"
           />
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-sm font-medium">トピック</label>
+            <label className="mb-1 block text-sm font-medium">{t.topicLabel}</label>
             <input
               className={field}
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
-              placeholder="例: 会議"
+              placeholder={t.topicPlaceholder}
               lang="ja"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium">レベル</label>
+            <label className="mb-1 block text-sm font-medium">{t.levelLabel}</label>
             <select
               className={field}
               value={level}
@@ -102,7 +107,7 @@ export function CreateCourseForm({ course }: { course?: Course }) {
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium">カバー画像URL（任意）</label>
+          <label className="mb-1 block text-sm font-medium">{t.coverLabel}</label>
           <input
             className={field}
             value={imageUrl}
@@ -112,14 +117,14 @@ export function CreateCourseForm({ course }: { course?: Course }) {
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium">アクセントカラー</label>
+          <label className="mb-1 block text-sm font-medium">{t.accentLabel}</label>
           <div className="flex gap-2">
             {ACCENTS.map((color) => (
               <button
                 key={color}
                 type="button"
                 onClick={() => setAccent(color)}
-                aria-label={`カラー ${color}`}
+                aria-label={t.colorAria(color)}
                 className={[
                   "h-8 w-8 rounded-full transition-transform",
                   accent === color ? "scale-110 ring-2 ring-offset-2 ring-offset-card" : "",
@@ -142,10 +147,8 @@ export function CreateCourseForm({ course }: { course?: Course }) {
               onChange={(e) => setIsPublic(e.target.checked)}
             />
             <span className="text-sm">
-              <span className="font-medium">公開する</span>
-              <span className="mt-0.5 block text-xs text-muted">
-                オンのときだけ学習者に表示されます。準備中のコースはオフにして非公開にできます。
-              </span>
+              <span className="font-medium">{t.publicLabel}</span>
+              <span className="mt-0.5 block text-xs text-muted">{t.publicHint}</span>
             </span>
           </label>
         </div>
@@ -155,7 +158,7 @@ export function CreateCourseForm({ course }: { course?: Course }) {
 
       <div className="flex justify-end">
         <Button type="submit" size="lg">
-          {course ? "コースを更新" : "コースを作成"}
+          {course ? t.submitUpdate : t.submitCreate}
         </Button>
       </div>
     </form>

@@ -12,12 +12,14 @@ import { isN2Course } from "@/lib/n2-course";
 import { AppShell } from "@/components/layout/AppShell";
 import { FullScreenLoading } from "@/components/ui/loading";
 import { LessonPlayer } from "@/components/lesson/LessonPlayer";
+import { useI18n } from "@/components/i18n/useI18n";
 
 export default function LessonPlayerPage() {
   // `id` param now holds a slug (falls back to UUID for old links).
   const params = useParams<{ id: string }>();
   const searchParams = useSearchParams();
   const { state, ready } = useData();
+  const { dictionary: m, href } = useI18n();
 
   if (!ready) return <FullScreenLoading />;
 
@@ -37,8 +39,8 @@ export default function LessonPlayerPage() {
   return (
     <AppShell>
       <div className="mb-4">
-        <Link href={backHref} className="text-sm text-muted hover:text-fg">
-          ← レッスン一覧
+        <Link href={href(backHref)} className="text-sm text-muted hover:text-fg">
+          {m.lesson.backToList}
         </Link>
       </div>
       <LessonPlayer lessonId={lesson?.id ?? params.id} />

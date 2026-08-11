@@ -13,8 +13,15 @@ import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { Avatar } from "@/components/ui/avatar";
+import { stripLocale, type Locale } from "@/lib/i18n";
+import { useI18n } from "@/components/i18n/useI18n";
 
-type NavItem = { href: string; label: string; icon: IconName; alt?: string[] };
+type NavItem = {
+  href: string;
+  labelKey: "home" | "courses" | "review" | "progress" | "about" | "admin";
+  icon: IconName;
+  alt?: string[];
+};
 
 interface PublicSiteVisitOverview {
   totalVisits: number;
@@ -27,32 +34,80 @@ const NUMBER_FORMAT = new Intl.NumberFormat("en-US");
 const recentSiteVisitRecords = new Map<string, number>();
 
 const NAV: NavItem[] = [
-  { href: "/", label: "ホーム", icon: "home" },
-  { href: "/courses", label: "コース", icon: "book", alt: ["/lessons"] },
-  { href: "/review", label: "単語帳", icon: "bookmark" },
-  { href: "/progress", label: "進捗", icon: "trending" },
-  { href: "/about", label: "紹介", icon: "sparkles" },
+  { href: "/", labelKey: "home", icon: "home" },
+  { href: "/courses", labelKey: "courses", icon: "book", alt: ["/lessons"] },
+  { href: "/review", labelKey: "review", icon: "bookmark" },
+  { href: "/progress", labelKey: "progress", icon: "trending" },
+  { href: "/about", labelKey: "about", icon: "sparkles" },
 ];
 
 function useActive() {
   const pathname = usePathname();
-  return (item: NavItem) =>
-    pathname === item.href ||
-    pathname.startsWith(item.href + "/") ||
-    (item.alt?.some((p) => pathname.startsWith(p)) ?? false);
+  const path = stripLocale(pathname || "/");
+  return (item: NavItem) => {
+    const itemPath = item.href === "/" ? "/" : item.href;
+    return (
+      path === itemPath ||
+      (itemPath !== "/" && path.startsWith(itemPath + "/")) ||
+      (item.alt?.some((p) => path === p || path.startsWith(p + "/")) ?? false)
+    );
+  };
+}
+
+function LanguageSwitch({
+  locale,
+  switchHref,
+  labels,
+}: {
+  locale: Locale;
+  switchHref: (locale: Locale) => string;
+  labels: { label: string; viShort: string; jaShort: string; ja: string };
+}) {
+  return (
+    <div
+      role="group"
+      aria-label={labels.label}
+      className="flex items-center rounded-full border border-border bg-surface p-0.5 text-[11px] font-black"
+    >
+      {(["vi", "ja"] as Locale[]).map((item) => (
+        <Link
+          key={item}
+          href={switchHref(item)}
+          aria-current={locale === item ? "true" : undefined}
+          className={cn(
+            "rounded-full px-2 py-1 transition-colors sm:px-2.5",
+            locale === item
+              ? "brand-gradient text-white shadow-[var(--shadow-glow)]"
+              : "text-muted hover:text-fg",
+          )}
+          hrefLang={item}
+        >
+          {item === "vi" ? (
+            labels.viShort
+          ) : (
+            <>
+              <span className="md:hidden">{labels.jaShort}</span>
+              <span className="hidden md:inline">{labels.ja}</span>
+            </>
+          )}
+        </Link>
+      ))}
+    </div>
+  );
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { state, logout } = useData();
   const pathname = usePathname();
   const router = useRouter();
+  const { locale, dictionary: m, href, switchHref } = useI18n();
   const profile = state.profile;
   const profileLevel = profile ? levelProgress(profile.total_xp).level : 1;
   const canAdmin = isAdminProfile(profile);
   const navItems: NavItem[] = canAdmin
     ? [
         ...NAV,
-        { href: "/admin/users", label: "管理", icon: "cap", alt: ["/admin"] },
+        { href: "/admin/users", labelKey: "admin", icon: "cap", alt: ["/admin"] },
       ]
     : NAV;
   // Mobile bottom bar: keep only the core daily-use tabs so it never crowds.
@@ -138,7 +193,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-dvh flex-col pb-16 md:pb-0">
       <header className="glass sticky top-0 z-30 pt-[env(safe-area-inset-top)]">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4">
-          <Link href="/" className="flex items-center gap-2.5 font-bold">
+          <Link href={href("/")} className="flex items-center gap-2.5 font-bold">
             <Image
               src="/logo-mark-256.webp"
               alt="Shadowing JP"
@@ -156,7 +211,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               return (
                 <Link
                   key={item.href}
-                  href={item.href}
+                  href={href(item.href)}
                   className={cn(
                     "flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm transition-all",
                     active
@@ -165,13 +220,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   )}
                 >
                   <Icon name={item.icon} size={16} />
-                  <span>{item.label}</span>
+                  <span>{m.nav[item.labelKey]}</span>
                 </Link>
               );
             })}
           </nav>
 
           <div className="ml-auto flex items-center gap-2">
+            <LanguageSwitch
+              locale={locale}
+              switchHref={switchHref}
+              labels={m.language}
+            />
             {profile ? (
               <>
                 <span className="hidden md:inline">
@@ -184,8 +244,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <XPBadge xp={profile.total_xp} />
                 </span>
                 <Link
-                  href="/about"
-                  aria-label="紹介"
+                  href={href("/about")}
+                  aria-label={m.nav.about}
                   className="focus-ring grid h-11 w-11 place-items-center rounded-full border border-border bg-surface text-muted transition-colors hover:text-fg md:hidden"
                 >
                   <Icon name="sparkles" size={18} />
@@ -196,7 +256,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     aria-haspopup="menu"
                     aria-expanded={menuOpen}
                     className="focus-ring flex h-11 items-center gap-2 rounded-full border border-border bg-surface py-1 pl-1 pr-3 text-sm"
-                    title={levelTitle(profileLevel)}
+                    title={levelTitle(profileLevel, locale)}
                   >
                     <Avatar
                       src={profile.avatar_url}
@@ -224,17 +284,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                           <p className="truncate font-semibold text-fg">
                             {profile.display_name}
                           </p>
-                          Lv.{profileLevel} · {levelTitle(profileLevel)}
+                          Lv.{profileLevel} · {levelTitle(profileLevel, locale)}
                         </div>
                         <button
                           onClick={() => {
                             logout();
-                            router.replace("/login");
+                            router.replace(href("/login"));
                           }}
                           className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-danger hover:bg-surface"
                         >
                           <Icon name="logout" size={15} />
-                          ログアウト
+                          {m.common.logout}
                         </button>
                       </div>
                     </>
@@ -244,13 +304,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             ) : (
               <>
                 <Link
-                  href="/about"
+                  href={href("/about")}
                   className="text-sm font-semibold text-muted hover:text-fg md:hidden"
                 >
-                  紹介
+                  {m.nav.about}
                 </Link>
-                <Link href="/login" className={buttonClasses("primary", "sm")}>
-                  ログイン
+                <Link href={href("/login")} className={buttonClasses("primary", "sm")}>
+                  {m.common.login}
                 </Link>
               </>
             )}
@@ -273,16 +333,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             />
             <div>
               <p className="text-sm font-bold text-gradient">Shadowing JP</p>
-              <p className="text-xs text-muted">Shadowing mỗi ngày — cùng cộng đồng nói tiếng Nhật tự tin hơn</p>
+              <p className="text-xs text-muted">{m.footer.tagline}</p>
             </div>
           </div>
           <div className="flex flex-col items-center gap-1 sm:items-end">
-            <p className="text-xs text-muted">Phi lợi nhuận · 一緒に頑張りましょう</p>
+            <p className="text-xs text-muted">{m.footer.note}</p>
             <p
               className="text-xs text-muted tabular-nums"
-              aria-label={`${displayTotalVisits} total website visits`}
+              aria-label={`${displayTotalVisits} ${m.footer.visits}`}
             >
-              {NUMBER_FORMAT.format(displayTotalVisits)} lượt truy cập
+              {NUMBER_FORMAT.format(displayTotalVisits)} {m.footer.visits}
             </p>
           </div>
         </div>
@@ -298,14 +358,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                href={href(item.href)}
                 className={cn(
                   "flex min-h-16 flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-semibold transition-colors",
                   active ? "text-primary" : "text-muted",
                 )}
               >
                 <Icon name={item.icon} size={22} filled={active} />
-                {item.label}
+                {m.nav[item.labelKey]}
               </Link>
             );
           })}

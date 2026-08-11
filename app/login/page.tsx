@@ -8,16 +8,13 @@ import { useData } from "@/lib/store/DataProvider";
 import { Button } from "@/components/ui/button";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { FullScreenLoading } from "@/components/ui/loading";
+import { useI18n } from "@/components/i18n/useI18n";
 
-// プロダクトの3本柱:
+// プロダクトの3本柱（文言は lib/i18n.ts の login.features）:
 // ① 話せる会話力はシャドーイングから（反射を鍛える）
 // ② 毎日少しずつ→習慣化→実際の場面へ
 // ③ 仲間と高め合うコミュニティ
-const FEATURES: { icon: IconName; text: string }[] = [
-  { icon: "mic", text: "一文ずつ声に出し、会話の反射を鍛える。発音は即採点。" },
-  { icon: "flame", text: "毎日少しずつ。ストリークで習慣にし、実際の場面で使える力へ。" },
-  { icon: "book", text: "仲間と高め合う非営利コミュニティ。学びも仕事もスムーズに。" },
-];
+const FEATURE_ICONS: IconName[] = ["mic", "flame", "book"];
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // Supabase の「Email OTP Length」設定に合わせる（既定6、範囲6〜10）。
@@ -29,6 +26,8 @@ export default function LoginPage() {
   const { state, ready, usingSupabase, login, sendEmailOtp, verifyEmailOtp } =
     useData();
   const router = useRouter();
+  const { dictionary: dict, href } = useI18n();
+  const t = dict.login;
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [inApp, setInApp] = useState(false);
@@ -42,8 +41,8 @@ export default function LoginPage() {
   const [resendIn, setResendIn] = useState(0);
 
   useEffect(() => {
-    if (ready && state.profile) router.replace("/");
-  }, [ready, state.profile, router]);
+    if (ready && state.profile) router.replace(href("/"));
+  }, [href, ready, state.profile, router]);
 
   useEffect(() => {
     // Google chặn OAuth trong webview nhúng (Zalo/Messenger/FB/IG/Line…).
@@ -80,12 +79,12 @@ export default function LoginPage() {
     try {
       const profile = await login({
         email: "you@shadowing.jp",
-        display_name: "学習者",
+        display_name: dict.common.guest,
         avatar_url: null,
       });
-      if (profile) router.replace("/");
+      if (profile) router.replace(href("/"));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "ログインに失敗しました。");
+      setError(err instanceof Error ? err.message : t.errorLoginFailed);
       setSubmitting(false);
     }
   }
@@ -93,7 +92,7 @@ export default function LoginPage() {
   async function handleSendCode() {
     const value = email.trim();
     if (!EMAIL_RE.test(value)) {
-      setError("メールアドレスの形式が正しくありません。");
+      setError(t.errorInvalidEmail);
       return;
     }
     setError(null);
@@ -103,9 +102,7 @@ export default function LoginPage() {
       setOtpSent(true);
       setResendIn(45);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "コードの送信に失敗しました。",
-      );
+      setError(err instanceof Error ? err.message : t.errorSendFailed);
     } finally {
       setOtpBusy(false);
     }
@@ -114,7 +111,7 @@ export default function LoginPage() {
   async function handleVerifyCode() {
     const code = otp.trim();
     if (code.length < OTP_MIN) {
-      setError("メールに届いたコードを入力してください。");
+      setError(t.errorEnterCode);
       return;
     }
     setError(null);
@@ -122,13 +119,9 @@ export default function LoginPage() {
     try {
       const profile = await verifyEmailOtp(email.trim(), code);
       // Supabase: profile は onAuthStateChange 経由で反映され、上の useEffect が遷移する。
-      if (profile) router.replace("/");
+      if (profile) router.replace(href("/"));
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "コードが正しくないか、期限切れです。",
-      );
+      setError(err instanceof Error ? err.message : t.errorInvalidCode);
       setOtpBusy(false);
     }
   }
@@ -152,21 +145,17 @@ export default function LoginPage() {
         </div>
 
         <div className="relative">
-          <h2 className="text-4xl font-extrabold leading-tight">
-            話せる日本語は、
-            <br />
-            シャドーイングから。
+          <h2 className="whitespace-pre-line text-4xl font-extrabold leading-tight">
+            {t.heroTitle}
           </h2>
-          <p className="mt-4 max-w-md text-white/85">
-            毎日少しずつ、仲間と一緒に。会話の反射を身につけて、実際の場面で話せる自分へ。
-          </p>
+          <p className="mt-4 max-w-md text-white/85">{t.heroBody}</p>
           <ul className="mt-8 space-y-3">
-            {FEATURES.map((f) => (
-              <li key={f.text} className="flex items-center gap-3">
+            {t.features.map((text, i) => (
+              <li key={text} className="flex items-center gap-3">
                 <span className="grid h-9 w-9 place-items-center rounded-xl bg-white/15 backdrop-blur">
-                  <Icon name={f.icon} size={18} />
+                  <Icon name={FEATURE_ICONS[i] ?? "mic"} size={18} />
                 </span>
-                <span className="text-white/90">{f.text}</span>
+                <span className="text-white/90">{text}</span>
               </li>
             ))}
           </ul>
@@ -174,9 +163,9 @@ export default function LoginPage() {
 
         <div className="relative flex gap-3">
           {[
-            { k: "ストリーク", v: "🔥" },
-            { k: "テーマ", v: "9+" },
-            { k: "採点", v: "AI-ready" },
+            { k: t.statStreak, v: "🔥" },
+            { k: t.statTopics, v: "9+" },
+            { k: t.statScoring, v: "AI-ready" },
           ].map((s) => (
             <div
               key={s.k}
@@ -199,21 +188,16 @@ export default function LoginPage() {
             className="animate-pop mx-auto mb-5 h-16 w-16 rounded-2xl object-contain shadow-[var(--shadow-glow)] lg:hidden"
             quality={75}
           />
-          <h1 className="text-3xl font-extrabold">おかえりなさい</h1>
-          <p className="mt-2 text-muted">
-            ログインして、今日のストリークを続けましょう。
-          </p>
+          <h1 className="text-3xl font-extrabold">{t.welcomeBack}</h1>
+          <p className="mt-2 text-muted">{t.welcomeBody}</p>
 
           {inApp && (
             <div className="mt-6 rounded-2xl border border-[var(--primary)]/40 bg-[var(--primary)]/10 p-4 text-left">
               <p className="flex items-center gap-1.5 text-sm font-extrabold text-[var(--primary)]">
                 <Icon name="mic" size={15} />
-                アプリ内ブラウザでも、メールコードでログインできます
+                {t.inAppTitle}
               </p>
-              <p className="mt-1.5 text-xs leading-5 text-fg">
-                Zalo / Messenger などのアプリ内ブラウザではGoogleログインがブロックされます。
-                下の<b>メールコード</b>なら、アプリを離れずにそのままログインできます。
-              </p>
+              <p className="mt-1.5 text-xs leading-5 text-fg">{t.inAppBody}</p>
             </div>
           )}
 
@@ -231,7 +215,7 @@ export default function LoginPage() {
                   htmlFor="email"
                   className="block text-sm font-bold text-fg"
                 >
-                  メールでログイン
+                  {t.emailLabel}
                 </label>
                 <input
                   id="email"
@@ -249,11 +233,9 @@ export default function LoginPage() {
                   className="w-full"
                   disabled={otpBusy}
                 >
-                  {otpBusy ? "送信中..." : "ログインコードを送信"}
+                  {otpBusy ? t.sending : t.sendCode}
                 </Button>
-                <p className="text-[11px] text-muted">
-                  メールに届くコードでログインします。
-                </p>
+                <p className="text-[11px] text-muted">{t.emailHint}</p>
               </form>
             ) : (
               <form
@@ -263,12 +245,8 @@ export default function LoginPage() {
                 }}
                 className="space-y-3"
               >
-                <p className="text-sm font-bold text-fg">
-                  コードを入力
-                </p>
-                <p className="text-xs text-muted">
-                  <b>{email}</b> に送ったコードを確認してください。
-                </p>
+                <p className="text-sm font-bold text-fg">{t.enterCode}</p>
+                <p className="text-xs text-muted">{t.codeSentTo(email)}</p>
                 <input
                   id="otp"
                   type="text"
@@ -288,7 +266,7 @@ export default function LoginPage() {
                   className="w-full"
                   disabled={otpBusy}
                 >
-                  {otpBusy ? "確認中..." : "ログイン"}
+                  {otpBusy ? t.verifying : dict.common.login}
                 </Button>
                 <div className="flex items-center justify-between text-xs">
                   <button
@@ -297,7 +275,7 @@ export default function LoginPage() {
                     onClick={handleSendCode}
                     disabled={otpBusy || resendIn > 0}
                   >
-                    {resendIn > 0 ? `再送 (${resendIn}s)` : "コードを再送"}
+                    {resendIn > 0 ? t.resendIn(resendIn) : t.resend}
                   </button>
                   <button
                     type="button"
@@ -308,7 +286,7 @@ export default function LoginPage() {
                       setError(null);
                     }}
                   >
-                    メールを変更
+                    {t.changeEmail}
                   </button>
                 </div>
               </form>
@@ -321,7 +299,7 @@ export default function LoginPage() {
               <>
                 <div className="flex items-center gap-3">
                   <span className="h-px flex-1 bg-border" />
-                  <span className="text-[11px] text-muted">または</span>
+                  <span className="text-[11px] text-muted">{t.or}</span>
                   <span className="h-px flex-1 bg-border" />
                 </div>
                 <Button
@@ -332,7 +310,7 @@ export default function LoginPage() {
                   disabled={submitting}
                 >
                   <GoogleIcon />
-                  {submitting ? "ログイン中..." : "Googleでログイン"}
+                  {submitting ? t.googleSigningIn : t.googleSignIn}
                 </Button>
               </>
             )}
@@ -343,32 +321,25 @@ export default function LoginPage() {
                 <div className="flex items-center gap-3">
                   <span className="h-px flex-1 bg-border" />
                   <span className="text-[11px] text-muted">
-                    Googleを使う場合
+                    {t.useGoogle}
                   </span>
                   <span className="h-px flex-1 bg-border" />
                 </div>
-                <p className="text-[11px] leading-5 text-muted">
-                  外部ブラウザ（Chrome / Safari）で開いてください：右上または下の
-                  「⋯」メニュー →「ブラウザで開く」。
-                </p>
+                <p className="text-[11px] leading-5 text-muted">{t.openExternal}</p>
                 <button
                   type="button"
                   onClick={copyLink}
                   className="focus-ring inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-bold"
                 >
                   <Icon name={copied ? "check" : "book"} size={15} />
-                  {copied ? "コピーしました" : "リンクをコピー"}
+                  {copied ? t.copied : t.copyLink}
                 </button>
               </>
             )}
 
+            <p className="text-xs text-muted">{t.noteOptional}</p>
             <p className="text-xs text-muted">
-              ログインは会話の閲覧・再生には不要です。録音して採点するときだけ必要です。
-            </p>
-            <p className="text-xs text-muted">
-              {usingSupabase
-                ? "Supabase Authでログインします。学習データはクラウドに保存されます。"
-                : "現在はローカルデモです。データはブラウザに保存されます（コードは任意の6桁でOK）。"}
+              {usingSupabase ? t.noteSupabase : t.noteLocal}
             </p>
           </div>
         </div>

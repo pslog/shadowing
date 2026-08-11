@@ -1,3 +1,6 @@
+"use client";
+
+import { useI18n } from "@/components/i18n/useI18n";
 import { CardTitle } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 
@@ -10,10 +13,13 @@ export function StreakCard({
   longest: number;
   keptToday: boolean;
 }) {
+  const { dictionary: m } = useI18n();
+  const copy = m.streakCard;
+
   return (
     <div className="tile p-5" style={{ ["--tile-c" as string]: "var(--c-amber)" }}>
       <div className="flex items-start justify-between">
-        <CardTitle>ストリーク</CardTitle>
+        <CardTitle>{copy.title}</CardTitle>
         <span className="tile-icon h-11 w-11">
           <Icon name="flame" size={22} filled />
         </span>
@@ -22,16 +28,15 @@ export function StreakCard({
         <span className="text-4xl font-extrabold tabular-nums text-[var(--c-amber)]">
           {current}
         </span>
-        <span className="text-muted">日</span>
+        <span className="text-muted">{copy.day}</span>
       </div>
       <p className="mt-2 text-sm text-muted">
-        {keptToday
-          ? "今日のストリークは達成済みです！"
-          : current > 0
-            ? "今日5文Passしてストリークを続けましょう。"
-            : "今日5文Passしてストリークを始めましょう。"}
+        {keptToday ? copy.kept : current > 0 ? copy.continue : copy.start}
       </p>
-      <p className="mt-1 text-xs text-muted">最高記録: {longest}日</p>
+      <p className="mt-1 text-xs text-muted">
+        {copy.best}: {longest}
+        {copy.day}
+      </p>
     </div>
   );
 }

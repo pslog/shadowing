@@ -36,7 +36,12 @@ export function lastNDays(n: number): string[] {
   return out;
 }
 
-export function shortDayLabel(dateKey: string): string {
-  const d = new Date(dateKey + "T00:00:00");
-  return ["日", "月", "火", "水", "木", "金", "土"][d.getDay()];
+/** Day-of-week index (0 = Sunday) for a `YYYY-MM-DD` key, in local time. */
+export function dayOfWeek(dateKey: string): number {
+  return new Date(dateKey + "T00:00:00").getDay();
+}
+
+/** Short weekday label, taken from the caller's localized `weekdays` list. */
+export function shortDayLabel(dateKey: string, weekdays: readonly string[]): string {
+  return weekdays[dayOfWeek(dateKey)] ?? "";
 }

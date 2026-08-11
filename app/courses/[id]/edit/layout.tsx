@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { privatePageMetadata } from "@/lib/seo";
+import { requestMessages } from "@/lib/seo-locale";
 
 type Props = {
   children: React.ReactNode;
@@ -8,10 +9,12 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
+  const { locale, m } = await requestMessages();
   return privatePageMetadata({
-    title: "コース編集",
-    description: "Shadowing JPのコース編集画面。",
+    title: m.meta.courseEditTitle,
+    description: m.meta.courseEditDescription,
     path: `/courses/${id}/edit`,
+    locale,
   });
 }
 
