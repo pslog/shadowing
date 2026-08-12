@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useData } from "@/lib/store/DataProvider";
-import { levelProgress, levelTitle } from "@/lib/gamification/level";
+import { levelMascot, levelProgress, levelTitle } from "@/lib/gamification/level";
 import { isAdminProfile } from "@/lib/store/selectors";
 import { cn } from "@/lib/cn";
 import { XPBadge } from "@/components/ui/xp-badge";
@@ -13,6 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { Avatar } from "@/components/ui/avatar";
+import { MascotBadge } from "@/components/ui/mascot";
+import { MascotCompanion } from "@/components/companion/MascotCompanion";
 import { stripLocale, type Locale } from "@/lib/i18n";
 import { useI18n } from "@/components/i18n/useI18n";
 
@@ -106,6 +108,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { locale, dictionary: m, href, switchHref } = useI18n();
   const profile = state.profile;
   const profileLevel = profile ? levelProgress(profile.total_xp).level : 1;
+  const profileMascot = levelMascot(profileLevel);
   const canAdmin = isAdminProfile(profile);
   // Admin is a rare, non-daily destination: it lives in the avatar menu only,
   // so the nav bar stays the same width for every user.
@@ -326,11 +329,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         role="menu"
                         className="rounded-xl border border-border bg-card p-1 shadow-lg"
                       >
-                        <div className="px-3 py-2 text-xs text-muted">
-                          <p className="truncate font-semibold text-fg">
-                            {profile.display_name}
-                          </p>
-                          Lv.{profileLevel} · {levelTitle(profileLevel, locale)}
+                        <div className="flex items-center gap-2.5 px-3 py-2 text-xs text-muted">
+                          <MascotBadge
+                            slug={profileMascot.slug}
+                            accent={profileMascot.accent}
+                            size={38}
+                          />
+                          <div className="min-w-0">
+                            <p className="truncate font-semibold text-fg">
+                              {profile.display_name}
+                            </p>
+                            <p className="truncate">
+                              Lv.{profileLevel} · {levelTitle(profileLevel, locale)}
+                            </p>
+                          </div>
                         </div>
                         {canAdmin && (
                           <Link
@@ -396,10 +408,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
         <div className="border-t border-border/50">
-          {/* col-reverse so the links sit above the copyright when stacked on
-              mobile, but read left-to-right as © … links on one row from sm up. */}
-          <div className="mx-auto flex max-w-6xl flex-col-reverse items-center gap-2 px-4 py-3 text-[11px] text-muted sm:flex-row sm:justify-between">
-            <p>© {COPYRIGHT_YEAR} Shadowing JP</p>
+          {/* Plain flex-col (not reverse): links come first in the DOM now, and
+              on mobile that already stacks them above the copyright. */}
+          <div className="mx-auto flex max-w-6xl flex-col items-center gap-2 px-4 py-3 text-[11px] text-muted sm:flex-row sm:justify-between">
             <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 font-semibold">
               {footerLinks.map((item, index) => (
                 <Fragment key={item.href}>
@@ -417,9 +428,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </Fragment>
               ))}
             </div>
+            <p>© {COPYRIGHT_YEAR} Shadowing JP</p>
           </div>
         </div>
       </footer>
+
+      <MascotCompanion />
 
       <nav className="glass fixed inset-x-0 bottom-0 z-40 border-t border-border/70 pb-[env(safe-area-inset-bottom)] md:hidden">
         <div className="mx-auto flex max-w-md items-stretch">

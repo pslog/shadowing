@@ -2,22 +2,21 @@
 
 import { useI18n } from "@/components/i18n/useI18n";
 import { CardTitle } from "@/components/ui/card";
-import { Icon } from "@/components/ui/icon";
-import { levelProgress, levelTitle } from "@/lib/gamification/level";
+import { MascotBadge } from "@/components/ui/mascot";
+import { levelMascot, levelProgress, levelTitle } from "@/lib/gamification/level";
 
 export function LevelCard({ totalXp }: { totalXp: number }) {
   const { locale, localeTag, dictionary: m } = useI18n();
   const p = levelProgress(totalXp);
+  const mascot = levelMascot(p.level);
   return (
-    <div className="tile p-5" style={{ ["--tile-c" as string]: "var(--c-violet)" }}>
+    <div className="tile p-5" style={{ ["--tile-c" as string]: mascot.accent }}>
       <div className="flex items-start justify-between">
         <CardTitle>{m.levelCard.title}</CardTitle>
-        <span className="tile-icon h-11 w-11">
-          <Icon name="sparkles" size={20} filled />
-        </span>
+        <MascotBadge slug={mascot.slug} accent={mascot.accent} size={52} />
       </div>
       <div className="mt-3">
-        <span className="text-3xl font-extrabold text-[var(--c-violet)]">
+        <span className="text-3xl font-extrabold" style={{ color: mascot.accent }}>
           Lv.{p.level}
         </span>
         <p className="text-sm font-semibold text-gradient">
@@ -30,7 +29,7 @@ export function LevelCard({ totalXp }: { totalXp: number }) {
             className="h-full rounded-full transition-all"
             style={{
               width: `${p.pct}%`,
-              background: "linear-gradient(90deg, var(--c-violet), var(--g3))",
+              background: `linear-gradient(90deg, ${mascot.accent}, var(--g3))`,
             }}
           />
         </div>

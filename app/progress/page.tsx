@@ -13,11 +13,13 @@ import {
   weakestSkill,
 } from "@/lib/store/selectors";
 import {
+  levelMascot,
   levelProgress,
   levelTitle,
   visibleLevelMap,
   type LevelMilestone,
 } from "@/lib/gamification/level";
+import { Mascot, MascotBadge } from "@/components/ui/mascot";
 import { AppShell } from "@/components/layout/AppShell";
 import { FullScreenLoading } from "@/components/ui/loading";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -131,6 +133,7 @@ function MountainRoadmap({
   const displayLevels = levels.filter((item) => item.level <= 10);
   const activeIndex = Math.min(Math.max(currentLevel, 1), 10) - 1;
   const currentPosition = MARKER_POSITIONS[activeIndex] ?? MARKER_POSITIONS[0];
+  const currentMascot = levelMascot(currentLevel);
 
   return (
     <Card>
@@ -180,8 +183,8 @@ function MountainRoadmap({
           className="absolute -translate-x-1/2 -translate-y-1/2"
           style={{ left: `${currentPosition.x}%`, top: `${currentPosition.y}%` }}
         >
-          <div className="grid h-11 w-11 place-items-center rounded-2xl border border-white/40 brand-gradient text-white shadow-[var(--shadow-glow)]">
-            <Icon name="star" size={18} filled />
+          <div className="grid h-12 w-12 place-items-center rounded-2xl border border-white/60 bg-card/90 shadow-[var(--shadow-glow)] backdrop-blur">
+            <Mascot slug={currentMascot.slug} size={34} />
           </div>
           <span className="-ml-5 mt-2 block rounded-full border border-white/60 bg-card/95 px-2.5 py-1 text-[11px] font-bold text-primary shadow-sm backdrop-blur">
             {t.roadmapHere}
@@ -206,19 +209,16 @@ function MountainRoadmap({
               ].join(" ")}
               title={`${item.minXp.toLocaleString(localeTag)} XP`}
             >
-              <p
-                className={[
-                  "grid h-6 w-6 shrink-0 place-items-center rounded-md text-[10px] font-extrabold tabular-nums",
-                  current
-                    ? "brand-gradient text-white"
-                    : reached
-                      ? "bg-[var(--c-emerald)] text-white"
-                      : "bg-card text-muted",
-                ].join(" ")}
-              >
-                {item.level}
-              </p>
+              <MascotBadge
+                slug={item.mascot.slug}
+                accent={item.mascot.accent}
+                size={34}
+                dimmed={!reached}
+              />
               <div className="min-w-0">
+                <p className="text-[9px] font-bold tabular-nums text-muted">
+                  Lv.{item.level}
+                </p>
                 <p className={`font-extrabold tracking-[-0.02em] ${levelTitleSize(item.title)}`}>
                   {item.title}
                 </p>

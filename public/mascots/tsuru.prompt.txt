@@ -1,0 +1,15 @@
+Use case: mascot-illustration
+Asset type: level-rank mascot badge for a Japanese shadowing study app (Lv.9 — Tsuru (red-crowned crane))
+Primary request: A red-crowned crane's head: white plumage, a vivid crimson crown patch on top of the head, and a long straight slate-grey bill.
+
+Style/medium: modern mascot illustration, soft cel shading with one clear light source from the upper left, a gentle rim light along the top edge, and a clean confident outline in a darker tone of the subject's own colour (never pure black).
+Rendering: smooth painted shading, subtle texture in the fur/feathers/scales, glossy eyes with one large catchlight at the upper right and a faint bounce light at the lower left.
+Composition/framing: a single front-facing head-and-shoulders bust, centred, filling about 85% of a square frame, looking straight at the viewer. Perfectly symmetrical framing.
+Mood: warm, friendly, confident. Appealing to adult learners, cute but not babyish.
+Canvas: square 512x512, fully transparent background.
+
+Set consistency: this is image 9 of 14 in one mascot set. Keep the outline weight, shading softness, eye style and light direction identical across the whole set, so the badges sit side by side without looking mismatched.
+
+Constraints: transparent background only — no scenery, no backdrop, no ground shadow, no coloured circle or badge behind the subject. No text, no letters, no numbers, no logo, no watermark, no signature, no border or frame. No body below the chest, no hands, no props unless named above. Not photorealistic, not 3D render, not low-poly, not pixel art, not line-art-only.
+
+Output filename suggestion: tsuru.png (save into public/mascots/ as tsuru.webp)

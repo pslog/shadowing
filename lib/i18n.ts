@@ -250,6 +250,35 @@ const vi = {
     firstLesson: "Bắt đầu bài đầu tiên",
     start: "Bắt đầu",
   },
+  companion: {
+    label: "Bạn đồng hành",
+    expand: "Xem gợi ý",
+    collapse: "Thu gọn",
+    guest: "Cứ nghe thử thoải mái nhé. Đăng nhập khi bạn muốn ghi âm và lưu tiến độ.",
+    guestCta: "Đăng nhập",
+    firstLesson: "Mình bắt đầu từ một bài ngắn nhé?",
+    firstLessonCta: "Chọn bài",
+    streakAtRisk: (left: number, streak: number) =>
+      `Chuỗi ${streak} ngày đang chờ bạn. Pass thêm ${left} câu là giữ được!`,
+    streakAtRiskCta: "Luyện ngay",
+    lessonProgress: (passed: number, total: number) =>
+      `Bài này bạn đã pass ${passed}/${total} câu. Cố thêm chút nữa nhé!`,
+    lessonProgressCta: "Tới phần shadowing",
+    lessonDone: "Xong cả bài rồi, giỏi lắm! Sang bài tiếp theo chứ?",
+    lessonDoneCta: "Bài tiếp theo",
+    missionLeft: (left: number) => `Còn ${left} câu nữa là xong nhiệm vụ hôm nay.`,
+    missionLeftCta: "Luyện tiếp",
+    nearLevelUp: (xp: string, level: number, mascot: string) =>
+      `Còn ${xp} XP là lên Lv.${level} - ${mascot} đang đợi bạn!`,
+    nearLevelUpCta: "Kiếm XP",
+    resumeLesson: (title: string) => `Xong nhiệm vụ rồi. Học tiếp «${title}» chứ?`,
+    resumeLessonCta: "Học tiếp",
+    reviewVocab: (words: number) =>
+      `Sổ từ vựng còn ${words} từ chưa thuộc. Ôn nhanh một chút nhé?`,
+    reviewVocabCta: "Ôn từ",
+    allDone: "Hôm nay bạn làm tốt lắm. Ghé xem khóa mới chứ?",
+    allDoneCta: "Xem khóa học",
+  },
   mission: {
     title: "Nhiệm vụ hôm nay",
     completed: "Xong!",
@@ -942,6 +971,36 @@ const ja: Dictionary = {
     restart: "再開",
     firstLesson: "最初のレッスンを始める",
     start: "始める",
+  },
+  companion: {
+    label: "相棒",
+    expand: "ヒントを見る",
+    collapse: "とじる",
+    guest: "まずは気軽に聞いてみてください。録音や記録の保存はログインしてから。",
+    guestCta: "ログイン",
+    firstLesson: "短いレッスンから始めてみませんか？",
+    firstLessonCta: "レッスンを選ぶ",
+    streakAtRisk: (left: number, streak: number) =>
+      `${streak}日の連続記録がかかっています。あと${left}文Passで守れます！`,
+    streakAtRiskCta: "今すぐ練習",
+    lessonProgress: (passed: number, total: number) =>
+      `このレッスンは${passed}/${total}文Pass。あと少しです！`,
+    lessonProgressCta: "シャドーイングへ",
+    lessonDone: "レッスン完了、お見事！次のレッスンに進みますか？",
+    lessonDoneCta: "次のレッスン",
+    missionLeft: (left: number) => `今日のミッションまで、あと${left}文です。`,
+    missionLeftCta: "続けて練習",
+    nearLevelUp: (xp: string, level: number, mascot: string) =>
+      `あと${xp} XPでLv.${level} - ${mascot}が待っています！`,
+    nearLevelUpCta: "XPを稼ぐ",
+    resumeLesson: (title: string) =>
+      `ミッション達成！「${title}」の続きはいかがですか？`,
+    resumeLessonCta: "続きから",
+    reviewVocab: (words: number) =>
+      `単語帳に未習得が${words}語あります。少し復習しませんか？`,
+    reviewVocabCta: "復習する",
+    allDone: "今日はよく頑張りました。新しいコースも見てみませんか？",
+    allDoneCta: "コースを見る",
   },
   mission: {
     title: "今日のミッション",

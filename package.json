@@ -9,7 +9,9 @@
     "extract:resources": "node scripts/extract-resources.mjs",
     "align:audio": "node scripts/align-lesson-audio.mjs",
     "build:resource-seed": "node scripts/build-resource-seed-sql.mjs",
-    "seed:minna": "node scripts/seed-minna.mjs"
+    "seed:minna": "node scripts/seed-minna.mjs",
+    "mascots:prompts": "node scripts/gen-mascot-prompts.mjs",
+    "mascots:manifest": "node scripts/gen-mascot-manifest.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
