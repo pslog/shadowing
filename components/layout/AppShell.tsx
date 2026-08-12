@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -18,7 +18,7 @@ import { useI18n } from "@/components/i18n/useI18n";
 
 type NavItem = {
   href: string;
-  labelKey: "home" | "courses" | "review" | "progress" | "about" | "admin";
+  labelKey: "home" | "courses" | "review" | "progress";
   icon: IconName;
   alt?: string[];
 };
@@ -30,15 +30,18 @@ interface PublicSiteVisitOverview {
 const SITE_VISIT_DISPLAY_BASELINE = 1000;
 const SITE_VISIT_DEDUPE_MS = 2_000;
 const COPYRIGHT_YEAR = 2026;
+/** Grace period so the pointer can cross the gap from the avatar to the menu. */
+const MENU_CLOSE_DELAY_MS = 160;
 const NUMBER_FORMAT = new Intl.NumberFormat("en-US");
 const recentSiteVisitRecords = new Map<string, number>();
 
+// Daily-use destinations only, and few enough that the Vietnamese labels never
+// wrap the bar. The static pages (about / terms / privacy) live in the footer.
 const NAV: NavItem[] = [
   { href: "/", labelKey: "home", icon: "home" },
   { href: "/courses", labelKey: "courses", icon: "book", alt: ["/lessons"] },
   { href: "/review", labelKey: "review", icon: "bookmark" },
   { href: "/progress", labelKey: "progress", icon: "trending" },
-  { href: "/about", labelKey: "about", icon: "sparkles" },
 ];
 
 function useActive() {
@@ -104,25 +107,74 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const profile = state.profile;
   const profileLevel = profile ? levelProgress(profile.total_xp).level : 1;
   const canAdmin = isAdminProfile(profile);
-  const navItems: NavItem[] = canAdmin
-    ? [
-        ...NAV,
-        { href: "/admin/users", labelKey: "admin", icon: "cap", alt: ["/admin"] },
-      ]
-    : NAV;
-  // Mobile bottom bar: keep only the core daily-use tabs so it never crowds.
-  // 紹介 (static intro) and admin live in the desktop nav / footer only.
-  const mobileNavItems = navItems.filter(
-    (item) => item.href !== "/about" && !item.href.startsWith("/admin"),
-  );
+  // Admin is a rare, non-daily destination: it lives in the avatar menu only,
+  // so the nav bar stays the same width for every user.
+  const footerLinks = [
+    { href: "/about", label: m.nav.about },
+    { href: "/terms", label: m.footer.terms },
+    { href: "/privacy", label: m.footer.privacy },
+  ];
   const isActive = useActive();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [canHover, setCanHover] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [visitOverview, setVisitOverview] = useState<PublicSiteVisitOverview>({
     totalVisits: 0,
   });
   const displayTotalVisits = visitOverview.totalVisits + SITE_VISIT_DISPLAY_BASELINE;
 
   useEffect(() => setMenuOpen(false), [pathname]);
+
+  // Hover-to-open only where hovering is real. On touch a tap fires mouseenter
+  // too, which would open the menu and then immediately toggle it shut.
+  useEffect(() => {
+    const query = window.matchMedia("(hover: hover) and (pointer: fine)");
+    const sync = () => setCanHover(query.matches);
+    sync();
+    query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
+  }, []);
+
+  const cancelClose = useCallback(() => {
+    if (closeTimer.current === null) return;
+    clearTimeout(closeTimer.current);
+    closeTimer.current = null;
+  }, []);
+
+  const openMenu = useCallback(() => {
+    cancelClose();
+    setMenuOpen(true);
+  }, [cancelClose]);
+
+  const scheduleClose = useCallback(() => {
+    cancelClose();
+    closeTimer.current = setTimeout(() => setMenuOpen(false), MENU_CLOSE_DELAY_MS);
+  }, [cancelClose]);
+
+  useEffect(() => cancelClose, [cancelClose]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (menuRef.current?.contains(event.target as Node)) return;
+      cancelClose();
+      setMenuOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      cancelClose();
+      setMenuOpen(false);
+    };
+
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [cancelClose, menuOpen]);
 
   useEffect(() => {
     let cancelled = false;
@@ -206,14 +258,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </Link>
 
           <nav className="ml-2 hidden items-center gap-1 md:flex">
-            {navItems.map((item) => {
+            {NAV.map((item) => {
               const active = isActive(item);
               return (
                 <Link
                   key={item.href}
                   href={href(item.href)}
                   className={cn(
-                    "flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm transition-all",
+                    "flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-2 text-sm transition-all",
                     active
                       ? "brand-gradient font-semibold text-white shadow-[var(--shadow-glow)]"
                       : "text-muted hover:bg-surface/70 hover:text-fg",
@@ -243,14 +295,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <span className="hidden sm:inline">
                   <XPBadge xp={profile.total_xp} />
                 </span>
-                <Link
-                  href={href("/about")}
-                  aria-label={m.nav.about}
-                  className="focus-ring grid h-11 w-11 place-items-center rounded-full border border-border bg-surface text-muted transition-colors hover:text-fg md:hidden"
+                <div
+                  ref={menuRef}
+                  className="relative"
+                  onMouseEnter={canHover ? openMenu : undefined}
+                  onMouseLeave={canHover ? scheduleClose : undefined}
                 >
-                  <Icon name="sparkles" size={18} />
-                </Link>
-                <div className="relative">
                   <button
                     onClick={() => setMenuOpen((value) => !value)}
                     aria-haspopup="menu"
@@ -269,16 +319,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     <Icon name="chevron-right" size={14} className="rotate-90 text-muted" />
                   </button>
                   {menuOpen && (
-                    <>
-                      <button
-                        aria-hidden
-                        tabIndex={-1}
-                        onClick={() => setMenuOpen(false)}
-                        className="fixed inset-0 z-40 cursor-default"
-                      />
+                    // pt-1 instead of mt-1: the offset stays hoverable, so the
+                    // pointer never leaves the wrapper on its way to the menu.
+                    <div className="absolute right-0 top-full z-50 w-52 pt-1">
                       <div
                         role="menu"
-                        className="absolute right-0 z-50 mt-1 w-52 rounded-xl border border-border bg-card p-1 shadow-lg"
+                        className="rounded-xl border border-border bg-card p-1 shadow-lg"
                       >
                         <div className="px-3 py-2 text-xs text-muted">
                           <p className="truncate font-semibold text-fg">
@@ -286,7 +332,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                           </p>
                           Lv.{profileLevel} · {levelTitle(profileLevel, locale)}
                         </div>
+                        {canAdmin && (
+                          <Link
+                            href={href("/admin/users")}
+                            role="menuitem"
+                            className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:bg-surface hover:text-fg"
+                          >
+                            <Icon name="cap" size={15} />
+                            {m.nav.admin}
+                          </Link>
+                        )}
                         <button
+                          role="menuitem"
                           onClick={() => {
                             logout();
                             router.replace(href("/login"));
@@ -297,22 +354,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                           {m.common.logout}
                         </button>
                       </div>
-                    </>
+                    </div>
                   )}
                 </div>
               </>
             ) : (
-              <>
-                <Link
-                  href={href("/about")}
-                  className="text-sm font-semibold text-muted hover:text-fg md:hidden"
-                >
-                  {m.nav.about}
-                </Link>
-                <Link href={href("/login")} className={buttonClasses("primary", "sm")}>
-                  {m.common.login}
-                </Link>
-              </>
+              <Link href={href("/login")} className={buttonClasses("primary", "sm")}>
+                {m.common.login}
+              </Link>
             )}
           </div>
         </div>
@@ -346,14 +395,35 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </p>
           </div>
         </div>
-        <div className="border-t border-border/50 px-4 py-3 text-center text-[11px] text-muted">
-          © {COPYRIGHT_YEAR} Shadowing JP
+        <div className="border-t border-border/50">
+          {/* col-reverse so the links sit above the copyright when stacked on
+              mobile, but read left-to-right as © … links on one row from sm up. */}
+          <div className="mx-auto flex max-w-6xl flex-col-reverse items-center gap-2 px-4 py-3 text-[11px] text-muted sm:flex-row sm:justify-between">
+            <p>© {COPYRIGHT_YEAR} Shadowing JP</p>
+            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 font-semibold">
+              {footerLinks.map((item, index) => (
+                <Fragment key={item.href}>
+                  {index > 0 && (
+                    <span aria-hidden className="text-muted/40">
+                      ·
+                    </span>
+                  )}
+                  <Link
+                    href={href(item.href)}
+                    className="transition-colors hover:text-fg"
+                  >
+                    {item.label}
+                  </Link>
+                </Fragment>
+              ))}
+            </div>
+          </div>
         </div>
       </footer>
 
       <nav className="glass fixed inset-x-0 bottom-0 z-40 border-t border-border/70 pb-[env(safe-area-inset-bottom)] md:hidden">
         <div className="mx-auto flex max-w-md items-stretch">
-          {mobileNavItems.map((item) => {
+          {NAV.map((item) => {
             const active = isActive(item);
             return (
               <Link

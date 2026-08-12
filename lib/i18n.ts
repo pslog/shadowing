@@ -156,6 +156,10 @@ const vi = {
     tagline: "Shadowing mỗi ngày - cùng cộng đồng nói tiếng Nhật tự tin hơn",
     note: "Phi lợi nhuận · cùng nhau cố gắng mỗi ngày",
     visits: "lượt truy cập",
+    // Nội dung 2 trang này cố ý giữ tiếng Anh (bản nộp cho platform review),
+    // nhưng nhãn điều hướng thì vẫn dịch để người học đọc được.
+    terms: "Điều khoản",
+    privacy: "Bảo mật",
   },
   courses: {
     title: "Khóa học",
@@ -849,6 +853,8 @@ const ja: Dictionary = {
     tagline: "Shadowing毎日 - みんなと一緒に日本語をもっと自然に",
     note: "非営利 · 一緒に頑張りましょう",
     visits: "アクセス",
+    terms: "利用規約",
+    privacy: "プライバシー",
   },
   courses: {
     title: "コース",
