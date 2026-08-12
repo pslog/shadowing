@@ -27,6 +27,22 @@ export function proxy(request: NextRequest) {
   const [maybeLocale, ...rest] = pathname.split("/").filter(Boolean);
 
   if (isLocale(maybeLocale)) {
+    if (
+      ((rest[0] === "courses" || rest[0] === "lessons") &&
+        rest[1] &&
+        rest[1] !== "new")
+    ) {
+      const headers = new Headers(request.headers);
+      headers.set(LOCALE_HEADER, maybeLocale);
+      const response = NextResponse.next({ request: { headers } });
+      response.cookies.set(LOCALE_COOKIE, maybeLocale, {
+        maxAge: 60 * 60 * 24 * 365,
+        path: "/",
+        sameSite: "lax",
+      });
+      return response;
+    }
+
     const rewriteUrl = request.nextUrl.clone();
     rewriteUrl.pathname = `/${rest.join("/")}`;
     if (rewriteUrl.pathname === "/") rewriteUrl.pathname = "/";
