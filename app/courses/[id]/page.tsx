@@ -36,6 +36,9 @@ import { getAnonymousSessionId } from "@/lib/anonymous-session";
 import type { AppState } from "@/lib/store/state";
 import type { Lesson } from "@/lib/types";
 
+const readingCourseProgressCache = new Map<string, Set<string>>();
+const readingCourseProgressPending = new Map<string, Promise<Set<string>>>();
+
 export default function CoursePage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -258,28 +261,48 @@ function ReadingCourseLessonCards({ lessons }: { lessons: Lesson[] }) {
     }
 
     let cancelled = false;
-    fetch(
-      `/api/reading-progress?lessonIds=${encodeURIComponent(
-        lessonIds,
-      )}&anonymousSessionId=${encodeURIComponent(getAnonymousSessionId())}`,
-      { cache: "no-store" },
-    )
-      .then((response) => (response.ok ? response.json() : null))
-      .then((payload) => {
-        if (cancelled) return;
-        const next = new Set<string>(
-          (payload?.lessons ?? [])
-            .map((item: { lessonId?: string }) => item.lessonId)
-            .filter(Boolean),
-        );
-        setReadLessonIds(next);
-      })
-      .catch(() => {
-        if (!cancelled) setReadLessonIds(new Set());
-      });
+    const anonymousSessionId = getAnonymousSessionId();
+    const cacheKey = `${anonymousSessionId}:${lessonIds}`;
+    const cached = readingCourseProgressCache.get(cacheKey);
+    if (cached) {
+      setReadLessonIds(cached);
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      const pending =
+        readingCourseProgressPending.get(cacheKey) ??
+        fetch(
+          `/api/reading-progress?lessonIds=${encodeURIComponent(
+            lessonIds,
+          )}&anonymousSessionId=${encodeURIComponent(anonymousSessionId)}`,
+          { cache: "no-store" },
+        )
+          .then((response) => (response.ok ? response.json() : null))
+          .then(
+            (payload) =>
+              new Set<string>(
+                (payload?.lessons ?? [])
+                  .map((item: { lessonId?: string }) => item.lessonId)
+                  .filter(Boolean),
+              ),
+          )
+          .finally(() => readingCourseProgressPending.delete(cacheKey));
+
+      readingCourseProgressPending.set(cacheKey, pending);
+      pending
+        .then((next) => {
+          readingCourseProgressCache.set(cacheKey, next);
+          if (!cancelled) setReadLessonIds(next);
+        })
+        .catch(() => {
+          if (!cancelled) setReadLessonIds(new Set());
+        });
+    }, 500);
 
     return () => {
       cancelled = true;
+      window.clearTimeout(timeout);
     };
   }, [lessonIds]);
 
