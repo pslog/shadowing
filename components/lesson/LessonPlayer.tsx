@@ -85,6 +85,10 @@ interface ReadingCheckQuestion {
 
 const LESSON_VIEW_DEDUPE_MS = 2_000;
 const recentLessonViewRecords = new Map<string, number>();
+const readingProgressCache = new Map<string, boolean>();
+const readingProgressPending = new Map<string, Promise<boolean>>();
+const lessonViewStatsCache = new Map<string, LessonViewStats>();
+const lessonViewStatsPending = new Map<string, Promise<LessonViewStats | null>>();
 
 const READING_CHECKS: Record<string, ReadingCheckQuestion[]> = {
   "kanji-shiawase-dokuhon-yasashii": [
@@ -493,29 +497,46 @@ function ReadingLesson({
     if (!usingSupabase) return;
     let cancelled = false;
     const anonymousSessionId = getAnonymousSessionId();
-    fetch(
-      `/api/reading-progress?lessonIds=${encodeURIComponent(
-        lesson.id,
-      )}&anonymousSessionId=${encodeURIComponent(anonymousSessionId)}`,
-      { cache: "no-store" },
-    )
-      .then((response) => (response.ok ? response.json() : null))
-      .then((payload) => {
-        if (cancelled) return;
-        setDbRead(
-          Boolean(
-            payload?.lessons?.some(
-              (item: { lessonId?: string }) => item.lessonId === lesson.id,
+    const cacheKey = `${anonymousSessionId}:${lesson.id}`;
+    const cached = readingProgressCache.get(cacheKey);
+    if (typeof cached === "boolean") {
+      setDbRead(cached);
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      const pending =
+        readingProgressPending.get(cacheKey) ??
+        fetch(
+          `/api/reading-progress?lessonIds=${encodeURIComponent(
+            lesson.id,
+          )}&anonymousSessionId=${encodeURIComponent(anonymousSessionId)}`,
+          { cache: "no-store" },
+        )
+          .then((response) => (response.ok ? response.json() : null))
+          .then((payload) =>
+            Boolean(
+              payload?.lessons?.some(
+                (item: { lessonId?: string }) => item.lessonId === lesson.id,
+              ),
             ),
-          ),
-        );
-      })
-      .catch(() => {
-        if (!cancelled) setDbRead(false);
-      });
+          )
+          .finally(() => readingProgressPending.delete(cacheKey));
+
+      readingProgressPending.set(cacheKey, pending);
+      pending
+        .then((read) => {
+          readingProgressCache.set(cacheKey, read);
+          if (!cancelled) setDbRead(read);
+        })
+        .catch(() => {
+          if (!cancelled) setDbRead(false);
+        });
+    }, 450);
 
     return () => {
       cancelled = true;
+      window.clearTimeout(timeout);
     };
   }, [lesson.id, usingSupabase]);
 
@@ -535,7 +556,12 @@ function ReadingLesson({
         lessonId: lesson.id,
         anonymousSessionId: getAnonymousSessionId(),
       }),
-    }).catch(() => setDbRead(progressRead));
+    })
+      .then(() => {
+        const cacheKey = `${getAnonymousSessionId()}:${lesson.id}`;
+        readingProgressCache.set(cacheKey, true);
+      })
+      .catch(() => setDbRead(progressRead));
   };
 
   return (
@@ -1187,14 +1213,18 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
     if (now - lastRecordedAt < LESSON_VIEW_DEDUPE_MS) return;
     recentLessonViewRecords.set(lessonIdForView, now);
 
-    void fetch("/api/lesson-views", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        lessonId: lessonIdForView,
-        anonymousSessionId: getAnonymousSessionId(),
-      }),
-    });
+    const timeout = window.setTimeout(() => {
+      void fetch("/api/lesson-views", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lessonId: lessonIdForView,
+          anonymousSessionId: getAnonymousSessionId(),
+        }),
+      });
+    }, 700);
+
+    return () => window.clearTimeout(timeout);
   }, [lessonIdForView, usingSupabase]);
 
   useEffect(() => {
@@ -1204,23 +1234,43 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
     }
 
     let cancelled = false;
-    fetch(`/api/lesson-views?lessonId=${encodeURIComponent(lesson.id)}`, {
-      cache: "no-store",
-    })
-      .then((response) => (response.ok ? response.json() : null))
-      .then((payload) => {
-        if (cancelled || !payload?.lesson) return;
-        setLessonViewStats({
-          totalViews: payload.lesson.totalViews ?? 0,
-          shadowingUsers: payload.lesson.shadowingUsers ?? 0,
+    const cached = lessonViewStatsCache.get(lesson.id);
+    if (cached) {
+      setLessonViewStats(cached);
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      const pending =
+        lessonViewStatsPending.get(lesson.id) ??
+        fetch(`/api/lesson-views?lessonId=${encodeURIComponent(lesson.id)}`, {
+          cache: "no-store",
+        })
+          .then((response) => (response.ok ? response.json() : null))
+          .then((payload) => {
+            if (!payload?.lesson) return null;
+            return {
+              totalViews: payload.lesson.totalViews ?? 0,
+              shadowingUsers: payload.lesson.shadowingUsers ?? 0,
+            };
+          })
+          .finally(() => lessonViewStatsPending.delete(lesson.id));
+
+      lessonViewStatsPending.set(lesson.id, pending);
+      pending
+        .then((stats) => {
+          if (!stats) return;
+          lessonViewStatsCache.set(lesson.id, stats);
+          if (!cancelled) setLessonViewStats(stats);
+        })
+        .catch(() => {
+          if (!cancelled) setLessonViewStats(null);
         });
-      })
-      .catch(() => {
-        if (!cancelled) setLessonViewStats(null);
-      });
+    }, 500);
 
     return () => {
       cancelled = true;
+      window.clearTimeout(timeout);
     };
   }, [lesson, usingSupabase]);
 

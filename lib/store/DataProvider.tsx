@@ -248,12 +248,26 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       fetchAll("lessons", [["title", true]]),
     ]);
     const user = authResult.data.user;
+    const lessons = lessonsAll as Lesson[];
+    const readingLessonIds = lessons
+      .filter((lesson) => lesson.topic === "読解")
+      .map((lesson) => lesson.id);
+    const readingSentencesResult =
+      readingLessonIds.length > 0
+        ? await supabase
+            .from("lesson_sentences")
+            .select("*")
+            .in("lesson_id", readingLessonIds)
+            .order("lesson_id", { ascending: true })
+            .order("order_index", { ascending: true })
+        : { data: [], error: null };
+    if (readingSentencesResult.error) throw readingSentencesResult.error;
 
     return {
       profile: user ? profileFromUser(user) : null,
       courses: (coursesResult.data ?? []) as Course[],
-      lessons: lessonsAll as Lesson[],
-      sentences: [],
+      lessons,
+      sentences: (readingSentencesResult.data ?? []) as LessonSentence[],
       attempts: [],
       progress: [],
       missions: [],

@@ -215,28 +215,31 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
     let cancelled = false;
 
-    fetch("/api/site-visits", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path: pathname, anonymousSessionId }),
-    })
-      .then(() => fetch("/api/site-visits", { cache: "no-store" }))
-      .then(async (response) => {
-        const raw = await response.text();
-        const payload = raw
-          ? (JSON.parse(raw) as { overview?: Partial<PublicSiteVisitOverview> })
-          : null;
-        if (!response.ok || !payload?.overview) return null;
-        return payload.overview;
+    const timeout = window.setTimeout(() => {
+      fetch("/api/site-visits", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: pathname, anonymousSessionId }),
       })
-      .then((overview) => {
-        if (cancelled || !overview) return;
-        setVisitOverview({ totalVisits: overview.totalVisits ?? 0 });
-      })
-      .catch(() => undefined);
+        .then(() => fetch("/api/site-visits", { cache: "no-store" }))
+        .then(async (response) => {
+          const raw = await response.text();
+          const payload = raw
+            ? (JSON.parse(raw) as { overview?: Partial<PublicSiteVisitOverview> })
+            : null;
+          if (!response.ok || !payload?.overview) return null;
+          return payload.overview;
+        })
+        .then((overview) => {
+          if (cancelled || !overview) return;
+          setVisitOverview({ totalVisits: overview.totalVisits ?? 0 });
+        })
+        .catch(() => undefined);
+    }, 900);
 
     return () => {
       cancelled = true;
+      window.clearTimeout(timeout);
     };
   }, [pathname]);
 
