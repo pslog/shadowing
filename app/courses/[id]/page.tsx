@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useData } from "@/lib/store/DataProvider";
 import {
   courseBySlug,
@@ -31,6 +31,8 @@ import { topicHue } from "@/lib/topic-style";
 import { optimizedImageSrc } from "@/lib/optimized-image";
 import { isN2Course } from "@/lib/n2-course";
 import { useI18n } from "@/components/i18n/useI18n";
+import { isReadingLessonRead, READING_PROGRESS_EVENT } from "@/lib/reading-progress";
+import { readingNoteForLesson } from "@/lib/reading-notes";
 import type { AppState } from "@/lib/store/state";
 import type { Lesson } from "@/lib/types";
 
@@ -39,7 +41,7 @@ export default function CoursePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { state, ready } = useData();
-  const { dictionary: m, href } = useI18n();
+  const { dictionary: m, href, locale } = useI18n();
 
   useEffect(() => {
     if (params.id !== "jlpt-n2-kai") return;
@@ -80,6 +82,15 @@ export default function CoursePage() {
   const allDone = stats.total > 0 && stats.completed >= stats.total;
   const showN2Filters =
     isN2Course(course) && lessons.some((lesson) => lesson.media_url?.startsWith("/audio/n2/"));
+  const isReadingCourse = course?.topic === "読解" || lessons.some((lesson) => lesson.topic === "読解");
+  const readingVocabCount = lessons.reduce(
+    (sum, lesson) => sum + (lesson.vocabulary?.length ?? 0),
+    0,
+  );
+  const readingCourseCopy =
+    locale === "vi"
+      ? { lessons: "bài đọc", start: "Bắt đầu đọc" }
+      : { lessons: "読み物", start: "読み始める" };
 
   return (
     <AppShell>
@@ -135,28 +146,43 @@ export default function CoursePage() {
               <p className="mt-2 text-sm leading-relaxed text-muted sm:max-w-3xl">{description}</p>
             )}
 
-            <div className="mt-4">
-              <div className="mb-1.5 flex items-center justify-between text-xs font-semibold">
-                <span className="tabular-nums text-fg">
-                  {stats.completed}/{stats.total} {m.courses.lessonsCompleted}
+            {isReadingCourse ? (
+              <div className="mt-4 flex flex-wrap gap-2 text-xs font-bold text-muted">
+                <span className="rounded-full border border-border bg-surface px-3 py-1.5 tabular-nums">
+                  {lessons.length} {readingCourseCopy.lessons}
                 </span>
-                {stats.averageScore != null && (
-                  <span className="tabular-nums text-muted">
-                    {m.common.average}{" "}
-                    <span className="text-base font-extrabold text-primary">
-                      {stats.averageScore}
-                    </span>
-                    {m.common.scoreSuffix}
+                <span className="rounded-full border border-border bg-surface px-3 py-1.5 tabular-nums">
+                  {readingVocabCount}
+                  {m.common.words}
+                </span>
+                <span className="rounded-full border border-border bg-surface px-3 py-1.5">
+                  本文 + 語彙 + 読解チェック
+                </span>
+              </div>
+            ) : (
+              <div className="mt-4">
+                <div className="mb-1.5 flex items-center justify-between text-xs font-semibold">
+                  <span className="tabular-nums text-fg">
+                    {stats.completed}/{stats.total} {m.courses.lessonsCompleted}
                   </span>
-                )}
+                  {stats.averageScore != null && (
+                    <span className="tabular-nums text-muted">
+                      {m.common.average}{" "}
+                      <span className="text-base font-extrabold text-primary">
+                        {stats.averageScore}
+                      </span>
+                      {m.common.scoreSuffix}
+                    </span>
+                  )}
+                </div>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--muted)_20%,transparent)]">
+                  <div
+                    className="h-full rounded-full transition-all"
+                    style={{ width: `${pct}%`, background: allDone ? "var(--success)" : hue }}
+                  />
+                </div>
               </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--muted)_20%,transparent)]">
-                <div
-                  className="h-full rounded-full transition-all"
-                  style={{ width: `${pct}%`, background: allDone ? "var(--success)" : hue }}
-                />
-              </div>
-            </div>
+            )}
 
             {next && (
               <Link
@@ -168,7 +194,9 @@ export default function CoursePage() {
                   ? m.courses.selectCondition
                   : allDone
                   ? m.common.practiceAgain
-                  : stats.completed > 0
+                  : isReadingCourse
+                    ? readingCourseCopy.start
+                    : stats.completed > 0
                     ? m.common.continue
                     : m.courses.startLearning}
                 </Link>
@@ -191,10 +219,156 @@ export default function CoursePage() {
         </p>
       ) : showN2Filters ? (
         <N2CourseLessonGrid lessons={lessons} state={state} />
+      ) : isReadingCourse ? (
+        <ReadingCourseLessonCards lessons={lessons} />
       ) : (
         <CourseLessonCards lessons={lessons} state={state} />
       )}
     </AppShell>
+  );
+}
+
+function ReadingCourseLessonCards({ lessons }: { lessons: Lesson[] }) {
+  const engagementStats = useLessonEngagementStats(lessons.map((lesson) => lesson.id));
+  const { href: localizedHref, locale, dictionary: m } = useI18n();
+  const [readLessonIds, setReadLessonIds] = useState<Set<string>>(() => new Set());
+  useEffect(() => {
+    const load = () => {
+      setReadLessonIds(
+        new Set(lessons.filter((lesson) => isReadingLessonRead(lesson.id)).map((lesson) => lesson.id)),
+      );
+    };
+    load();
+    window.addEventListener("storage", load);
+    window.addEventListener(READING_PROGRESS_EVENT, load);
+    return () => {
+      window.removeEventListener("storage", load);
+      window.removeEventListener(READING_PROGRESS_EVENT, load);
+    };
+  }, [lessons]);
+  const copy =
+    locale === "vi"
+      ? {
+          eyebrow: "Trang đọc",
+          read: "Đọc bài",
+          unread: "Chưa đọc",
+          done: "Đã đọc",
+          views: m.common.views,
+        }
+      : {
+          eyebrow: "読み物",
+          read: "読む",
+          unread: "未読",
+          done: "読了",
+          views: m.common.views,
+        };
+
+  return (
+    <div className="stagger mt-6 grid gap-4 sm:grid-cols-2">
+      {lessons.map((lesson, index) => {
+        const isRead = readLessonIds.has(lesson.id);
+        const watermark = lesson.slug === "kanji-shiawase-dokuhon-daijoubu" ? "大" : "優";
+        const note = readingNoteForLesson(lesson.slug, locale);
+        return (
+          <Link
+            key={lesson.id}
+            href={localizedHref(lessonHref(lesson))}
+            prefetch={false}
+            className={[
+              "group relative overflow-hidden rounded-[1.25rem] border bg-card p-0 shadow-[var(--shadow-sm)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)]",
+              isRead
+                ? "border-[var(--success)]/25 hover:border-[var(--success)]/45"
+                : "border-border hover:border-primary/30",
+            ].join(" ")}
+            style={{ ["--i" as string]: index }}
+          >
+            <div
+              className={[
+                "absolute inset-y-0 left-0 w-1",
+                isRead ? "bg-[var(--success)]" : "bg-primary",
+              ].join(" ")}
+            />
+            <div
+              className={[
+                "pointer-events-none absolute right-4 top-2 select-none text-[5.5rem] font-black leading-none",
+                isRead ? "text-[var(--success)]/[0.075]" : "text-primary/[0.07]",
+              ].join(" ")}
+            >
+              {watermark}
+            </div>
+            <div className="relative p-4 sm:p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <span
+                    className={[
+                      "grid h-11 w-11 shrink-0 place-items-center rounded-2xl border",
+                      isRead
+                        ? "border-[var(--success)]/20 bg-[var(--success-soft)] text-[var(--success)]"
+                        : "border-primary/15 bg-primary/10 text-primary",
+                    ].join(" ")}
+                  >
+                    <Icon name={isRead ? "check" : "book"} size={22} />
+                  </span>
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.2em] text-primary">
+                      {copy.eyebrow} {String(index + 1).padStart(2, "0")}
+                    </p>
+                    <h2 lang="ja" className="mt-1 text-xl font-black leading-tight text-fg">
+                      {lesson.title}
+                    </h2>
+                    {note && (
+                      <p lang="ja" className="mt-2 text-sm font-black leading-6 text-fg">
+                        {note.keyword}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex shrink-0 flex-col items-end gap-2">
+                  <span
+                    className={[
+                      "inline-flex h-8 items-center gap-1 rounded-full px-2.5 text-xs font-black",
+                      isRead
+                        ? "bg-[var(--success-soft)] text-[var(--success)]"
+                        : "border border-border bg-card/80 text-muted",
+                    ].join(" ")}
+                  >
+                    {isRead && <Icon name="check" size={13} />}
+                    {isRead ? copy.done : copy.unread}
+                  </span>
+                  <span
+                    className="inline-flex h-7 items-center gap-1 rounded-full border border-border bg-card/80 px-2.5 text-[11px] font-bold text-muted tabular-nums"
+                    title={copy.views}
+                  >
+                    <Icon name="eye" size={12} />
+                    {(engagementStats[lesson.id]?.totalViews ?? 0).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+
+              {note && (
+                <div className="mt-3 border-t border-border/65 pt-3">
+                {note?.body && (
+                  <p className="mt-1 line-clamp-2 text-sm font-semibold leading-6 text-muted">
+                    {note.body}
+                  </p>
+                )}
+                </div>
+              )}
+
+              <div
+                className={[
+                  "mt-3 inline-flex items-center gap-2 text-sm font-black",
+                  isRead ? "text-[var(--success)]" : "text-primary",
+                ].join(" ")}
+              >
+                {copy.read}
+                <Icon name="arrow-right" size={16} />
+              </div>
+            </div>
+          </Link>
+        );
+      })}
+    </div>
   );
 }
 

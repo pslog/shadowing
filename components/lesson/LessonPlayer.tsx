@@ -40,6 +40,8 @@ import { LessonReview } from "./LessonReview";
 import { LessonVocabulary } from "./LessonVocabulary";
 import { Furigana } from "./Furigana";
 import { useI18n } from "@/components/i18n/useI18n";
+import { markReadingLessonRead } from "@/lib/reading-progress";
+import { readingNoteForLesson } from "@/lib/reading-notes";
 import type { Dictionary } from "@/lib/i18n";
 
 function attemptToScore(a: SentenceAttempt): ScoreBreakdown {
@@ -66,8 +68,619 @@ interface LessonViewStats {
   shadowingUsers: number;
 }
 
+interface ReadingLessonProps {
+  lesson: NonNullable<ReturnType<typeof lessonById>>;
+  sentences: LessonSentence[];
+  courseHref: string;
+  lessonViewStats: LessonViewStats | null;
+}
+
+interface ReadingCheckQuestion {
+  question: string;
+  choices: string[];
+  answer: number;
+  explanation: string;
+}
+
 const LESSON_VIEW_DEDUPE_MS = 2_000;
 const recentLessonViewRecords = new Map<string, number>();
+
+const READING_CHECKS: Record<string, ReadingCheckQuestion[]> = {
+  "kanji-shiawase-dokuhon-yasashii": [
+    {
+      question: "先生の説明では、「本当に優しい人」とはどのような人ですか。",
+      choices: [
+        "いつも楽しい話をしてくれる人",
+        "悲しいときにそばにいてくれる人",
+        "漢字を正しい書き順で書ける人",
+        "一人で何でもできる人",
+      ],
+      answer: 1,
+      explanation:
+        "Khi buồn hoặc đau khổ, người ở bên cạnh mình mới là người thực sự tử tế.",
+    },
+    {
+      question: "女の子には、「憂」という漢字がどのように見えましたか。",
+      choices: [
+        "「人の心」と書いているように見えた",
+        "「悲しい愛」と書いているように見えた",
+        "「百の愛」と書いているように見えた",
+        "「一つの愛」と書いているように見えた",
+      ],
+      answer: 2,
+      explanation:
+        "Cô bé nhìn chữ「憂」như thể được viết bằng “trăm tình yêu” -「百の愛」.",
+    },
+    {
+      question: "この話を聞いた筆者は、最後にどのような人になりたいと思いましたか。",
+      choices: [
+        "辛い経験をできるだけ忘れる人",
+        "誰にも頼らず一人で生きられる人",
+        "漢字を子どもたちに上手に教えられる人",
+        "悲しさや辛さを、誰かを思いやる愛に変えられる優しい人",
+      ],
+      answer: 3,
+      explanation:
+        "Tác giả muốn biến những trải nghiệm buồn và đau khổ thành sự yêu thương, biết nghĩ cho người khác.",
+    },
+  ],
+  "kanji-shiawase-dokuhon-daijoubu": [
+    {
+      question: "この話では、「大丈夫」の3文字に共通して入っている漢字は何ですか。",
+      choices: ["「心」", "「人」", "「力」", "「日」"],
+      answer: 1,
+      explanation:
+        "Tác giả cho rằng cả「大」「丈」「夫」đều có hình chữ「人」bên trong.",
+    },
+    {
+      question: "「あなたの味方は3人いる」とは、どのような意味ですか。",
+      choices: [
+        "どんなときでも自分を支えてくれる人がいる",
+        "必ず3人の友達を作らなければならない",
+        "一人では何もできない",
+        "3人で生活したほうが幸せになれる",
+      ],
+      answer: 0,
+      explanation:
+        "“3 người” tượng trưng cho những người luôn ở bên và nâng đỡ mình khi gặp khó khăn.",
+    },
+    {
+      question: "この話で「春」が表しているものとして、最も適切なものはどれですか。",
+      choices: [
+        "暖かい季節が好きだということ",
+        "春には3人で遊ぶべきだということ",
+        "辛いときがあっても、いつか良いときが来るということ",
+        "春になると新しい友達ができるということ",
+      ],
+      answer: 2,
+      explanation:
+        "「必ず春は来る」は、dù đang khó khăn thì rồi thời điểm tốt đẹp cũng sẽ đến.",
+    },
+  ],
+};
+
+function buildReadingParagraphs(lesson: ReadingLessonProps["lesson"], sentences: LessonSentence[]) {
+  const source = sentences.map((sentence) => sentence.ja_text);
+  const makeParagraph = (start: number, end: number) => ({
+    id: sentences[start]?.id ?? String(start),
+    text: source.slice(start, end).join(""),
+    author: false,
+  });
+
+  if (lesson.slug === "kanji-shiawase-dokuhon-yasashii" && sentences.length >= 17) {
+    return [
+      makeParagraph(0, 7),
+      makeParagraph(7, 13),
+      makeParagraph(13, 16),
+      {
+        id: sentences[16].id,
+        text: sentences[16].ja_text,
+        author: true,
+      },
+    ];
+  }
+
+  if (lesson.slug === "kanji-shiawase-dokuhon-daijoubu" && sentences.length >= 27) {
+    return [
+      makeParagraph(0, 3),
+      {
+        id: sentences[3].id,
+        text: [
+          ...source.slice(3, 6),
+          source.slice(6, 9).join("\n"),
+          ...source.slice(9, 12),
+        ].join("\n"),
+        author: false,
+      },
+      makeParagraph(12, 20),
+      {
+        id: sentences[20].id,
+        text: [source[20], source[21], ...source.slice(22, 26)].join("\n"),
+        author: false,
+      },
+      {
+        id: sentences[26].id,
+        text: sentences[26].ja_text,
+        author: true,
+      },
+    ];
+  }
+
+  const paragraphs: { id: string; text: string; author: boolean }[] = [];
+  let buffer: LessonSentence[] = [];
+
+  for (const sentence of sentences) {
+    if (sentence.ja_text.startsWith("☞")) {
+      if (buffer.length > 0) {
+        paragraphs.push({
+          id: buffer[0].id,
+          text: buffer.map((item) => item.ja_text).join(""),
+          author: false,
+        });
+        buffer = [];
+      }
+      paragraphs.push({ id: sentence.id, text: sentence.ja_text, author: true });
+      continue;
+    }
+
+    buffer.push(sentence);
+    if (buffer.length >= 4) {
+      paragraphs.push({
+        id: buffer[0].id,
+        text: buffer.map((item) => item.ja_text).join(""),
+        author: false,
+      });
+      buffer = [];
+    }
+  }
+
+  if (buffer.length > 0) {
+    paragraphs.push({
+      id: buffer[0].id,
+      text: buffer.map((item) => item.ja_text).join(""),
+      author: false,
+    });
+  }
+
+  return paragraphs;
+}
+
+function ReadingCheck({
+  questions,
+  lessonId,
+}: {
+  questions: ReadingCheckQuestion[];
+  lessonId: string;
+}) {
+  const { locale } = useI18n();
+  const [answers, setAnswers] = useState<(number | null)[]>(
+    () => questions.map(() => null),
+  );
+  const [submitted, setSubmitted] = useState(false);
+  const answered = answers.filter((answer) => answer != null).length;
+  const score = answers.reduce<number>(
+    (sum, answer, index) => sum + (answer === questions[index].answer ? 1 : 0),
+    0,
+  );
+  const complete = answered === questions.length;
+  const copy =
+    locale === "vi"
+      ? {
+          eyebrow: "Reading check",
+          title: "読解チェック",
+          subtitle: "Chọn đáp án sau khi đọc xong để tự kiểm tra mức hiểu bài.",
+          progress: "đã trả lời",
+          correct: "Đúng",
+          wrong: "Chưa đúng",
+          answer: "正解",
+          submit: "Nộp bài",
+          submitHint: "Chọn đủ đáp án để nộp bài.",
+          ready: "Đã chọn đủ đáp án. Nộp bài để xem kết quả.",
+          retry: "Làm lại",
+          result: "Kết quả",
+        }
+      : {
+          eyebrow: "Reading check",
+          title: "読解チェック",
+          subtitle: "本文を読んだあと、内容を理解できたか確認しましょう。",
+          progress: "回答済み",
+          correct: "正解",
+          wrong: "もう一度確認",
+          answer: "正解",
+          submit: "提出する",
+          submitHint: "すべて選ぶと提出できます。",
+          ready: "すべて選びました。提出すると結果を確認できます。",
+          retry: "やり直す",
+          result: "結果",
+        };
+
+  return (
+    <section className="overflow-hidden rounded-[1.5rem] border border-border bg-card shadow-[var(--shadow-sm)]">
+      <div className="flex flex-col gap-4 border-b border-border bg-surface/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-primary">
+            {copy.eyebrow}
+          </p>
+          <h2 className="mt-1 flex items-center gap-2 text-xl font-extrabold">
+            <Icon name="check" size={18} className="text-primary" />
+            {copy.title}
+          </h2>
+          <p className="mt-1 text-sm leading-6 text-muted">{copy.subtitle}</p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-bold text-muted tabular-nums">
+            {answered}/{questions.length} {copy.progress}
+          </span>
+          {submitted && (
+            <span className="rounded-full bg-primary/10 px-3 py-1.5 text-xs font-black text-primary tabular-nums">
+              {copy.result}: {score}/{questions.length}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-3 p-4 sm:p-5">
+        {questions.map((question, questionIndex) => {
+          const selected = answers[questionIndex];
+          const revealed = submitted;
+          const correct = selected === question.answer;
+          return (
+            <div
+              key={question.question}
+              className="rounded-2xl border border-border bg-surface/45 p-4"
+            >
+              <div className="flex items-start gap-3">
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-primary/10 text-sm font-black text-primary tabular-nums">
+                  Q{questionIndex + 1}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p lang="ja" className="text-[0.95rem] font-extrabold leading-7 text-fg">
+                    {question.question}
+                  </p>
+                  <div className="mt-3 grid gap-2">
+                    {question.choices.map((choice, choiceIndex) => {
+                      const isSelected = selected === choiceIndex;
+                      const isAnswer = question.answer === choiceIndex;
+                      const tone = revealed
+                        ? isAnswer
+                          ? "border-[var(--success)]/50 bg-[var(--success-soft)] text-[var(--success)]"
+                          : isSelected
+                            ? "border-[var(--danger)]/45 bg-[var(--danger-soft)] text-[var(--danger)]"
+                            : "border-border bg-card text-muted"
+                        : isSelected
+                          ? "border-primary/45 bg-primary/10 text-primary"
+                          : "border-border bg-card hover:border-primary/35 hover:bg-primary/5";
+                      return (
+                        <button
+                          key={choice}
+                          type="button"
+                          disabled={submitted}
+                          onClick={() =>
+                            setAnswers((prev) =>
+                              prev.map((item, index) =>
+                                index === questionIndex ? choiceIndex : item,
+                              ),
+                            )
+                          }
+                          className={[
+                            "focus-ring flex min-h-12 w-full items-start gap-3 rounded-xl border px-3 py-2.5 text-left text-sm font-bold transition-colors disabled:cursor-default",
+                            tone,
+                          ].join(" ")}
+                        >
+                          <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-lg border border-current/20 text-xs font-black">
+                            {String.fromCharCode(65 + choiceIndex)}
+                          </span>
+                          <span lang="ja" className="leading-6">
+                            {choice}
+                          </span>
+                          {revealed && isAnswer && (
+                            <Icon name="check" size={16} className="ml-auto mt-1 shrink-0" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {revealed && (
+                    <div
+                      className={[
+                        "mt-3 rounded-xl border px-3 py-2.5 text-sm leading-6",
+                        correct
+                          ? "border-[var(--success)]/25 bg-[var(--success-soft)] text-[var(--success)]"
+                          : "border-[var(--warning)]/25 bg-[var(--warning-soft)] text-[var(--warning)]",
+                      ].join(" ")}
+                    >
+                      <p className="font-black">
+                        {correct ? copy.correct : copy.wrong} · {copy.answer}:{" "}
+                        {String.fromCharCode(65 + question.answer)}
+                      </p>
+                      <p className="mt-1 text-fg/80">{question.explanation}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="flex flex-col gap-3 border-t border-border bg-surface/50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+        {!submitted ? (
+          <>
+            <p className="text-sm font-bold text-muted">
+              {complete ? copy.ready : copy.submitHint}
+            </p>
+            <Button
+              disabled={!complete}
+              onClick={() => {
+                setSubmitted(true);
+                markReadingLessonRead(lessonId);
+              }}
+            >
+              <Icon name="check" size={16} />
+              {copy.submit}
+            </Button>
+          </>
+        ) : (
+          <>
+            <p className="text-sm font-black text-primary tabular-nums">
+              {copy.result}: {score}/{questions.length}
+            </p>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setAnswers(questions.map(() => null));
+                setSubmitted(false);
+              }}
+            >
+              <Icon name="retry" size={16} />
+              {copy.retry}
+            </Button>
+          </>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function ReadingLesson({
+  lesson,
+  sentences,
+  courseHref,
+  lessonViewStats,
+}: ReadingLessonProps) {
+  const { state } = useData();
+  const { locale, dictionary: m, href } = useI18n();
+  const copy =
+    locale === "vi"
+      ? {
+          label: "Đọc hiểu",
+          intro:
+            "Đọc chậm theo từng đoạn, giữ mạch văn tự nhiên rồi xem lại từ vựng ở cuối bài.",
+          article: "本文",
+          articleHint: "Đọc liền mạch, chú ý cách chữ Hán mở nghĩa trong câu chuyện.",
+          blocks: "đoạn",
+          back: "Về khóa học",
+        }
+      : {
+          label: "読解",
+          intro:
+            "段落ごとにゆっくり読み、文章の流れと漢字に込められた意味を味わいます。下の語彙も確認しましょう。",
+          article: "本文",
+          articleHint: "文章の流れと漢字に込められた意味を味わいながら読みましょう。",
+          blocks: "段落",
+          back: "コースへ戻る",
+        };
+  const paragraphs = buildReadingParagraphs(lesson, sentences);
+  const readingCheck = lesson.slug ? READING_CHECKS[lesson.slug] : undefined;
+  const watermark = lesson.slug === "kanji-shiawase-dokuhon-daijoubu" ? "大" : "優";
+  const readingNote = readingNoteForLesson(lesson.slug, locale);
+
+  return (
+    <div className="space-y-6">
+      <section className="relative overflow-hidden rounded-[1.5rem] border border-border bg-card p-5 shadow-[var(--shadow-sm)] sm:p-6">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-1 brand-gradient" />
+        <div className="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="min-w-0">
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <Badge tone="primary">{copy.label}</Badge>
+              {lesson.level && <Badge>{lesson.level}</Badge>}
+              <span
+                className="inline-flex h-7 items-center gap-2 rounded-full border border-border/70 bg-card/85 px-2.5 text-[11px] font-extrabold text-muted shadow-sm backdrop-blur"
+                aria-label={`${lessonViewStats?.totalViews ?? 0} ${m.common.views}`}
+              >
+                <span className="inline-flex items-center gap-1 tabular-nums" title={m.common.views}>
+                  <Icon name="eye" size={12} />
+                  {(lessonViewStats?.totalViews ?? 0).toLocaleString()}
+                </span>
+              </span>
+            </div>
+            <h1 lang="ja" className="text-2xl font-extrabold leading-tight sm:text-3xl">
+              {lesson.title}
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">{copy.intro}</p>
+            {readingNote && (
+              <div className="mt-3 flex max-w-3xl flex-wrap items-baseline gap-x-3 gap-y-1 rounded-full border border-primary/15 bg-primary/5 px-3.5 py-2">
+                <span lang="ja" className="text-sm font-black leading-6 text-fg">
+                  {readingNote.keyword}
+                </span>
+                <span className="text-sm font-semibold leading-6 text-muted">
+                  {readingNote.body}
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="flex shrink-0 flex-wrap gap-2 text-xs font-bold text-muted">
+            <span className="rounded-full border border-border bg-surface px-3 py-1.5 tabular-nums">
+              {paragraphs.filter((item) => !item.author).length} {copy.blocks}
+            </span>
+            <span className="rounded-full border border-border bg-surface px-3 py-1.5 tabular-nums">
+              {lesson.vocabulary?.length ?? 0}
+              {m.common.words}
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <article className="overflow-hidden rounded-[1.5rem] border border-border bg-card shadow-[var(--shadow-sm)]">
+        <div className="relative overflow-hidden border-b border-border bg-[linear-gradient(135deg,color-mix(in_srgb,var(--primary)_10%,transparent),color-mix(in_srgb,var(--surface)_76%,transparent))] px-5 py-4 sm:px-6">
+          <div className="relative flex items-center justify-between gap-4">
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-primary/15 bg-card/80 text-primary shadow-sm">
+                <Icon name="book" size={21} />
+              </span>
+              <div className="min-w-0">
+                <h2 className="text-xl font-black leading-tight">{copy.article}</h2>
+                <p className="mt-1 max-w-2xl text-sm font-semibold leading-6 text-muted">
+                  {copy.articleHint}
+                </p>
+              </div>
+            </div>
+            <span className="hidden rounded-full border border-border/70 bg-card/75 px-3 py-1.5 text-xs font-bold text-muted shadow-sm sm:inline-flex">
+              {paragraphs.filter((item) => !item.author).length} {copy.blocks}
+            </span>
+          </div>
+        </div>
+        <div className="relative overflow-hidden bg-[linear-gradient(180deg,color-mix(in_srgb,var(--surface)_58%,transparent),transparent)] px-4 py-7 sm:px-10 sm:py-11">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-6 top-7 bottom-8 grid grid-cols-3 content-around justify-items-center gap-y-10 text-primary/[0.04] sm:inset-x-12 sm:grid-cols-4 sm:gap-y-14"
+          >
+            {Array.from({ length: 20 }).map((_, index) => (
+              <span
+                key={index}
+                className="select-none text-[3.5rem] font-black leading-none sm:text-[5rem]"
+              >
+                {watermark}
+              </span>
+            ))}
+          </div>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute right-8 top-7 select-none text-[8rem] font-black leading-none text-primary/[0.06] sm:right-12 sm:text-[11rem]"
+          >
+            {watermark}
+          </div>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute left-10 top-24 select-none text-[4.5rem] font-black leading-none text-primary/[0.046] sm:left-20 sm:top-28 sm:text-[6rem]"
+          >
+            {watermark}
+          </div>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute bottom-28 right-16 select-none text-[5.5rem] font-black leading-none text-primary/[0.048] sm:right-24 sm:text-[7rem]"
+          >
+            {watermark}
+          </div>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute bottom-12 left-1/3 select-none text-[3.75rem] font-black leading-none text-primary/[0.02] sm:text-[5rem]"
+          >
+            {watermark}
+          </div>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute left-1/2 top-12 select-none text-[3.25rem] font-black leading-none text-primary/[0.018] sm:text-[4.5rem]"
+          >
+            {watermark}
+          </div>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute left-8 top-1/2 select-none text-[5rem] font-black leading-none text-primary/[0.018] sm:left-14 sm:text-[6.5rem]"
+          >
+            {watermark}
+          </div>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute right-6 top-1/2 select-none text-[4rem] font-black leading-none text-primary/[0.02] sm:right-14 sm:text-[5.75rem]"
+          >
+            {watermark}
+          </div>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute left-[18%] bottom-1/3 select-none text-[3.75rem] font-black leading-none text-primary/[0.018] sm:text-[5.25rem]"
+          >
+            {watermark}
+          </div>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute right-[30%] bottom-1/4 select-none text-[4.25rem] font-black leading-none text-primary/[0.019] sm:text-[5.75rem]"
+          >
+            {watermark}
+          </div>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute right-[18%] top-[34%] select-none text-[3.5rem] font-black leading-none text-primary/[0.017] sm:text-[4.75rem]"
+          >
+            {watermark}
+          </div>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute left-[42%] top-[42%] select-none text-[3rem] font-black leading-none text-primary/[0.016] sm:text-[4.25rem]"
+          >
+            {watermark}
+          </div>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute left-[58%] bottom-16 select-none text-[3.5rem] font-black leading-none text-primary/[0.018] sm:text-[4.75rem]"
+          >
+            {watermark}
+          </div>
+          <div className="relative mx-auto max-w-[56rem] pl-4 sm:pl-5">
+            <div
+              aria-hidden="true"
+              className="absolute left-0 top-1 bottom-10 w-px bg-gradient-to-b from-primary/35 via-border to-transparent"
+            />
+            {paragraphs.map((paragraph) => {
+              if (paragraph.author) {
+                return (
+                  <p
+                    key={paragraph.id}
+                    lang="ja"
+                    className="mt-8 border-t border-border/60 pt-5 text-right text-sm font-bold leading-7 text-muted sm:text-base"
+                  >
+                    {paragraph.text}
+                  </p>
+                );
+              }
+
+              return (
+                <p
+                  key={paragraph.id}
+                  lang="ja"
+                  className="relative mt-7 whitespace-pre-line indent-[1em] text-[1.08rem] font-medium leading-[2.45] text-fg first:mt-0 before:absolute before:-left-[1.2rem] before:top-[1.08em] before:h-2 before:w-2 before:rounded-full before:border before:border-primary/25 before:bg-card before:shadow-[0_0_0_4px_color-mix(in_srgb,var(--primary)_8%,transparent)] before:content-[''] sm:text-[1.14rem] sm:leading-[2.62] sm:before:-left-[1.45rem]"
+                >
+                  {paragraph.text}
+                </p>
+              );
+            })}
+          </div>
+        </div>
+      </article>
+
+      <LessonVocabulary vocabulary={lesson.vocabulary} lessonId={lesson.id} variant="reading" />
+
+      {readingCheck && <ReadingCheck questions={readingCheck} lessonId={lesson.id} />}
+
+      <div className="flex justify-end">
+        <Link href={href(courseHref)} className={buttonClasses("secondary")}>
+          <Icon name="arrow-left" size={16} />
+          {copy.back}
+        </Link>
+      </div>
+
+      {isAdmin(state) && (
+        <div className="flex justify-end">
+          <Link href={href(`${lessonHref(lesson)}/edit`)} className={buttonClasses("ghost")}>
+            {m.common.edit}
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function MissionCompleteDialog({
   outcome,
@@ -544,6 +1157,18 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
     isN2Course(parentCourse) && fromMondai && fromExam
       ? `${baseCourseHref}?mondai=${encodeURIComponent(fromMondai)}&exam=${encodeURIComponent(fromExam)}#n2-filter`
       : baseCourseHref;
+
+  if (lesson.topic === "読解" || parentCourse?.topic === "読解") {
+    return (
+      <ReadingLesson
+        lesson={lesson}
+        sentences={sentences}
+        courseHref={courseHref}
+        lessonViewStats={lessonViewStats}
+      />
+    );
+  }
+
   const current = sentences[Math.min(index, sentences.length - 1)];
   const passed = passedCountForLesson(state, lessonId);
   const total = sentences.length;

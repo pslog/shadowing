@@ -43,6 +43,8 @@ function isToday(iso: string): boolean {
 }
 
 function lessonNumber(title: string): number | null {
+  const lesson = title.match(/^Lesson\s+(\d+)/iu);
+  if (lesson) return Number(lesson[1]);
   const dai = title.match(/^第(\d+)課/u);
   if (dai) return Number(dai[1]);
   // "Unit 1.1", "Unit 1.2" -> 101, 102 … (order within a course).
