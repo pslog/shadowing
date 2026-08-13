@@ -12,6 +12,7 @@ import { FullScreenLoading } from "@/components/ui/loading";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { useI18n } from "@/components/i18n/useI18n";
+import { emitCompanionEvent } from "@/lib/gamification/companion-events";
 import type { Dictionary } from "@/lib/i18n";
 
 type Filter = "all" | "unlearned" | "learned";
@@ -31,6 +32,15 @@ export default function ReviewPage() {
 
   const all = savedVocabList(state);
   const learnedCount = all.filter((v) => v.learned).length;
+
+  // Marking a word learned is a small win, and clearing the last one is a real
+  // one — both worth a word from the companion. Unlearning is silent: undoing
+  // something should not be congratulated.
+  function markLearned(id: string, learned: boolean) {
+    setVocabLearned(id, learned);
+    if (!learned) return;
+    emitCompanionEvent({ kind: "vocab", left: Math.max(0, all.length - learnedCount - 1) });
+  }
 
   // Cross-user popularity per word (saved / learned counts).
   const [stats, setStats] = useState<Map<string, VocabStat>>(new Map());
@@ -104,7 +114,7 @@ export default function ReviewPage() {
         <Flashcards
           deck={deck}
           onExit={() => setDeck(null)}
-          onLearned={(id, learned) => setVocabLearned(id, learned)}
+          onLearned={markLearned}
           t={t}
         />
       </AppShell>
@@ -204,7 +214,7 @@ export default function ReviewPage() {
                     const lesson = id ? lessonById(state, id) : undefined;
                     return lesson ? lessonHref(lesson) : null;
                   }}
-                  onToggleLearned={() => setVocabLearned(v.id, !v.learned)}
+                  onToggleLearned={() => markLearned(v.id, !v.learned)}
                   onRemove={() => removeSavedVocab(v.id)}
                   t={t}
                   localizedHref={href}

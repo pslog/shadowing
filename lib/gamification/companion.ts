@@ -16,6 +16,7 @@
 import type { AppState } from "@/lib/store/state";
 import {
   inProgressLesson,
+  isReadingLesson,
   lessonHref,
   nextLessonInCourse,
   passedCountForLesson,
@@ -32,6 +33,8 @@ export type CompanionActionKey =
   | "streakAtRisk"
   | "lessonProgress"
   | "lessonDone"
+  | "readingRead"
+  | "readingDone"
   | "missionLeft"
   | "nearLevelUp"
   | "resumeLesson"
@@ -81,6 +84,25 @@ export function nextCompanionAction(
 ): CompanionAction {
   const profile = state.profile;
 
+  // A 読解 lesson still being read outranks everything below, including the
+  // streak and the login prompt. There is no recorder on that page, so "pass 3
+  // more sentences" or "log in to record" would both misread what the learner
+  // is doing and walk them off the passage they are halfway through. Those
+  // nudges find them again once the reading is done.
+  const openLesson = ctx.lessonId
+    ? state.lessons.find((item) => item.id === ctx.lessonId)
+    : undefined;
+  const readingOpen = isReadingLesson(state, openLesson);
+  if (readingOpen) {
+    const read = state.progress.some(
+      (item) => item.lesson_id === ctx.lessonId && item.status === "completed",
+    );
+    if (!read) {
+      // The passage itself; it carries scroll-mt so the header does not cover it.
+      return { key: "readingRead", href: "#reading-article", lessonId: ctx.lessonId };
+    }
+  }
+
   if (!profile) {
     return { key: "guest", href: "/login" };
   }
@@ -109,10 +131,24 @@ export function nextCompanionAction(
   // it is the number the learner can see moving. Streak risk still outranks it,
   // because that is the one thing they would regret missing.
   if (ctx.lessonId) {
+    const lesson = openLesson;
+
+    // Read but still sitting on the page: point at the door, not at a recorder.
+    if (readingOpen) {
+      const upcoming = lesson?.course_id
+        ? nextLessonInCourse(state, lesson.course_id)
+        : null;
+      const next = upcoming && upcoming.id !== ctx.lessonId ? upcoming : null;
+      return {
+        key: "readingDone",
+        href: next ? lessonHref(next) : "/courses",
+        lessonId: ctx.lessonId,
+      };
+    }
+
     const total = sentencesForLesson(state, ctx.lessonId).length;
     const passed = passedCountForLesson(state, ctx.lessonId);
     if (total > 0 && passed >= total) {
-      const lesson = state.lessons.find((item) => item.id === ctx.lessonId);
       const upcoming = lesson?.course_id
         ? nextLessonInCourse(state, lesson.course_id)
         : null;

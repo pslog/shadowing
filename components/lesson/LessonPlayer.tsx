@@ -40,6 +40,7 @@ import { LessonReview } from "./LessonReview";
 import { LessonVocabulary } from "./LessonVocabulary";
 import { Furigana } from "./Furigana";
 import { useI18n } from "@/components/i18n/useI18n";
+import { emitCompanionEvent } from "@/lib/gamification/companion-events";
 import { readingNoteForLesson } from "@/lib/reading-notes";
 import { getAnonymousSessionId } from "@/lib/anonymous-session";
 import type { Dictionary } from "@/lib/i18n";
@@ -250,7 +251,7 @@ function ReadingCheck({
   onSubmitComplete,
 }: {
   questions: ReadingCheckQuestion[];
-  onSubmitComplete: () => void;
+  onSubmitComplete: (correct: number, total: number) => void;
 }) {
   const { locale } = useI18n();
   const [answers, setAnswers] = useState<(number | null)[]>(
@@ -295,7 +296,10 @@ function ReadingCheck({
         };
 
   return (
-    <section className="overflow-hidden rounded-[1.5rem] border border-border bg-card shadow-[var(--shadow-sm)]">
+    <section
+      id="reading-check"
+      className="scroll-mt-24 overflow-hidden rounded-[1.5rem] border border-border bg-card shadow-[var(--shadow-sm)]"
+    >
       <div className="flex flex-col gap-4 border-b border-border bg-surface/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.22em] text-primary">
@@ -414,7 +418,7 @@ function ReadingCheck({
               disabled={!complete}
               onClick={() => {
                 setSubmitted(true);
-                onSubmitComplete();
+                onSubmitComplete(score, questions.length);
               }}
             >
               <Icon name="check" size={16} />
@@ -515,9 +519,13 @@ function ReadingLesson({
     };
   }, [lesson.id, usingSupabase]);
 
-  const markRead = () => {
+  const markRead = (correct: number, total: number) => {
+    const firstRead = !isRead;
     setDbRead(true);
     markReadingLessonRead(lesson.id);
+    // Reading has its own companion vocabulary: no takes, no pass score, so the
+    // comprehension result is the only thing there is to react to.
+    emitCompanionEvent({ kind: "reading", correct, total, firstRead });
     if (!usingSupabase) return;
 
     void fetch("/api/reading-progress", {
@@ -588,29 +596,40 @@ function ReadingLesson({
         </div>
       </section>
 
-      <article className="overflow-hidden rounded-[1.5rem] border border-border bg-card shadow-[var(--shadow-sm)]">
-        <div className="relative overflow-hidden border-b border-border bg-[linear-gradient(135deg,color-mix(in_srgb,var(--primary)_10%,transparent),color-mix(in_srgb,var(--surface)_76%,transparent))] px-5 py-4 sm:px-6">
+      <article
+        id="reading-article"
+        className="scroll-mt-24 overflow-hidden rounded-[1.5rem] border border-border bg-card shadow-[var(--shadow-sm)]"
+      >
+        <div className="relative overflow-hidden border-b border-border bg-[linear-gradient(180deg,color-mix(in_srgb,var(--surface)_86%,transparent),color-mix(in_srgb,var(--card)_96%,transparent))] px-5 py-3.5 sm:px-7">
           <div className="relative flex items-center justify-between gap-4">
             <div className="flex min-w-0 items-center gap-3">
-              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-primary/15 bg-card/80 text-primary shadow-sm">
-                <Icon name="book" size={21} />
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-primary/15 bg-primary/[0.08] text-primary">
+                <Icon name="book" size={18} />
               </span>
               <div className="min-w-0">
-                <h2 className="text-xl font-black leading-tight">{copy.article}</h2>
-                <p className="mt-1 max-w-2xl text-sm font-semibold leading-6 text-muted">
+                <h2 className="text-base font-black leading-tight">{copy.article}</h2>
+                <p className="mt-0.5 max-w-2xl text-xs font-semibold leading-5 text-muted sm:text-sm">
                   {copy.articleHint}
                 </p>
               </div>
             </div>
-            <span className="hidden rounded-full border border-border/70 bg-card/75 px-3 py-1.5 text-xs font-bold text-muted shadow-sm sm:inline-flex">
+            <span className="hidden rounded-full border border-border/70 bg-card/75 px-3 py-1.5 text-xs font-bold text-muted sm:inline-flex">
               {paragraphs.filter((item) => !item.author).length} {copy.blocks}
             </span>
           </div>
         </div>
-        <div className="relative overflow-hidden bg-[linear-gradient(180deg,color-mix(in_srgb,var(--surface)_58%,transparent),transparent)] px-4 py-7 sm:px-10 sm:py-11">
+        <div className="relative overflow-hidden bg-[radial-gradient(circle_at_12%_18%,color-mix(in_srgb,var(--primary)_10%,transparent),transparent_24%),radial-gradient(circle_at_88%_16%,color-mix(in_srgb,var(--warning)_12%,transparent),transparent_22%),radial-gradient(circle_at_86%_84%,color-mix(in_srgb,var(--success)_9%,transparent),transparent_26%),linear-gradient(90deg,color-mix(in_srgb,var(--primary)_5%,transparent),transparent_13%,transparent_87%,color-mix(in_srgb,var(--primary)_5%,transparent)),linear-gradient(180deg,color-mix(in_srgb,var(--surface)_72%,transparent),color-mix(in_srgb,var(--card)_96%,transparent)_28%,color-mix(in_srgb,var(--surface)_56%,transparent))] px-4 py-7 sm:px-10 sm:py-11">
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-x-6 top-7 bottom-8 grid grid-cols-3 content-around justify-items-center gap-y-10 text-primary/[0.04] sm:inset-x-12 sm:grid-cols-4 sm:gap-y-14"
+            className="pointer-events-none absolute inset-0 opacity-[0.42] [background-image:linear-gradient(90deg,color-mix(in_srgb,var(--fg)_5%,transparent)_1px,transparent_1px),linear-gradient(180deg,color-mix(in_srgb,var(--fg)_4%,transparent)_1px,transparent_1px)] [background-size:44px_44px]"
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-8 top-6 bottom-6 rounded-[2rem] bg-[radial-gradient(ellipse_at_center,color-mix(in_srgb,var(--card)_72%,transparent),color-mix(in_srgb,var(--card)_24%,transparent)_64%,transparent)]"
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-6 top-8 bottom-8 grid grid-cols-3 content-around justify-items-center gap-y-10 text-primary/[0.045] sm:inset-x-12 sm:grid-cols-4 sm:gap-y-14"
           >
             {Array.from({ length: 20 }).map((_, index) => (
               <span
@@ -693,12 +712,12 @@ function ReadingLesson({
           >
             {watermark}
           </div>
-          <div className="relative mx-auto max-w-[56rem] pl-4 sm:pl-5">
+          <div className="relative mx-auto max-w-[50rem]">
             <div
               aria-hidden="true"
-              className="absolute left-0 top-1 bottom-10 w-px bg-gradient-to-b from-primary/35 via-border to-transparent"
+              className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-border to-transparent"
             />
-            {paragraphs.map((paragraph) => {
+            {paragraphs.map((paragraph, paragraphIndex) => {
               if (paragraph.author) {
                 return (
                   <p
@@ -711,11 +730,19 @@ function ReadingLesson({
                 );
               }
 
+              const sideLine =
+                paragraphIndex % 2 === 0
+                  ? "pl-5 before:left-0 after:left-0 after:bg-gradient-to-r sm:pl-6"
+                  : "pr-5 before:right-0 after:right-0 after:bg-gradient-to-l sm:pr-6";
+
               return (
                 <p
                   key={paragraph.id}
                   lang="ja"
-                  className="relative mt-7 whitespace-pre-line indent-[1em] text-[1.08rem] font-medium leading-[2.45] text-fg first:mt-0 before:absolute before:-left-[1.2rem] before:top-[1.08em] before:h-2 before:w-2 before:rounded-full before:border before:border-primary/25 before:bg-card before:shadow-[0_0_0_4px_color-mix(in_srgb,var(--primary)_8%,transparent)] before:content-[''] sm:text-[1.14rem] sm:leading-[2.62] sm:before:-left-[1.45rem]"
+                  className={[
+                    "relative mt-7 whitespace-pre-line text-[1.08rem] font-medium leading-[2.35] text-fg first:mt-0 before:absolute before:top-3 before:h-[calc(100%-1.5rem)] before:w-[3px] before:rounded-full before:bg-gradient-to-b before:from-primary/5 before:via-primary/35 before:to-primary/5 before:content-[''] after:absolute after:top-3 after:h-px after:w-14 after:from-primary/30 after:to-transparent after:content-[''] sm:text-[1.14rem] sm:leading-[2.55]",
+                    sideLine,
+                  ].join(" ")}
                 >
                   {paragraph.text}
                 </p>
@@ -1371,6 +1398,26 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
       });
 
       setFresh({ score, outcome, audioUrl: r.audioUrl, transcript: r.transcript });
+      // Tell the companion what just happened so it can cheer or reassure. It
+      // decides what is worth saying; the player only reports the facts.
+      emitCompanionEvent({
+        kind: "attempt",
+        passed: score.passed,
+        total: score.total,
+        passScore: current.pass_score,
+        improvedBy:
+          outcome.previousBestTotal != null
+            ? score.total - outcome.previousBestTotal
+            : null,
+        firstPassToday: outcome.countedToday,
+        tries: attempts.length + 1,
+        lessonCompleted: outcome.lessonCompletedNow,
+        missionCompleted: outcome.missionCompletedNow,
+        streakIncreased: outcome.streakIncreased,
+        currentStreak: outcome.currentStreak,
+        leveledUp: outcome.leveledUp,
+        newLevel: outcome.newLevel,
+      });
       if (outcome.missionCompletedNow) {
         setMissionAlert(outcome);
       }

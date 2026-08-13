@@ -333,7 +333,25 @@ button:disabled {
   50% { transform: translateY(-8px); }
 }
 
+/* Companion moods. Both are single-shot: the mascot reacts to something the
+   learner just did, then settles back to its idle float. A looping celebration
+   would read as decoration instead of as an answer. */
+@keyframes cheer-hop {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-9px) rotate(-8deg); }
+  55% { transform: translateY(0) rotate(0deg); }
+  78% { transform: translateY(-5px) rotate(7deg); }
+}
+@keyframes nod-soft {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  35% { transform: translateY(2px) rotate(-4deg); }
+  70% { transform: translateY(0) rotate(3deg); }
+}
+
 .animate-in { animation: fade-in-up 0.3s ease-out both; }
+.animate-cheer { animation: cheer-hop 0.85s ease-in-out 2; }
+.animate-nod { animation: nod-soft 1.3s ease-in-out 2; }
+.animate-ring { animation: pulse-ring 1.2s ease-out 2; }
 .animate-pop { animation: pop-in 0.34s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
 .animate-float { animation: float-soft 5s ease-in-out infinite; }
 .stagger > * { animation: fade-in-up 0.34s ease-out both; animation-delay: calc(var(--i, 0) * 65ms); }

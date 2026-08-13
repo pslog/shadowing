@@ -174,6 +174,21 @@ export function recentAttemptedLessons(state: AppState, n = 4): Lesson[] {
 }
 
 /** First not-yet-completed lesson in the course (for a "continue" button). */
+/**
+ * 読解 lessons are read, not shadowed: no recorder, no attempts, no XP. Anything
+ * that phrases progress in passed sentences has to branch on this first, or it
+ * ends up telling a reader they have "passed 0/27 sentences".
+ *
+ * The topic can sit on the lesson or be inherited from its course, matching what
+ * the player itself checks when it picks the reading layout.
+ */
+export function isReadingLesson(state: AppState, lesson: Lesson | undefined): boolean {
+  if (!lesson) return false;
+  if (lesson.topic === "読解") return true;
+  const course = lesson.course_id ? courseById(state, lesson.course_id) : undefined;
+  return course?.topic === "読解";
+}
+
 export function nextLessonInCourse(
   state: AppState,
   courseId: string,

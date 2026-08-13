@@ -254,6 +254,49 @@ const vi = {
     label: "Bạn đồng hành",
     expand: "Xem gợi ý",
     collapse: "Thu gọn",
+    hint: "Gợi ý cho bạn",
+    moodCheer: "Giỏi quá!",
+    moodWarm: "Cố lên nào",
+    moodCalm: "Không sao đâu",
+    react: {
+      levelUp: (level: number, mascot: string) =>
+        `Lên Lv.${level} rồi! ${mascot} vừa nhập hội với bạn đó 🎉`,
+      lessonCleared: [
+        "Xong cả bài rồi! Bạn làm tốt thật đấy 🎉",
+        "Hết bài luôn! Nghe chắc hơn hẳn lúc mới bắt đầu.",
+        "Trọn bài! Nghỉ một chút rồi mình qua bài mới nhé.",
+      ],
+      missionCleared: (streak: number) =>
+        `Xong nhiệm vụ hôm nay! Streak ${streak} ngày rồi đó 🔥`,
+      firstPass: [
+        "Pass rồi! Câu này bạn đọc tự nhiên lắm.",
+        "Đẹp! Bỏ túi thêm một câu.",
+        "Chuẩn luôn. Sang câu tiếp thôi!",
+      ],
+      newBest: (delta: number) =>
+        `Hơn lần trước ${delta} điểm! Đang lên tay rồi đó.`,
+      nearPass: (gap: number) =>
+        `Sát rồi, chỉ thiếu ${gap} điểm thôi. Thu lại một lần nữa nhé!`,
+      hardSentence: [
+        "Câu này khó thật. Nghe lại mẫu một hai lần rồi đọc chậm hơn xem sao.",
+        "Không sao đâu, câu nào cũng có lúc lì. Chậm lại một nhịp là được.",
+        "Thử tách câu ra đọc từng vế, rồi ghép lại nhé.",
+      ],
+      keepGoing: [
+        "Chưa tới, nhưng nghe rõ hơn lần trước rồi đấy.",
+        "Hít một hơi, thu lại lần nữa nhé. Mình vẫn ở đây.",
+        "Cứ từ từ thôi, không ai đúng ngay từ lần đầu cả.",
+      ],
+      readingPerfect: (total: number) =>
+        `Đúng hết ${total}/${total} câu! Bài này bạn nắm chắc rồi 🎉`,
+      readingPassed: (correct: number, total: number) =>
+        `Đúng ${correct}/${total} câu. Đọc lại đoạn liên quan một lượt là chắc luôn.`,
+      readingMissed: (correct: number, total: number) =>
+        `Được ${correct}/${total} câu. Đọc lại bài chậm một lượt nữa nhé, để ý mấy chỗ giải thích ở dưới.`,
+      vocabLearned: (words: number) =>
+        `Nhớ thêm một từ rồi! Còn ${words} từ nữa thôi.`,
+      vocabCleared: "Hết sạch từ cần ôn rồi. Sổ từ vựng sạch bong 🎉",
+    },
     guest: "Cứ nghe thử thoải mái nhé. Đăng nhập khi bạn muốn ghi âm và lưu tiến độ.",
     guestCta: "Đăng nhập",
     firstLesson: "Mình bắt đầu từ một bài ngắn nhé?",
@@ -266,6 +309,11 @@ const vi = {
     lessonProgressCta: "Tới phần shadowing",
     lessonDone: "Xong cả bài rồi, giỏi lắm! Sang bài tiếp theo chứ?",
     lessonDoneCta: "Bài tiếp theo",
+    readingRead:
+      "Bài đọc hiểu này cứ đọc chậm từng đoạn nhé. Cuối bài có mấy câu hỏi kiểm tra.",
+    readingReadCta: "Vào bài đọc",
+    readingDone: "Đọc xong bài này rồi! Lưu vài từ mới rồi mình đi tiếp nhé?",
+    readingDoneCta: "Đi tiếp",
     missionLeft: (left: number) => `Còn ${left} câu nữa là xong nhiệm vụ hôm nay.`,
     missionLeftCta: "Luyện tiếp",
     nearLevelUp: (xp: string, level: number, mascot: string) =>
@@ -976,6 +1024,46 @@ const ja: Dictionary = {
     label: "相棒",
     expand: "ヒントを見る",
     collapse: "とじる",
+    hint: "つぎの一手",
+    moodCheer: "お見事！",
+    moodWarm: "その調子",
+    moodCalm: "だいじょうぶ",
+    react: {
+      levelUp: (level: number, mascot: string) =>
+        `Lv.${level}にアップ！${mascot}が仲間になりました 🎉`,
+      lessonCleared: [
+        "レッスン完走！よくがんばりました 🎉",
+        "全文クリア！最初より発音がしっかりしています。",
+        "これで一冊おしまい。ひと息ついて次に行きましょう。",
+      ],
+      missionCleared: (streak: number) =>
+        `今日のミッション達成！${streak}日連続です 🔥`,
+      firstPass: [
+        "合格！今の文、とても自然でした。",
+        "いいですね！一文クリアです。",
+        "ばっちり。次の文に進みましょう！",
+      ],
+      newBest: (delta: number) => `前回より${delta}点アップ！伸びています。`,
+      nearPass: (gap: number) => `あと${gap}点。もう一回録ってみましょう！`,
+      hardSentence: [
+        "この文は手強いですね。お手本をもう一度聞いて、ゆっくり読んでみましょう。",
+        "だいじょうぶ、どの文にも詰まる時があります。一拍ゆっくりで。",
+        "文を区切って読んでから、つなげてみましょう。",
+      ],
+      keepGoing: [
+        "今回は届きませんでしたが、さっきより聞き取りやすいです。",
+        "ひと呼吸おいて、もう一度録りましょう。ここで見ています。",
+        "あせらずに。最初から完璧な人はいません。",
+      ],
+      readingPerfect: (total: number) =>
+        `${total}問すべて正解！内容をしっかりつかめています 🎉`,
+      readingPassed: (correct: number, total: number) =>
+        `${total}問中${correct}問正解。関係する段落をもう一度読めば完璧です。`,
+      readingMissed: (correct: number, total: number) =>
+        `${total}問中${correct}問。もう一度ゆっくり読んでみましょう。解説にも目を通すと見えてきますよ。`,
+      vocabLearned: (words: number) => `ひとつ覚えました！残り${words}語です。`,
+      vocabCleared: "復習する単語はゼロ。単語帳がきれいになりました 🎉",
+    },
     guest: "まずは気軽に聞いてみてください。録音や記録の保存はログインしてから。",
     guestCta: "ログイン",
     firstLesson: "短いレッスンから始めてみませんか？",
@@ -988,6 +1076,11 @@ const ja: Dictionary = {
     lessonProgressCta: "シャドーイングへ",
     lessonDone: "レッスン完了、お見事！次のレッスンに進みますか？",
     lessonDoneCta: "次のレッスン",
+    readingRead:
+      "読解のレッスンです。段落ごとにゆっくり読みましょう。最後に確認問題がありますよ。",
+    readingReadCta: "本文へ",
+    readingDone: "読み終わりましたね！語彙をいくつか保存して次に進みましょうか。",
+    readingDoneCta: "次へ",
     missionLeft: (left: number) => `今日のミッションまで、あと${left}文です。`,
     missionLeftCta: "続けて練習",
     nearLevelUp: (xp: string, level: number, mascot: string) =>
