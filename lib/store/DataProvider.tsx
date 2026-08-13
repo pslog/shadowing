@@ -115,6 +115,13 @@ interface DataContextValue {
 
 const DataContext = createContext<DataContextValue | null>(null);
 const USING_SUPABASE = hasSupabaseEnv();
+const SUPABASE_SHELL_CACHE_KEY = "shadowing-jp-supabase-shell-v1";
+const SUPABASE_SHELL_CACHE_TTL_MS = 5 * 60 * 1000;
+
+interface SupabaseShellCache {
+  savedAt: number;
+  state: AppState;
+}
 
 function migrateSeedContent(state: AppState): AppState {
   const seed = buildSeed(new Date().toISOString());
@@ -161,6 +168,46 @@ function loadLocalState(): AppState {
       : emptyState(new Date().toISOString());
   } catch {
     return emptyState(new Date().toISOString());
+  }
+}
+
+function loadSupabaseShellCache(): AppState | null {
+  try {
+    const raw = sessionStorage.getItem(SUPABASE_SHELL_CACHE_KEY);
+    if (!raw) return null;
+    const cached = JSON.parse(raw) as SupabaseShellCache;
+    if (!cached?.state || Date.now() - cached.savedAt > SUPABASE_SHELL_CACHE_TTL_MS) {
+      sessionStorage.removeItem(SUPABASE_SHELL_CACHE_KEY);
+      return null;
+    }
+    return cached.state;
+  } catch {
+    return null;
+  }
+}
+
+function writeSupabaseShellCache(state: AppState): void {
+  try {
+    const shellState: AppState = {
+      profile: state.profile,
+      courses: state.courses,
+      lessons: state.lessons,
+      sentences: state.sentences.filter((sentence) => {
+        const lesson = state.lessons.find((item) => item.id === sentence.lesson_id);
+        return lesson?.topic === "読解";
+      }),
+      attempts: [],
+      progress: [],
+      missions: [],
+      xpEvents: [],
+      savedVocab: [],
+    };
+    sessionStorage.setItem(
+      SUPABASE_SHELL_CACHE_KEY,
+      JSON.stringify({ savedAt: Date.now(), state: shellState } satisfies SupabaseShellCache),
+    );
+  } catch {
+    /* sessionStorage may be unavailable or full; cache is optional. */
   }
 }
 
@@ -584,10 +631,22 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     let cancelled = false;
 
     async function hydrate() {
+      let cachedShell: AppState | null = null;
+      if (USING_SUPABASE) {
+        cachedShell = loadSupabaseShellCache();
+        if (cachedShell) {
+          stateRef.current = cachedShell;
+          setState(cachedShell);
+          hydrated.current = true;
+          setReady(true);
+        }
+      }
+
       let next: AppState;
       try {
         next = USING_SUPABASE ? await loadSupabaseCourseShellState() : loadLocalState();
       } catch {
+        if (cachedShell) return;
         next = loadLocalState();
       }
 
@@ -596,6 +655,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       setState(next);
       hydrated.current = true;
       setReady(true);
+      if (USING_SUPABASE) writeSupabaseShellCache(next);
 
       if (USING_SUPABASE) {
         window.setTimeout(() => {
@@ -727,6 +787,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   );
 
   const logout = useCallback(() => {
+    sessionStorage.removeItem(SUPABASE_SHELL_CACHE_KEY);
     createSupabaseClient()
       .then((supabase) => supabase?.auth.signOut())
       .catch(() => undefined);
@@ -1093,6 +1154,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const reset = useCallback(() => {
     const next = emptyState(new Date().toISOString());
     commit(next);
+    sessionStorage.removeItem(SUPABASE_SHELL_CACHE_KEY);
     if (!USING_SUPABASE) localStorage.removeItem(STORAGE_KEY);
   }, [commit]);
 
