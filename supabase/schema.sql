@@ -304,6 +304,18 @@ from view_summary v
 cross join attempt_summary a
 cross join completion_summary c;
 
+create or replace view public.course_engagement_stats
+with (security_invoker = false) as
+select
+  coalesce(l.course_id::text, '__uncategorized__') as course_id,
+  coalesce(sum(s.total_views), 0)::int as total_views,
+  coalesce(sum(s.shadowing_users), 0)::int as shadowing_users,
+  coalesce(sum(s.completed_users), 0)::int as completed_users
+from public.lessons l
+left join public.lesson_view_stats s on s.lesson_id = l.id
+where l.is_public = true
+group by coalesce(l.course_id::text, '__uncategorized__');
+
 -- ---------------------------------------------------------------------------
 --  site_visits  (site-wide page visit analytics)
 -- ---------------------------------------------------------------------------

@@ -16,6 +16,7 @@ import {
   passedCountForLesson,
   sentencesForLesson,
   lessonById,
+  nextLessonInCourse,
   UNCATEGORIZED_COURSE_ID,
 } from "@/lib/store/selectors";
 import type { AttemptOutcome } from "@/lib/store/engine";
@@ -41,9 +42,16 @@ import { LessonVocabulary } from "./LessonVocabulary";
 import { Furigana } from "./Furigana";
 import { useI18n } from "@/components/i18n/useI18n";
 import { emitCompanionEvent } from "@/lib/gamification/companion-events";
+import {
+  levelMascot,
+  levelProgress,
+  levelTitle,
+  type Mascot as MascotIdentity,
+} from "@/lib/gamification/level";
+import { MascotBadge } from "@/components/ui/mascot";
 import { readingNoteForLesson } from "@/lib/reading-notes";
 import { getAnonymousSessionId } from "@/lib/anonymous-session";
-import type { Dictionary } from "@/lib/i18n";
+import type { Dictionary, Locale } from "@/lib/i18n";
 
 function attemptToScore(a: SentenceAttempt): ScoreBreakdown {
   return {
@@ -255,7 +263,7 @@ function ReadingCheck({
   onSubmitComplete,
 }: {
   questions: ReadingCheckQuestion[];
-  onSubmitComplete: (correct: number, total: number) => void;
+  onSubmitComplete: (results: boolean[]) => void;
 }) {
   const { locale } = useI18n();
   const [answers, setAnswers] = useState<(number | null)[]>(
@@ -422,7 +430,9 @@ function ReadingCheck({
               disabled={!complete}
               onClick={() => {
                 setSubmitted(true);
-                onSubmitComplete(score, questions.length);
+                onSubmitComplete(
+                  answers.map((answer, i) => answer === questions[i].answer),
+                );
               }}
             >
               <Icon name="check" size={16} />
@@ -451,6 +461,233 @@ function ReadingCheck({
   );
 }
 
+/**
+ * Shown once the comprehension check is submitted — at ANY score.
+ *
+ * Reading has no XP, no streak and no pass mark, so without this the learner
+ * answers the questions and the page just sits there. This dialog is the only
+ * moment reading gets to feel like an accomplishment, which is why a weak score
+ * still opens it: what is being celebrated is finishing the passage, and the
+ * score is reported underneath as information rather than as a verdict. The copy
+ * shifts tone with the result but never scolds, and the mascot in the middle is
+ * the learner's own level mascot — the same currency as the shadowing side, so
+ * reading does not feel like the lesser half of the app.
+ */
+function ReadingCompleteDialog({
+  results,
+  locale,
+  mascot,
+  mascotTitle,
+  nextHref,
+  hasNext,
+  onClose,
+  onReview,
+  localizedHref,
+}: {
+  results: boolean[];
+  locale: Locale;
+  mascot: MascotIdentity;
+  mascotTitle: string;
+  nextHref: string;
+  hasNext: boolean;
+  onClose: () => void;
+  onReview: () => void;
+  localizedHref: (href: string) => string;
+}) {
+  const primaryRef = useRef<HTMLAnchorElement | null>(null);
+  const total = results.length;
+  const correct = results.filter(Boolean).length;
+  const tier = correct === total ? "perfect" : correct * 2 >= total ? "good" : "low";
+
+  useEffect(() => {
+    primaryRef.current?.focus();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const copy =
+    locale === "vi"
+      ? {
+          eyebrow: "Đọc hiểu",
+          title: {
+            perfect: "Đúng hết rồi!",
+            good: "Làm tốt lắm!",
+            low: "Bạn đã đọc hết bài!",
+          }[tier],
+          body: {
+            perfect: "Bài này bạn nắm rất chắc. Giữ nhịp đọc này nhé!",
+            good: "Đúng phần lớn rồi. Xem giải thích mấy câu còn lại là trọn vẹn.",
+            low: "Kết quả chưa cao, nhưng bạn đã đi hết bài — đó mới là phần khó. Xem giải thích rồi đọc lại một lượt là khác ngay.",
+          }[tier],
+          resultLabel: "Kết quả",
+          statusLabel: "Trạng thái",
+          statusValue: "Đã đọc",
+          questionShort: "Câu",
+          review: "Xem giải thích",
+          next: hasNext ? "Bài tiếp theo" : "Về khóa học",
+        }
+      : {
+          eyebrow: "読解",
+          title: {
+            perfect: "全問正解！",
+            good: "よくできました！",
+            low: "本文を読み切りました！",
+          }[tier],
+          body: {
+            perfect: "内容をしっかりつかめています。このペースで続けましょう！",
+            good: "ほとんど正解です。残りの解説を読めば完璧です。",
+            low: "点数はまだ伸ばせますが、最後まで読み切ったことが一番大事です。解説を見て、もう一度読んでみましょう。",
+          }[tier],
+          resultLabel: "結果",
+          statusLabel: "状態",
+          statusValue: "読了",
+          questionShort: "問",
+          review: "解説を見る",
+          next: hasNext ? "次のレッスン" : "コースへ戻る",
+        };
+
+  // One ring, three tones: full marks reads as success, a decent score as brand
+  // colour, a weak one as a warning — never as an error. Nothing here failed.
+  const tone =
+    tier === "perfect"
+      ? "var(--success)"
+      : tier === "good"
+        ? "var(--primary)"
+        : "var(--warning)";
+  const RADIUS = 34;
+  const circumference = 2 * Math.PI * RADIUS;
+  const offset = circumference * (1 - correct / Math.max(1, total));
+
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[60] grid place-items-center overflow-y-auto bg-black/60 px-4 py-6 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="reading-complete-title"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="animate-pop relative m-auto w-full max-w-sm overflow-hidden rounded-[1.75rem] border bg-card p-5 text-center shadow-[var(--shadow-lg)] sm:p-6"
+        style={{ borderColor: `color-mix(in srgb, ${tone} 28%, transparent)` }}
+      >
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-1 brand-gradient" />
+        <div
+          className="pointer-events-none absolute -right-20 -top-24 h-52 w-52 rounded-full blur-3xl"
+          style={{ background: `color-mix(in srgb, ${tone} 16%, transparent)` }}
+        />
+
+        <div className="relative">
+          <p className="text-[11px] font-black uppercase tracking-[0.22em] text-primary">
+            {copy.eyebrow}
+          </p>
+
+          {/* Score ring around the level mascot: the number and the thing it
+              feeds land as one object instead of two separate widgets. */}
+          <div className="relative mx-auto mt-3 grid h-24 w-24 place-items-center">
+            <svg
+              viewBox="0 0 80 80"
+              aria-hidden
+              className="absolute inset-0 h-full w-full -rotate-90"
+            >
+              <circle
+                cx="40"
+                cy="40"
+                r={RADIUS}
+                fill="none"
+                strokeWidth="6"
+                className="stroke-border"
+              />
+              <circle
+                cx="40"
+                cy="40"
+                r={RADIUS}
+                fill="none"
+                strokeWidth="6"
+                strokeLinecap="round"
+                className="animate-ring-draw"
+                style={
+                  {
+                    stroke: tone,
+                    strokeDasharray: circumference,
+                    "--ring-len": `${circumference}`,
+                    "--ring-off": `${offset}`,
+                  } as React.CSSProperties
+                }
+              />
+            </svg>
+            <MascotBadge slug={mascot.slug} accent={mascot.accent} size={58} />
+          </div>
+
+          <h2 id="reading-complete-title" className="mt-4 text-2xl font-extrabold text-fg">
+            {copy.title}
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-muted">{copy.body}</p>
+
+          {/* Per-question dots: which ones to go back to, without a table. */}
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-1.5">
+            {results.map((ok, i) => (
+              <span
+                key={i}
+                title={`${copy.questionShort} ${i + 1}`}
+                className={[
+                  "grid h-7 w-7 place-items-center rounded-lg text-[11px] font-black tabular-nums",
+                  ok
+                    ? "bg-[var(--success-soft)] text-[var(--success)]"
+                    : "bg-[var(--warning-soft)] text-[var(--warning)]",
+                ].join(" ")}
+              >
+                {ok ? <Icon name="check" size={13} /> : i + 1}
+              </span>
+            ))}
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
+            <div className="rounded-xl bg-surface px-3 py-2">
+              <p className="text-xs font-bold text-muted">{copy.resultLabel}</p>
+              <p
+                className="mt-0.5 text-lg font-extrabold tabular-nums"
+                style={{ color: tone }}
+              >
+                {correct}/{total}
+              </p>
+            </div>
+            <div className="rounded-xl bg-surface px-3 py-2">
+              <p className="text-xs font-bold text-muted">{copy.statusLabel}</p>
+              <p className="mt-0.5 inline-flex items-center gap-1 text-lg font-extrabold text-[var(--success)]">
+                <Icon name="check" size={16} />
+                {copy.statusValue}
+              </p>
+            </div>
+          </div>
+
+          <p className="mt-3 text-xs font-bold text-muted">{mascotTitle}</p>
+
+          <div className="mt-5 flex flex-col gap-2">
+            <Link
+              ref={primaryRef}
+              href={localizedHref(nextHref)}
+              className={`${buttonClasses("primary")} w-full`}
+            >
+              {copy.next}
+              <Icon name="arrow-right" size={16} />
+            </Link>
+            <Button variant="secondary" onClick={onReview} className="w-full">
+              {copy.review}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 function ReadingLesson({
   lesson,
   sentences,
@@ -460,6 +697,8 @@ function ReadingLesson({
   const { state, usingSupabase, markReadingLessonRead } = useData();
   const { locale, dictionary: m, href } = useI18n();
   const [dbRead, setDbRead] = useState(false);
+  /** Per-question results of the submitted check; non-null opens the dialog. */
+  const [checkResults, setCheckResults] = useState<boolean[] | null>(null);
   const copy =
     locale === "vi"
       ? {
@@ -540,13 +779,19 @@ function ReadingLesson({
     };
   }, [lesson.id, usingSupabase]);
 
-  const markRead = (correct: number, total: number) => {
+  const markRead = (results: boolean[]) => {
     const firstRead = !isRead;
     setDbRead(true);
+    setCheckResults(results);
     markReadingLessonRead(lesson.id);
     // Reading has its own companion vocabulary: no takes, no pass score, so the
     // comprehension result is the only thing there is to react to.
-    emitCompanionEvent({ kind: "reading", correct, total, firstRead });
+    emitCompanionEvent({
+      kind: "reading",
+      correct: results.filter(Boolean).length,
+      total: results.length,
+      firstRead,
+    });
     if (!usingSupabase) return;
 
     void fetch("/api/reading-progress", {
@@ -564,8 +809,36 @@ function ReadingLesson({
       .catch(() => setDbRead(progressRead));
   };
 
+  // Where the dialog's primary button goes: the next unread lesson of this
+  // course, or back to the course when this was the last one.
+  const upcoming = lesson.course_id
+    ? nextLessonInCourse(state, lesson.course_id)
+    : null;
+  const nextLesson = upcoming && upcoming.id !== lesson.id ? upcoming : null;
+  const level = state.profile ? levelProgress(state.profile.total_xp).level : 1;
+
   return (
     <div className="space-y-6">
+      {checkResults && (
+        <ReadingCompleteDialog
+          results={checkResults}
+          locale={locale}
+          mascot={levelMascot(level)}
+          mascotTitle={levelTitle(level, locale)}
+          nextHref={nextLesson ? lessonHref(nextLesson) : courseHref}
+          hasNext={Boolean(nextLesson)}
+          onClose={() => setCheckResults(null)}
+          onReview={() => {
+            setCheckResults(null);
+            requestAnimationFrame(() => {
+              document
+                .getElementById("reading-check")
+                ?.scrollIntoView({ behavior: "smooth", block: "start" });
+            });
+          }}
+          localizedHref={href}
+        />
+      )}
       <section className="relative overflow-hidden rounded-[1.5rem] border border-border bg-card p-5 shadow-[var(--shadow-sm)] sm:p-6">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-1 brand-gradient" />
         <div className="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
