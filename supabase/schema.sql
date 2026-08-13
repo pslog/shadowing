@@ -175,6 +175,33 @@ create table if not exists public.lesson_progress (
 );
 
 -- ---------------------------------------------------------------------------
+--  reading_progress  (read-completion state for reading lessons)
+-- ---------------------------------------------------------------------------
+create table if not exists public.reading_progress (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references public.profiles(id) on delete cascade,
+  anonymous_session_id text,
+  lesson_id uuid not null references public.lessons(id) on delete cascade,
+  completed_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint reading_progress_identity_chk
+    check (user_id is not null or anonymous_session_id is not null)
+);
+
+create index if not exists reading_progress_lesson_idx
+  on public.reading_progress(lesson_id, updated_at desc);
+create index if not exists reading_progress_user_idx
+  on public.reading_progress(user_id, updated_at desc);
+create index if not exists reading_progress_anonymous_session_idx
+  on public.reading_progress(anonymous_session_id, updated_at desc);
+create unique index if not exists reading_progress_user_lesson_unique
+  on public.reading_progress(user_id, lesson_id)
+  where user_id is not null;
+create unique index if not exists reading_progress_anonymous_lesson_unique
+  on public.reading_progress(anonymous_session_id, lesson_id)
+  where anonymous_session_id is not null;
+
+-- ---------------------------------------------------------------------------
 --  lesson_views  (lightweight lesson view analytics)
 -- ---------------------------------------------------------------------------
 create table if not exists public.lesson_views (

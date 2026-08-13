@@ -31,8 +31,8 @@ import { topicHue } from "@/lib/topic-style";
 import { optimizedImageSrc } from "@/lib/optimized-image";
 import { isN2Course } from "@/lib/n2-course";
 import { useI18n } from "@/components/i18n/useI18n";
-import { isReadingLessonRead, READING_PROGRESS_EVENT } from "@/lib/reading-progress";
 import { readingNoteForLesson } from "@/lib/reading-notes";
+import { getAnonymousSessionId } from "@/lib/anonymous-session";
 import type { AppState } from "@/lib/store/state";
 import type { Lesson } from "@/lib/types";
 
@@ -231,21 +231,9 @@ export default function CoursePage() {
 function ReadingCourseLessonCards({ lessons }: { lessons: Lesson[] }) {
   const engagementStats = useLessonEngagementStats(lessons.map((lesson) => lesson.id));
   const { href: localizedHref, locale, dictionary: m } = useI18n();
+  const { state } = useData();
   const [readLessonIds, setReadLessonIds] = useState<Set<string>>(() => new Set());
-  useEffect(() => {
-    const load = () => {
-      setReadLessonIds(
-        new Set(lessons.filter((lesson) => isReadingLessonRead(lesson.id)).map((lesson) => lesson.id)),
-      );
-    };
-    load();
-    window.addEventListener("storage", load);
-    window.addEventListener(READING_PROGRESS_EVENT, load);
-    return () => {
-      window.removeEventListener("storage", load);
-      window.removeEventListener(READING_PROGRESS_EVENT, load);
-    };
-  }, [lessons]);
+  const lessonIds = lessons.map((lesson) => lesson.id).join(",");
   const copy =
     locale === "vi"
       ? {
@@ -263,10 +251,46 @@ function ReadingCourseLessonCards({ lessons }: { lessons: Lesson[] }) {
           views: m.common.views,
         };
 
+  useEffect(() => {
+    if (!lessonIds) {
+      setReadLessonIds(new Set());
+      return;
+    }
+
+    let cancelled = false;
+    fetch(
+      `/api/reading-progress?lessonIds=${encodeURIComponent(
+        lessonIds,
+      )}&anonymousSessionId=${encodeURIComponent(getAnonymousSessionId())}`,
+      { cache: "no-store" },
+    )
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload) => {
+        if (cancelled) return;
+        const next = new Set<string>(
+          (payload?.lessons ?? [])
+            .map((item: { lessonId?: string }) => item.lessonId)
+            .filter(Boolean),
+        );
+        setReadLessonIds(next);
+      })
+      .catch(() => {
+        if (!cancelled) setReadLessonIds(new Set());
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [lessonIds]);
+
   return (
     <div className="stagger mt-6 grid gap-4 sm:grid-cols-2">
       {lessons.map((lesson, index) => {
-        const isRead = readLessonIds.has(lesson.id);
+        const isRead =
+          readLessonIds.has(lesson.id) ||
+          state.progress.some(
+            (progress) => progress.lesson_id === lesson.id && progress.status === "completed",
+          );
         const watermark = lesson.slug === "kanji-shiawase-dokuhon-daijoubu" ? "大" : "優";
         const note = readingNoteForLesson(lesson.slug, locale);
         return (

@@ -108,6 +108,7 @@ interface DataContextValue {
     audioEnd: number | null,
   ) => void;
   ensureLessonSentences: (lessonIds: string | string[]) => Promise<void>;
+  markReadingLessonRead: (lessonId: string) => void;
   recordAttempt: (input: RecordAttemptInput) => AttemptOutcome;
   reset: () => void;
 }
@@ -1039,6 +1040,42 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     [commit, persistSupabaseOutcome],
   );
 
+  const markReadingLessonRead = useCallback(
+    (lessonId: string) => {
+      const prev = stateRef.current;
+      if (!prev.profile) return;
+
+      const now = new Date().toISOString();
+      const total = prev.sentences.filter((sentence) => sentence.lesson_id === lessonId).length;
+      const existing = prev.progress.find(
+        (progress) =>
+          progress.user_id === prev.profile?.id && progress.lesson_id === lessonId,
+      );
+      const progress = {
+        id: existing?.id ?? uid(),
+        user_id: prev.profile.id,
+        lesson_id: lessonId,
+        status: "completed" as const,
+        passed_sentence_count: Math.max(existing?.passed_sentence_count ?? 0, total),
+        total_sentence_count: Math.max(existing?.total_sentence_count ?? 0, total),
+        completed_at: existing?.completed_at ?? now,
+        updated_at: now,
+      };
+      const nextProgress = existing
+        ? prev.progress.map((item) => (item.id === existing.id ? progress : item))
+        : [...prev.progress, progress];
+
+      commit({ ...prev, progress: nextProgress });
+
+      if (USING_SUPABASE) {
+        createSupabaseClient()
+          .then((supabase) => supabase?.from("lesson_progress").upsert(progress))
+          .then(undefined, console.error);
+      }
+    },
+    [commit],
+  );
+
   const reset = useCallback(() => {
     const next = emptyState(new Date().toISOString());
     commit(next);
@@ -1063,6 +1100,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       updateLesson,
       updateSentenceTiming,
       ensureLessonSentences,
+      markReadingLessonRead,
       recordAttempt,
       reset,
     }),
@@ -1082,6 +1120,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       updateLesson,
       updateSentenceTiming,
       ensureLessonSentences,
+      markReadingLessonRead,
       recordAttempt,
       reset,
     ],

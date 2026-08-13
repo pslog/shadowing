@@ -50,7 +50,12 @@ async function supabaseRest<T>(
     return { data: null, error: null, status: response.status };
   }
 
-  return { data: (await response.json()) as T, error: null, status: response.status };
+  const text = await response.text();
+  return {
+    data: text ? (JSON.parse(text) as T) : null,
+    error: null,
+    status: response.status,
+  };
 }
 
 async function currentUser() {

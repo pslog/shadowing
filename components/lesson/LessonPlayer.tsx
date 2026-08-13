@@ -40,8 +40,8 @@ import { LessonReview } from "./LessonReview";
 import { LessonVocabulary } from "./LessonVocabulary";
 import { Furigana } from "./Furigana";
 import { useI18n } from "@/components/i18n/useI18n";
-import { markReadingLessonRead } from "@/lib/reading-progress";
 import { readingNoteForLesson } from "@/lib/reading-notes";
+import { getAnonymousSessionId } from "@/lib/anonymous-session";
 import type { Dictionary } from "@/lib/i18n";
 
 function attemptToScore(a: SentenceAttempt): ScoreBreakdown {
@@ -247,10 +247,10 @@ function buildReadingParagraphs(lesson: ReadingLessonProps["lesson"], sentences:
 
 function ReadingCheck({
   questions,
-  lessonId,
+  onSubmitComplete,
 }: {
   questions: ReadingCheckQuestion[];
-  lessonId: string;
+  onSubmitComplete: () => void;
 }) {
   const { locale } = useI18n();
   const [answers, setAnswers] = useState<(number | null)[]>(
@@ -414,7 +414,7 @@ function ReadingCheck({
               disabled={!complete}
               onClick={() => {
                 setSubmitted(true);
-                markReadingLessonRead(lessonId);
+                onSubmitComplete();
               }}
             >
               <Icon name="check" size={16} />
@@ -449,12 +449,15 @@ function ReadingLesson({
   courseHref,
   lessonViewStats,
 }: ReadingLessonProps) {
-  const { state } = useData();
+  const { state, usingSupabase, markReadingLessonRead } = useData();
   const { locale, dictionary: m, href } = useI18n();
+  const [dbRead, setDbRead] = useState(false);
   const copy =
     locale === "vi"
       ? {
           label: "Đọc hiểu",
+          read: "Đã đọc",
+          unread: "Chưa đọc",
           intro:
             "Đọc chậm theo từng đoạn, giữ mạch văn tự nhiên rồi xem lại từ vựng ở cuối bài.",
           article: "本文",
@@ -464,6 +467,8 @@ function ReadingLesson({
         }
       : {
           label: "読解",
+          read: "読了",
+          unread: "未読",
           intro:
             "段落ごとにゆっくり読み、文章の流れと漢字に込められた意味を味わいます。下の語彙も確認しましょう。",
           article: "本文",
@@ -475,6 +480,55 @@ function ReadingLesson({
   const readingCheck = lesson.slug ? READING_CHECKS[lesson.slug] : undefined;
   const watermark = lesson.slug === "kanji-shiawase-dokuhon-daijoubu" ? "大" : "優";
   const readingNote = readingNoteForLesson(lesson.slug, locale);
+  const progressRead = state.progress.some(
+    (progress) => progress.lesson_id === lesson.id && progress.status === "completed",
+  );
+  const isRead = progressRead || dbRead;
+
+  useEffect(() => {
+    if (!usingSupabase) return;
+    let cancelled = false;
+    const anonymousSessionId = getAnonymousSessionId();
+    fetch(
+      `/api/reading-progress?lessonIds=${encodeURIComponent(
+        lesson.id,
+      )}&anonymousSessionId=${encodeURIComponent(anonymousSessionId)}`,
+      { cache: "no-store" },
+    )
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload) => {
+        if (cancelled) return;
+        setDbRead(
+          Boolean(
+            payload?.lessons?.some(
+              (item: { lessonId?: string }) => item.lessonId === lesson.id,
+            ),
+          ),
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setDbRead(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [lesson.id, usingSupabase]);
+
+  const markRead = () => {
+    setDbRead(true);
+    markReadingLessonRead(lesson.id);
+    if (!usingSupabase) return;
+
+    void fetch("/api/reading-progress", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        lessonId: lesson.id,
+        anonymousSessionId: getAnonymousSessionId(),
+      }),
+    }).catch(() => setDbRead(progressRead));
+  };
 
   return (
     <div className="space-y-6">
@@ -485,6 +539,17 @@ function ReadingLesson({
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <Badge tone="primary">{copy.label}</Badge>
               {lesson.level && <Badge>{lesson.level}</Badge>}
+              <span
+                className={[
+                  "inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[11px] font-black",
+                  isRead
+                    ? "bg-[var(--success-soft)] text-[var(--success)]"
+                    : "border border-border bg-card text-muted",
+                ].join(" ")}
+              >
+                {isRead && <Icon name="check" size={12} />}
+                {isRead ? copy.read : copy.unread}
+              </span>
               <span
                 className="inline-flex h-7 items-center gap-2 rounded-full border border-border/70 bg-card/85 px-2.5 text-[11px] font-extrabold text-muted shadow-sm backdrop-blur"
                 aria-label={`${lessonViewStats?.totalViews ?? 0} ${m.common.views}`}
@@ -662,7 +727,12 @@ function ReadingLesson({
 
       <LessonVocabulary vocabulary={lesson.vocabulary} lessonId={lesson.id} variant="reading" />
 
-      {readingCheck && <ReadingCheck questions={readingCheck} lessonId={lesson.id} />}
+      {readingCheck && (
+        <ReadingCheck
+          questions={readingCheck}
+          onSubmitComplete={markRead}
+        />
+      )}
 
       <div className="flex justify-end">
         <Link href={href(courseHref)} className={buttonClasses("secondary")}>
@@ -1093,7 +1163,10 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
     void fetch("/api/lesson-views", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ lessonId: lessonIdForView }),
+      body: JSON.stringify({
+        lessonId: lessonIdForView,
+        anonymousSessionId: getAnonymousSessionId(),
+      }),
     });
   }, [lessonIdForView, usingSupabase]);
 

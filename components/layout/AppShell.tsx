@@ -17,6 +17,7 @@ import { MascotBadge } from "@/components/ui/mascot";
 import { MascotCompanion } from "@/components/companion/MascotCompanion";
 import { stripLocale, type Locale } from "@/lib/i18n";
 import { useI18n } from "@/components/i18n/useI18n";
+import { getAnonymousSessionId } from "@/lib/anonymous-session";
 
 type NavItem = {
   href: string;
@@ -210,12 +211,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     if (now - lastRecordedAt < SITE_VISIT_DEDUPE_MS) return;
     recentSiteVisitRecords.set(pathname, now);
 
-    const storageKey = "shadowing-jp-visitor-id";
-    let anonymousSessionId = window.sessionStorage.getItem(storageKey);
-    if (!anonymousSessionId) {
-      anonymousSessionId = crypto.randomUUID();
-      window.sessionStorage.setItem(storageKey, anonymousSessionId);
-    }
+    const anonymousSessionId = getAnonymousSessionId();
 
     let cancelled = false;
 
