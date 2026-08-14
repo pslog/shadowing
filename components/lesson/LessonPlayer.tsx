@@ -920,7 +920,7 @@ function ReadingLesson({
         <div className="relative overflow-hidden bg-[radial-gradient(circle_at_12%_18%,color-mix(in_srgb,var(--primary)_10%,transparent),transparent_24%),radial-gradient(circle_at_88%_16%,color-mix(in_srgb,var(--warning)_12%,transparent),transparent_22%),radial-gradient(circle_at_86%_84%,color-mix(in_srgb,var(--success)_9%,transparent),transparent_26%),linear-gradient(90deg,color-mix(in_srgb,var(--primary)_5%,transparent),transparent_13%,transparent_87%,color-mix(in_srgb,var(--primary)_5%,transparent)),linear-gradient(180deg,color-mix(in_srgb,var(--surface)_72%,transparent),color-mix(in_srgb,var(--card)_96%,transparent)_28%,color-mix(in_srgb,var(--surface)_56%,transparent))] px-4 py-7 sm:px-10 sm:py-11">
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 opacity-[0.42] [background-image:linear-gradient(90deg,color-mix(in_srgb,var(--fg)_5%,transparent)_1px,transparent_1px),linear-gradient(180deg,color-mix(in_srgb,var(--fg)_4%,transparent)_1px,transparent_1px)] [background-size:44px_44px]"
+            className="pointer-events-none absolute inset-0 opacity-[0.18] [background-image:linear-gradient(90deg,color-mix(in_srgb,var(--fg)_4%,transparent)_1px,transparent_1px)] [background-size:48px_48px]"
           />
           <div
             aria-hidden="true"
@@ -1031,15 +1031,15 @@ function ReadingLesson({
 
               const sideLine =
                 paragraphIndex % 2 === 0
-                  ? "pl-5 before:left-0 after:left-0 after:bg-gradient-to-r sm:pl-6"
-                  : "pr-5 before:right-0 after:right-0 after:bg-gradient-to-l sm:pr-6";
+                  ? "pl-5 before:left-0 sm:pl-6"
+                  : "pr-5 before:right-0 sm:pr-6";
 
               return (
                 <p
                   key={paragraph.id}
                   lang="ja"
                   className={[
-                    "relative mt-7 whitespace-pre-line text-[1.08rem] font-medium leading-[2.35] text-fg first:mt-0 before:absolute before:top-3 before:h-[calc(100%-1.5rem)] before:w-[3px] before:rounded-full before:bg-gradient-to-b before:from-primary/5 before:via-primary/35 before:to-primary/5 before:content-[''] after:absolute after:top-3 after:h-px after:w-14 after:from-primary/30 after:to-transparent after:content-[''] sm:text-[1.14rem] sm:leading-[2.55]",
+                    "relative mt-7 whitespace-pre-line text-[1.08rem] font-medium leading-[2.35] text-fg first:mt-0 before:absolute before:top-3 before:h-[calc(100%-1.5rem)] before:w-[3px] before:rounded-full before:bg-gradient-to-b before:from-primary/5 before:via-primary/30 before:to-primary/5 before:content-[''] sm:text-[1.14rem] sm:leading-[2.55]",
                     sideLine,
                   ].join(" ")}
                 >
