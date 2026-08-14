@@ -891,6 +891,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         media_url: input.media_url,
         is_public: input.is_public ?? false,
         vocabulary: null,
+        reading_meta: null,
         created_at: now,
       };
       const sentences: LessonSentence[] = input.sentences.map((s, i) => ({

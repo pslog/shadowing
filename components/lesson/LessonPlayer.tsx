@@ -25,6 +25,7 @@ import { extractContourFromUrl, contourMetrics } from "@/lib/speech/pitch";
 import { speakJa, cancelSpeech } from "@/lib/speech/tts";
 import { isSpeechRecognitionSupported, type RecordResult } from "@/lib/speech/useRecorder";
 import type {
+  Lesson,
   LessonSentence,
   ScoreAlignmentToken,
   ScoreBreakdown,
@@ -49,7 +50,6 @@ import {
   type Mascot as MascotIdentity,
 } from "@/lib/gamification/level";
 import { MascotBadge } from "@/components/ui/mascot";
-import { readingNoteForLesson } from "@/lib/reading-notes";
 import { getAnonymousSessionId } from "@/lib/anonymous-session";
 import type { Dictionary, Locale } from "@/lib/i18n";
 
@@ -98,226 +98,13 @@ const readingProgressPending = new Map<string, Promise<boolean>>();
 const lessonViewStatsCache = new Map<string, LessonViewStats>();
 const lessonViewStatsPending = new Map<string, Promise<LessonViewStats | null>>();
 
-const READING_CHECKS: Record<string, ReadingCheckQuestion[]> = {
-  "kanji-shiawase-dokuhon-yasashii": [
-    {
-      question: "先生の説明では、「本当に優しい人」とはどのような人ですか。",
-      choices: [
-        "いつも楽しい話をしてくれる人",
-        "悲しいときにそばにいてくれる人",
-        "漢字を正しい書き順で書ける人",
-        "一人で何でもできる人",
-      ],
-      answer: 1,
-      explanation:
-        "Khi buồn hoặc đau khổ, người ở bên cạnh mình mới là người thực sự tử tế.",
-    },
-    {
-      question: "女の子には、「憂」という漢字がどのように見えましたか。",
-      choices: [
-        "「人の心」と書いているように見えた",
-        "「悲しい愛」と書いているように見えた",
-        "「百の愛」と書いているように見えた",
-        "「一つの愛」と書いているように見えた",
-      ],
-      answer: 2,
-      explanation:
-        "Cô bé nhìn chữ「憂」như thể được viết bằng “trăm tình yêu” -「百の愛」.",
-    },
-    {
-      question: "この話を聞いた筆者は、最後にどのような人になりたいと思いましたか。",
-      choices: [
-        "辛い経験をできるだけ忘れる人",
-        "誰にも頼らず一人で生きられる人",
-        "漢字を子どもたちに上手に教えられる人",
-        "悲しさや辛さを、誰かを思いやる愛に変えられる優しい人",
-      ],
-      answer: 3,
-      explanation:
-        "Tác giả muốn biến những trải nghiệm buồn và đau khổ thành sự yêu thương, biết nghĩ cho người khác.",
-    },
-  ],
-  "kanji-shiawase-dokuhon-daijoubu": [
-    {
-      question: "この話では、「大丈夫」の3文字に共通して入っている漢字は何ですか。",
-      choices: ["「心」", "「人」", "「力」", "「日」"],
-      answer: 1,
-      explanation:
-        "Tác giả cho rằng cả「大」「丈」「夫」đều có hình chữ「人」bên trong.",
-    },
-    {
-      question: "「あなたの味方は3人いる」とは、どのような意味ですか。",
-      choices: [
-        "どんなときでも自分を支えてくれる人がいる",
-        "必ず3人の友達を作らなければならない",
-        "一人では何もできない",
-        "3人で生活したほうが幸せになれる",
-      ],
-      answer: 0,
-      explanation:
-        "“3 người” tượng trưng cho những người luôn ở bên và nâng đỡ mình khi gặp khó khăn.",
-    },
-    {
-      question: "この話で「春」が表しているものとして、最も適切なものはどれですか。",
-      choices: [
-        "暖かい季節が好きだということ",
-        "春には3人で遊ぶべきだということ",
-        "辛いときがあっても、いつか良いときが来るということ",
-        "春になると新しい友達ができるということ",
-      ],
-      answer: 2,
-      explanation:
-        "「必ず春は来る」は、dù đang khó khăn thì rồi thời điểm tốt đẹp cũng sẽ đến.",
-    },
-  ],
-  "kanji-shiawase-dokuhon-renai": [
-    {
-      question: "筆者は「恋」と「愛」の違いをどのように説明していますか。",
-      choices: [
-        "恋も愛も自分の意志で始めるもの",
-        "恋は落ちるもので、愛は深めるもの",
-        "恋は深めるもので、愛は自然に落ちるもの",
-        "恋も愛もコントロールできないもの",
-      ],
-      answer: 1,
-      explanation:
-        "Theo tác giả, 「恋」đến một cách tự nhiên, còn 「愛」là thứ được vun đắp bằng ý chí của bản thân.",
-    },
-    {
-      question: "「恋が着せ、愛が脱がせる」とは、どのような意味ですか。",
-      choices: [
-        "愛すると相手に服をプレゼントするということ",
-        "恋をするとおしゃれになるということ",
-        "愛では、ありのままの自分でいられるということ",
-        "恋愛では外見が一番大切だということ",
-      ],
-      answer: 2,
-      explanation:
-        "「脱がせる」ẩn dụ cho việc không cần che giấu, có thể sống đúng với con người thật của mình.",
-    },
-    {
-      question: "筆者が考える「本当の恋愛」とは何ですか。",
-      choices: [
-        "相手を自分の理想に合わせて変えること",
-        "相手の悪いところを直してあげること",
-        "相手といつも同じ考えを持つこと",
-        "相手をあるがまま、まるごと受け止めること",
-      ],
-      answer: 3,
-      explanation:
-        "Tình yêu thật sự theo tác giả là chấp nhận đối phương một cách trọn vẹn như chính con người họ.",
-    },
-  ],
-  "kanji-shiawase-dokuhon-iki": [
-    {
-      question: "おじいちゃんは、なぜ軍人障害者年金を受け取ろうとしなかったのですか。",
-      choices: [
-        "申請の方法がわからなかったから",
-        "年金の金額が少なかったから",
-        "毎日普通にごはんを食べられ、それ以上必要ないと思ったから",
-        "おばあちゃんに反対されたから",
-      ],
-      answer: 2,
-      explanation:
-        "Ông cho rằng chỉ cần mỗi ngày được ăn cơm bình thường là đã đủ, không cần nhận thêm tiền trợ cấp.",
-    },
-    {
-      question: "筆者が考える「足るを知る生き方」とは、どのようなものですか。",
-      choices: [
-        "小さな幸せにも満足し、感謝する生き方",
-        "できるだけ多くのお金を手に入れる生き方",
-        "百点を取るまで絶対に満足しない生き方",
-        "必要なものをすべて我慢する生き方",
-      ],
-      answer: 0,
-      explanation:
-        "「足るを知る」ở đây là biết trân trọng, hài lòng và biết ơn cả những hạnh phúc nhỏ bé.",
-    },
-    {
-      question: "本文では、「粋」という漢字をどのように説明していますか。",
-      choices: [
-        "「百」という数字が隠れている",
-        "「九十」が隠れていて、百までいかなくても幸せだと考える",
-        "「八十九」という数字が隠れている",
-        "「米」という字には「九十」が隠れている",
-      ],
-      answer: 1,
-      explanation:
-        "Tác giả liên tưởng 「粋」 với 「九十」, mang ý rằng không cần đạt đến 100 mới có thể hạnh phúc.",
-    },
-  ],
-  "kanji-shiawase-dokuhon-asa": [
-    {
-      question: "筆者は、なぜ一睡もできなかったのですか。",
-      choices: [
-        "次の日に大切な試験があったから",
-        "母から両親の問題を聞き、強い不安を感じたから",
-        "父と大げんかをしたから",
-        "親族の家で眠れなかったから",
-      ],
-      answer: 1,
-      explanation:
-        "Sau khi nghe mẹ kể về vấn đề nghiêm trọng giữa bố mẹ, tác giả lo lắng đến mức tim đập mạnh và không thể ngủ được.",
-    },
-    {
-      question: "朝を迎えたとき、筆者はどのように感じましたか。",
-      choices: [
-        "不思議と救われた気持ちになった",
-        "さらに不安になった",
-        "とても怒った",
-        "何も感じなかった",
-      ],
-      answer: 0,
-      explanation:
-        "Khi trời dần sáng và buổi sáng đến, tác giả cảm thấy như mình được cứu rỗi một cách kỳ lạ.",
-    },
-    {
-      question: "この文章で、筆者は「朝」をどのようなものとして考えていますか。",
-      choices: [
-        "前の日の問題をすべて忘れる時間",
-        "一日の中で最も忙しい時間",
-        "毎日、新しく生まれ変わる機会",
-        "夜よりも安全な時間",
-      ],
-      answer: 2,
-      explanation:
-        "Tác giả xem mỗi buổi sáng như một cơ hội để “tái sinh”, bắt đầu một ngày mới và tiếp tục cố gắng.",
-    },
-  ],
-  "kanji-shiawase-dokuhon-toki": [
-    {
-      question: "先輩の話では、人生の「楽しいこと」は何％ですか。",
-      choices: ["36％", "46％", "64％", "100％"],
-      answer: 2,
-      explanation:
-        "「ハハ（笑う）」＝8×8＝64 nên tác giả liên tưởng rằng những điều vui vẻ chiếm 64% cuộc đời.",
-    },
-    {
-      question: "「天気」の話で、筆者が伝えたいことは何ですか。",
-      choices: [
-        "雨の日は晴れの日より多い",
-        "雨は一度降ると長い間止まない",
-        "雨の日も晴れの日も同じくらいある",
-        "雨はいつか止み、晴れの日のほうが多い",
-      ],
-      answer: 3,
-      explanation:
-        "Tác giả dùng hình ảnh mưa rồi cũng tạnh và ngày nắng nhiều hơn để nói rằng khó khăn không kéo dài mãi.",
-    },
-    {
-      question: "「時」という漢字について、本文ではどのように説明していますか。",
-      choices: [
-        "一日の中には悪いことしかない",
-        "マイナスのことは少しだけで、楽しいことのほうが多い",
-        "時間がたつと悲しいことを全部忘れる",
-        "一日の出来事は自分ですべてコントロールできる",
-      ],
-      answer: 1,
-      explanation:
-        "Bài viết liên tưởng chữ 「時」 để truyền tải rằng chuyện tiêu cực chỉ là một phần nhỏ, còn những điều vui vẻ thì nhiều hơn.",
-    },
-  ],
-};
+function readingWatermark(lesson: Lesson) {
+  return lesson.reading_meta?.watermark ?? lesson.title.trim().charAt(0) ?? "読";
+}
+
+function readingMemo(lesson: Lesson, locale: Locale) {
+  return lesson.reading_meta?.memo?.[locale] ?? lesson.reading_meta?.memo?.ja ?? null;
+}
 
 function buildReadingParagraphs(lesson: ReadingLessonProps["lesson"], sentences: LessonSentence[]) {
   const source = sentences.map((sentence) => sentence.ja_text);
@@ -871,20 +658,9 @@ function ReadingLesson({
           back: "コースへ戻る",
         };
   const paragraphs = buildReadingParagraphs(lesson, sentences);
-  const readingCheck = lesson.slug ? READING_CHECKS[lesson.slug] : undefined;
-  const watermark =
-    lesson.slug === "kanji-shiawase-dokuhon-daijoubu"
-      ? "大"
-      : lesson.slug === "kanji-shiawase-dokuhon-renai"
-        ? "恋"
-        : lesson.slug === "kanji-shiawase-dokuhon-iki"
-          ? "粋"
-          : lesson.slug === "kanji-shiawase-dokuhon-asa"
-            ? "朝"
-            : lesson.slug === "kanji-shiawase-dokuhon-toki"
-              ? "時"
-        : "優";
-  const readingNote = readingNoteForLesson(lesson.slug, locale);
+  const readingCheck = lesson.reading_meta?.readingCheck;
+  const watermark = readingWatermark(lesson);
+  const readingNote = readingMemo(lesson, locale);
   const progressRead = state.progress.some(
     (progress) => progress.lesson_id === lesson.id && progress.status === "completed",
   );

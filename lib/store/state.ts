@@ -115,6 +115,7 @@ export function buildSeed(nowIso: string): {
       media_url: s.media_url ?? null,
       is_public: true,
       vocabulary: null,
+      reading_meta: null,
       created_at: nowIso,
     });
     s.sentences.forEach((sent, i) => {

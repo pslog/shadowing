@@ -52,6 +52,24 @@ export interface VocabEntry {
   example_vi: string;
 }
 
+export interface ReadingMemo {
+  keyword: string;
+  body: string;
+}
+
+export interface ReadingCheckQuestion {
+  question: string;
+  choices: string[];
+  answer: number;
+  explanation: string;
+}
+
+export interface ReadingMeta {
+  watermark?: string;
+  memo?: Partial<Record<"ja" | "vi", ReadingMemo>>;
+  readingCheck?: ReadingCheckQuestion[];
+}
+
 /** A vocabulary entry the user saved to their personal review notebook. */
 export interface SavedVocab {
   id: string;
@@ -86,6 +104,8 @@ export interface Lesson {
   is_public: boolean;
   /** Curated difficult-vocabulary list (JSONB column); null/[] when not generated. */
   vocabulary: VocabEntry[] | null;
+  /** Reading-lesson metadata such as kanji memo, watermark, and quiz. */
+  reading_meta: ReadingMeta | null;
   created_at: string;
 }
 

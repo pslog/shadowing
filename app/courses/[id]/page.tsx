@@ -31,13 +31,20 @@ import { topicHue } from "@/lib/topic-style";
 import { optimizedImageSrc } from "@/lib/optimized-image";
 import { isN2Course } from "@/lib/n2-course";
 import { useI18n } from "@/components/i18n/useI18n";
-import { readingNoteForLesson } from "@/lib/reading-notes";
 import { getAnonymousSessionId } from "@/lib/anonymous-session";
 import type { AppState } from "@/lib/store/state";
 import type { Lesson } from "@/lib/types";
 
 const readingCourseProgressCache = new Map<string, Set<string>>();
 const readingCourseProgressPending = new Map<string, Promise<Set<string>>>();
+
+function readingWatermark(lesson: Lesson) {
+  return lesson.reading_meta?.watermark ?? lesson.title.trim().charAt(0) ?? "読";
+}
+
+function readingMemo(lesson: Lesson, locale: "ja" | "vi") {
+  return lesson.reading_meta?.memo?.[locale] ?? lesson.reading_meta?.memo?.ja ?? null;
+}
 
 export default function CoursePage() {
   const params = useParams<{ id: string }>();
@@ -314,19 +321,8 @@ function ReadingCourseLessonCards({ lessons }: { lessons: Lesson[] }) {
           state.progress.some(
             (progress) => progress.lesson_id === lesson.id && progress.status === "completed",
           );
-        const watermark =
-          lesson.slug === "kanji-shiawase-dokuhon-daijoubu"
-            ? "大"
-            : lesson.slug === "kanji-shiawase-dokuhon-renai"
-              ? "恋"
-              : lesson.slug === "kanji-shiawase-dokuhon-iki"
-                ? "粋"
-                : lesson.slug === "kanji-shiawase-dokuhon-asa"
-                  ? "朝"
-                  : lesson.slug === "kanji-shiawase-dokuhon-toki"
-                    ? "時"
-              : "優";
-        const note = readingNoteForLesson(lesson.slug, locale);
+        const watermark = readingWatermark(lesson);
+        const note = readingMemo(lesson, locale);
         return (
           <Link
             key={lesson.id}

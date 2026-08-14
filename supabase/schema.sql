@@ -66,6 +66,7 @@ create table if not exists public.lessons (
   media_url text,
   is_public boolean not null default false,
   vocabulary jsonb not null default '[]'::jsonb,
+  reading_meta jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now()
 );
 
@@ -76,6 +77,11 @@ alter table public.lessons
 -- Curated difficult-vocabulary list (word/reading/meaning/example) per lesson.
 alter table public.lessons
   add column if not exists vocabulary jsonb not null default '[]'::jsonb;
+
+-- Reading-specific display/test metadata:
+-- { watermark, memo: { ja, vi }, readingCheck: [{ question, choices, answer, explanation }] }
+alter table public.lessons
+  add column if not exists reading_meta jsonb not null default '{}'::jsonb;
 
 -- ---------------------------------------------------------------------------
 --  lesson_sentences
