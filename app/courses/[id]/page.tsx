@@ -314,7 +314,18 @@ function ReadingCourseLessonCards({ lessons }: { lessons: Lesson[] }) {
           state.progress.some(
             (progress) => progress.lesson_id === lesson.id && progress.status === "completed",
           );
-        const watermark = lesson.slug === "kanji-shiawase-dokuhon-daijoubu" ? "大" : "優";
+        const watermark =
+          lesson.slug === "kanji-shiawase-dokuhon-daijoubu"
+            ? "大"
+            : lesson.slug === "kanji-shiawase-dokuhon-renai"
+              ? "恋"
+              : lesson.slug === "kanji-shiawase-dokuhon-iki"
+                ? "粋"
+                : lesson.slug === "kanji-shiawase-dokuhon-asa"
+                  ? "朝"
+                  : lesson.slug === "kanji-shiawase-dokuhon-toki"
+                    ? "時"
+              : "優";
         const note = readingNoteForLesson(lesson.slug, locale);
         return (
           <Link
