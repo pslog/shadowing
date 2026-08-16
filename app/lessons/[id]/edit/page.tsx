@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
 import { EditLessonForm } from "@/components/lesson/CreateLessonForm";
+import { ReadingLessonEditForm } from "@/components/lesson/ReadingLessonEditForm";
 import { SentenceTimingEditor } from "@/components/lesson/SentenceTimingEditor";
 import { FullScreenLoading } from "@/components/ui/loading";
 import { useData } from "@/lib/store/DataProvider";
@@ -44,6 +45,9 @@ export default function EditLessonPage() {
     );
   }
 
+  const lessonWithSentences = { ...lesson, sentences };
+  const isReadingLesson = lesson.topic === "読解";
+
   return (
     <AppShell>
       <div className="mb-5">
@@ -56,11 +60,17 @@ export default function EditLessonPage() {
         <h1 className="mt-1 text-2xl font-bold">{t.editTitle}</h1>
         <p className="text-muted">{t.editBody}</p>
       </div>
-      <EditLessonForm lesson={{ ...lesson, sentences }} />
+      {isReadingLesson ? (
+        <ReadingLessonEditForm lesson={lessonWithSentences} />
+      ) : (
+        <EditLessonForm lesson={lessonWithSentences} />
+      )}
 
-      <div className="mt-6">
-        <SentenceTimingEditor lessonId={lesson.id} />
-      </div>
+      {!isReadingLesson && (
+        <div className="mt-6">
+          <SentenceTimingEditor lessonId={lesson.id} />
+        </div>
+      )}
     </AppShell>
   );
 }

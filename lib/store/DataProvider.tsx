@@ -14,6 +14,7 @@ import type {
   Lesson,
   LessonSentence,
   Profile,
+  ReadingMeta,
   SavedVocab,
   ScoreBreakdown,
   VocabEntry,
@@ -46,6 +47,8 @@ export interface CreateLessonInput {
   duration_seconds: number | null;
   /** 公開（承認済み）フラグ。UIで管理者が切り替える。省略時は既存値を維持。 */
   is_public?: boolean;
+  vocabulary?: VocabEntry[] | null;
+  reading_meta?: ReadingMeta | null;
   sentences: {
     ja_text: string;
     vi_translation: string | null;
@@ -890,8 +893,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         source_url: input.source_url,
         media_url: input.media_url,
         is_public: input.is_public ?? false,
-        vocabulary: null,
-        reading_meta: null,
+        vocabulary: input.vocabulary ?? null,
+        reading_meta: input.reading_meta ?? null,
         created_at: now,
       };
       const sentences: LessonSentence[] = input.sentences.map((s, i) => ({
@@ -938,6 +941,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         source_url: input.source_url,
         media_url: input.media_url,
         is_public: input.is_public ?? existing.is_public,
+        vocabulary: input.vocabulary ?? existing.vocabulary,
+        reading_meta: input.reading_meta ?? existing.reading_meta,
       };
       const existingSentences = prev.sentences
         .filter((sentence) => sentence.lesson_id === input.id)
