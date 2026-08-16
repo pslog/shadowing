@@ -106,11 +106,27 @@ function readingMemo(lesson: Lesson, locale: Locale) {
   return lesson.reading_meta?.memo?.[locale] ?? lesson.reading_meta?.memo?.ja ?? null;
 }
 
+interface ReadingParagraph {
+  id: string;
+  text: string;
+  translation: string | null;
+  author: boolean;
+}
+
+function joinReadingTranslation(items: LessonSentence[]) {
+  const text = items
+    .map((item) => item.vi_translation?.trim())
+    .filter(Boolean)
+    .join(" ");
+  return text.length > 0 ? text : null;
+}
+
 function buildReadingParagraphs(lesson: ReadingLessonProps["lesson"], sentences: LessonSentence[]) {
   const source = sentences.map((sentence) => sentence.ja_text);
-  const makeParagraph = (start: number, end: number) => ({
+  const makeParagraph = (start: number, end: number): ReadingParagraph => ({
     id: sentences[start]?.id ?? String(start),
     text: source.slice(start, end).join(""),
+    translation: joinReadingTranslation(sentences.slice(start, end)),
     author: false,
   });
 
@@ -122,6 +138,7 @@ function buildReadingParagraphs(lesson: ReadingLessonProps["lesson"], sentences:
       {
         id: sentences[16].id,
         text: sentences[16].ja_text,
+        translation: sentences[16].vi_translation,
         author: true,
       },
     ];
@@ -137,23 +154,26 @@ function buildReadingParagraphs(lesson: ReadingLessonProps["lesson"], sentences:
           source.slice(6, 9).join("\n"),
           ...source.slice(9, 12),
         ].join("\n"),
+        translation: joinReadingTranslation(sentences.slice(3, 12)),
         author: false,
       },
       makeParagraph(12, 20),
       {
         id: sentences[20].id,
         text: [source[20], source[21], ...source.slice(22, 26)].join("\n"),
+        translation: joinReadingTranslation(sentences.slice(20, 26)),
         author: false,
       },
       {
         id: sentences[26].id,
         text: sentences[26].ja_text,
+        translation: sentences[26].vi_translation,
         author: true,
       },
     ];
   }
 
-  const paragraphs: { id: string; text: string; author: boolean }[] = [];
+  const paragraphs: ReadingParagraph[] = [];
   let buffer: LessonSentence[] = [];
 
   for (const sentence of sentences) {
@@ -162,11 +182,17 @@ function buildReadingParagraphs(lesson: ReadingLessonProps["lesson"], sentences:
         paragraphs.push({
           id: buffer[0].id,
           text: buffer.map((item) => item.ja_text).join(""),
+          translation: joinReadingTranslation(buffer),
           author: false,
         });
         buffer = [];
       }
-      paragraphs.push({ id: sentence.id, text: sentence.ja_text, author: true });
+      paragraphs.push({
+        id: sentence.id,
+        text: sentence.ja_text,
+        translation: sentence.vi_translation,
+        author: true,
+      });
       continue;
     }
 
@@ -175,6 +201,7 @@ function buildReadingParagraphs(lesson: ReadingLessonProps["lesson"], sentences:
       paragraphs.push({
         id: buffer[0].id,
         text: buffer.map((item) => item.ja_text).join(""),
+        translation: joinReadingTranslation(buffer),
         author: false,
       });
       buffer = [];
@@ -185,6 +212,7 @@ function buildReadingParagraphs(lesson: ReadingLessonProps["lesson"], sentences:
     paragraphs.push({
       id: buffer[0].id,
       text: buffer.map((item) => item.ja_text).join(""),
+      translation: joinReadingTranslation(buffer),
       author: false,
     });
   }
@@ -248,7 +276,7 @@ function ReadingCheck({
     >
       <div className="flex flex-col gap-4 border-b border-border bg-surface/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-primary">
+          <p className="text-xs font-extrabold text-primary">
             {copy.eyebrow}
           </p>
           <h2 className="mt-1 flex items-center gap-2 text-xl font-extrabold">
@@ -517,7 +545,7 @@ function ReadingCompleteDialog({
         />
 
         <div className="relative">
-          <p className="text-[11px] font-black uppercase tracking-[0.22em] text-primary">
+          <p className="text-xs font-extrabold text-primary">
             {copy.eyebrow}
           </p>
 
@@ -790,7 +818,7 @@ function ReadingLesson({
           </div>
           <div className="relative">
             <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
-              <p className="text-xs font-black uppercase text-primary/70">{lessonLabel}</p>
+              <p className="text-sm font-extrabold text-primary/75">{lessonLabel}</p>
               <h1 lang="ja" className="mt-1 text-[2.45rem] font-black leading-none text-fg sm:text-[3.35rem]">
                 {lessonHeading}
               </h1>
@@ -943,42 +971,52 @@ function ReadingLesson({
           >
             {watermark}
           </div>
-          <div className="relative mx-auto max-w-[50rem]">
-            <div
-              aria-hidden="true"
-              className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-border to-transparent"
-            />
-            {paragraphs.map((paragraph, paragraphIndex) => {
-              if (paragraph.author) {
-                return (
-                  <p
-                    key={paragraph.id}
-                    lang="ja"
-                    className="mt-8 border-t border-border/60 pt-5 text-right text-sm font-bold leading-7 text-muted sm:text-base"
-                  >
-                    {paragraph.text}
-                  </p>
-                );
-              }
+          <div className="relative mx-auto max-w-6xl">
+            <div className="overflow-hidden rounded-[1.6rem] border border-border/70 bg-[linear-gradient(90deg,color-mix(in_srgb,var(--card)_100%,transparent),color-mix(in_srgb,var(--surface)_38%,transparent)_50%,color-mix(in_srgb,var(--card)_98%,transparent))] px-5 py-6 shadow-[0_24px_70px_color-mix(in_srgb,var(--fg)_9%,transparent)] backdrop-blur sm:px-8 sm:py-8">
+              <div className="relative space-y-5">
+                {paragraphs.map((paragraph, paragraphIndex) => {
+                  const missingTranslation = !paragraph.translation;
+                  const softOffset = paragraphIndex % 2 === 0 ? "" : "lg:translate-x-1";
 
-              const sideLine =
-                paragraphIndex % 2 === 0
-                  ? "pl-5 before:left-0 sm:pl-6"
-                  : "pr-5 before:right-0 sm:pr-6";
-
-              return (
-                <p
-                  key={paragraph.id}
-                  lang="ja"
-                  className={[
-                    "relative mt-4 whitespace-pre-line text-[1.06rem] font-medium leading-[2.05] text-fg first:mt-0 before:absolute before:top-3 before:h-[calc(100%-1.5rem)] before:w-[3px] before:rounded-full before:bg-gradient-to-b before:from-primary/5 before:via-primary/30 before:to-primary/5 before:content-[''] sm:text-[1.12rem] sm:leading-[2.25]",
-                    sideLine,
-                  ].join(" ")}
-                >
-                  {paragraph.text}
-                </p>
-              );
-            })}
+                  return (
+                    <div
+                      key={paragraph.id}
+                      className={[
+                        "grid gap-2 rounded-2xl px-1 py-1 transition-colors lg:grid-cols-[minmax(0,1.02fr)_minmax(0,0.98fr)] lg:gap-6",
+                        softOffset,
+                        paragraph.author ? "items-end" : "items-start",
+                      ].join(" ")}
+                    >
+                      <div>
+                        <p
+                          lang="ja"
+                          className={[
+                            "whitespace-pre-line text-fg",
+                            paragraph.author
+                              ? "text-right text-sm font-bold leading-7 text-muted sm:text-base"
+                              : "text-[1.04rem] font-medium leading-[2] sm:text-[1.1rem] sm:leading-[2.12]",
+                          ].join(" ")}
+                        >
+                          {paragraph.text}
+                        </p>
+                      </div>
+                      <div className="pl-3 lg:pl-0">
+                        <p
+                          className={[
+                            paragraph.author
+                              ? "text-right text-sm font-bold leading-7 text-muted sm:text-base"
+                              : "text-[0.98rem] font-medium leading-8 text-muted sm:text-[1.02rem] sm:leading-9",
+                            missingTranslation ? "text-muted/70" : "",
+                          ].join(" ")}
+                        >
+                          {paragraph.translation ?? "Chưa có bản dịch tiếng Việt cho đoạn này."}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
       </article>

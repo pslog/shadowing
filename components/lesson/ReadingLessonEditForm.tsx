@@ -72,6 +72,9 @@ export function ReadingLessonEditForm({ lesson }: { lesson: LessonWithSentences 
   const [body, setBody] = useState(
     lesson.sentences.map((sentence) => sentence.ja_text).join("\n"),
   );
+  const [bodyVi, setBodyVi] = useState(
+    lesson.sentences.map((sentence) => sentence.vi_translation ?? "").join("\n"),
+  );
   const [watermark, setWatermark] = useState(initialMeta.watermark);
   const [memoJaKeyword, setMemoJaKeyword] = useState(initialMeta.memo.ja?.keyword ?? "");
   const [memoJaBody, setMemoJaBody] = useState(initialMeta.memo.ja?.body ?? "");
@@ -92,6 +95,10 @@ export function ReadingLessonEditForm({ lesson }: { lesson: LessonWithSentences 
         .map((line) => line.trim())
         .filter(Boolean),
     [body],
+  );
+  const bodyViLines = useMemo(
+    () => bodyVi.split("\n").map((line) => line.trim()),
+    [bodyVi],
   );
 
   function updateVocab(index: number, patch: Partial<VocabEntry>) {
@@ -163,9 +170,9 @@ export function ReadingLessonEditForm({ lesson }: { lesson: LessonWithSentences 
       is_public: isPublic,
       vocabulary: cleanVocabulary,
       reading_meta: readingMeta,
-      sentences: bodyLines.map((line) => ({
+      sentences: bodyLines.map((line, index) => ({
         ja_text: line,
-        vi_translation: null,
+        vi_translation: bodyViLines[index] || null,
       })),
     });
     router.push(href(lessonHref(updated)));
@@ -241,7 +248,7 @@ export function ReadingLessonEditForm({ lesson }: { lesson: LessonWithSentences 
         <CardTitle>Kanji memo</CardTitle>
         <div className="grid gap-3 lg:grid-cols-2">
           <div className="space-y-2 rounded-2xl border border-border bg-surface/50 p-3">
-            <p className="text-xs font-black uppercase text-muted">Japanese</p>
+            <p className="text-xs font-extrabold text-muted">Japanese</p>
             <input
               className={field}
               value={memoJaKeyword}
@@ -258,7 +265,7 @@ export function ReadingLessonEditForm({ lesson }: { lesson: LessonWithSentences 
             />
           </div>
           <div className="space-y-2 rounded-2xl border border-border bg-surface/50 p-3">
-            <p className="text-xs font-black uppercase text-muted">Vietnamese</p>
+            <p className="text-xs font-extrabold text-muted">Vietnamese</p>
             <input
               className={field}
               value={memoViKeyword}
@@ -276,16 +283,36 @@ export function ReadingLessonEditForm({ lesson }: { lesson: LessonWithSentences 
       </Card>
 
       <Card className="space-y-3">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <CardTitle>Body</CardTitle>
-          <span className="text-xs font-bold text-muted">One paragraph per line</span>
+          <span className="text-xs font-bold text-muted">
+            One paragraph per line. Keep Japanese and Vietnamese lines aligned.
+          </span>
         </div>
-        <textarea
-          className={`${textarea} min-h-[28rem] font-[var(--font-jp)]`}
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          lang="ja"
-        />
+        <div className="grid overflow-hidden rounded-2xl border border-border bg-surface/50 lg:grid-cols-2">
+          <label className="block border-b border-border bg-card/70 p-3 lg:border-b-0 lg:border-r">
+            <span className="mb-2 block text-xs font-extrabold text-primary/70">
+              Japanese page
+            </span>
+            <textarea
+              className={`${textarea} min-h-[30rem] border-border/70 font-[var(--font-jp)] leading-8`}
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              lang="ja"
+            />
+          </label>
+          <label className="block bg-card/70 p-3">
+            <span className="mb-2 block text-xs font-extrabold text-primary/70">
+              Vietnamese page
+            </span>
+            <textarea
+              className={`${textarea} min-h-[30rem] border-border/70 leading-8`}
+              value={bodyVi}
+              onChange={(e) => setBodyVi(e.target.value)}
+              placeholder="Nhập bản dịch tiếng Việt tương ứng từng dòng bên trái"
+            />
+          </label>
+        </div>
       </Card>
 
       <Card className="space-y-3">

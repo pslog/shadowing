@@ -87,7 +87,7 @@ export function LessonVocabulary({
       <section className="overflow-hidden rounded-[1.5rem] border border-border bg-card shadow-[var(--shadow-sm)]">
         <div className="flex items-center justify-between gap-3 border-b border-border bg-surface/60 px-5 py-4">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-primary">
+            <p className="text-xs font-extrabold text-primary">
               Vocabulary
             </p>
             <h2 className="mt-1 flex items-center gap-2 text-xl font-extrabold">
