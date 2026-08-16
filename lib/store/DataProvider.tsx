@@ -115,7 +115,7 @@ interface DataContextValue {
 
 const DataContext = createContext<DataContextValue | null>(null);
 const USING_SUPABASE = hasSupabaseEnv();
-const SUPABASE_SHELL_CACHE_KEY = "shadowing-jp-supabase-shell-v6";
+const SUPABASE_SHELL_CACHE_KEY = "shadowing-jp-supabase-shell-v7";
 const SUPABASE_SHELL_CACHE_TTL_MS = 5 * 60 * 1000;
 
 interface SupabaseShellCache {
