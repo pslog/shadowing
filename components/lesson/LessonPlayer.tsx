@@ -665,6 +665,9 @@ function ReadingLesson({
     (progress) => progress.lesson_id === lesson.id && progress.status === "completed",
   );
   const isRead = progressRead || dbRead;
+  const titleMatch = lesson.title.match(/^(Lesson\s+\d+)\s+-\s+(.+)$/);
+  const lessonLabel = titleMatch?.[1] ?? copy.label;
+  const lessonHeading = titleMatch?.[2] ?? lesson.title;
 
   useEffect(() => {
     if (!usingSupabase) return;
@@ -773,85 +776,80 @@ function ReadingLesson({
           localizedHref={href}
         />
       )}
-      <section className="relative overflow-hidden rounded-[1.5rem] border border-border bg-card p-5 shadow-[var(--shadow-sm)] sm:p-6">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-1 brand-gradient" />
-        <div className="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="min-w-0">
-            <div className="mb-3 flex flex-wrap items-center gap-2">
-              <Badge tone="primary">{copy.label}</Badge>
-              {lesson.level && <Badge>{lesson.level}</Badge>}
-              <span
-                className={[
-                  "inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[11px] font-black",
-                  isRead
-                    ? "bg-[var(--success-soft)] text-[var(--success)]"
-                    : "border border-border bg-card text-muted",
-                ].join(" ")}
-              >
-                {isRead && <Icon name="check" size={12} />}
-                {isRead ? copy.read : copy.unread}
-              </span>
-              <span
-                className="inline-flex h-7 items-center gap-2 rounded-full border border-border/70 bg-card/85 px-2.5 text-[11px] font-extrabold text-muted shadow-sm backdrop-blur"
-                aria-label={`${lessonViewStats?.totalViews ?? 0} ${m.common.views}`}
-              >
-                <span className="inline-flex items-center gap-1 tabular-nums" title={m.common.views}>
-                  <Icon name="eye" size={12} />
-                  {(lessonViewStats?.totalViews ?? 0).toLocaleString()}
-                </span>
-              </span>
-            </div>
-            <h1 lang="ja" className="text-2xl font-extrabold leading-tight sm:text-3xl">
-              {lesson.title}
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">{copy.intro}</p>
-            {readingNote && (
-              <div className="mt-3 flex max-w-3xl flex-wrap items-baseline gap-x-3 gap-y-1 rounded-full border border-primary/15 bg-primary/5 px-3.5 py-2">
-                <span lang="ja" className="text-sm font-black leading-6 text-fg">
-                  {readingNote.keyword}
-                </span>
-                <span className="text-sm font-semibold leading-6 text-muted">
-                  {readingNote.body}
-                </span>
-              </div>
-            )}
-          </div>
-
-          <div className="flex shrink-0 flex-wrap gap-2 text-xs font-bold text-muted">
-            <span className="rounded-full border border-border bg-surface px-3 py-1.5 tabular-nums">
-              {paragraphs.filter((item) => !item.author).length} {copy.blocks}
-            </span>
-            <span className="rounded-full border border-border bg-surface px-3 py-1.5 tabular-nums">
-              {lesson.vocabulary?.length ?? 0}
-              {m.common.words}
-            </span>
-          </div>
-        </div>
-      </section>
-
       <article
         id="reading-article"
         className="scroll-mt-24 overflow-hidden rounded-[1.5rem] border border-border bg-card shadow-[var(--shadow-sm)]"
       >
-        <div className="relative overflow-hidden border-b border-border bg-[linear-gradient(180deg,color-mix(in_srgb,var(--surface)_86%,transparent),color-mix(in_srgb,var(--card)_96%,transparent))] px-5 py-3.5 sm:px-7">
-          <div className="relative flex items-center justify-between gap-4">
-            <div className="flex min-w-0 items-center gap-3">
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-primary/15 bg-primary/[0.08] text-primary">
-                <Icon name="book" size={18} />
-              </span>
-              <div className="min-w-0">
-                <h2 className="text-base font-black leading-tight">{copy.article}</h2>
-                <p className="mt-0.5 max-w-2xl text-xs font-semibold leading-5 text-muted sm:text-sm">
-                  {copy.articleHint}
-                </p>
+        <div className="relative overflow-hidden border-b border-border bg-[radial-gradient(circle_at_10%_0%,color-mix(in_srgb,var(--primary)_12%,transparent),transparent_28%),linear-gradient(180deg,color-mix(in_srgb,var(--surface)_90%,transparent),color-mix(in_srgb,var(--card)_98%,transparent))] px-5 py-4 sm:px-7 sm:py-5">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-1 brand-gradient" />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-5 -top-7 select-none text-[8rem] font-black leading-none text-primary/[0.045] sm:right-4 sm:text-[10rem]"
+          >
+            {watermark}
+          </div>
+          <div className="relative">
+            <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
+              <p className="text-xs font-black uppercase text-primary/70">{lessonLabel}</p>
+              <h1 lang="ja" className="mt-1 text-[2.45rem] font-black leading-none text-fg sm:text-[3.35rem]">
+                {lessonHeading}
+              </h1>
+              {readingNote && (
+                <div className="mt-3 max-w-3xl">
+                  <p
+                    lang="ja"
+                    className="inline-flex items-center justify-center rounded-full bg-primary/8 px-3 py-1 text-sm font-black leading-6 text-primary"
+                  >
+                    {readingNote.keyword}
+                  </p>
+                  <p className="mt-2 text-sm font-bold leading-6 text-muted sm:text-[0.95rem]">
+                    {readingNote.body}
+                  </p>
+                </div>
+              )}
+
+              <div className="mt-4 flex shrink-0 flex-wrap justify-center gap-2 text-xs font-bold text-muted">
+                <span className="inline-flex h-8 items-center rounded-full border border-primary/15 bg-primary/8 px-3 text-primary">
+                  {copy.label}
+                </span>
+                {lesson.level && (
+                  <span className="inline-flex h-8 items-center rounded-full border border-border/70 bg-card/85 px-3 shadow-sm backdrop-blur">
+                    {lesson.level}
+                  </span>
+                )}
+                <span
+                  className={[
+                    "inline-flex h-8 items-center gap-1.5 rounded-full px-3 shadow-sm backdrop-blur",
+                    isRead
+                      ? "bg-[var(--success-soft)] text-[var(--success)]"
+                      : "border border-border/70 bg-card/85 text-muted",
+                  ].join(" ")}
+                >
+                  {isRead && <Icon name="check" size={12} />}
+                  {isRead ? copy.read : copy.unread}
+                </span>
+                <span
+                  className="inline-flex h-8 items-center gap-1.5 rounded-full border border-border/70 bg-card/85 px-3 shadow-sm backdrop-blur"
+                  aria-label={`${lessonViewStats?.totalViews ?? 0} ${m.common.views}`}
+                  title={m.common.views}
+                >
+                  <Icon name="eye" size={13} />
+                  <span className="tabular-nums">
+                    {(lessonViewStats?.totalViews ?? 0).toLocaleString()}
+                  </span>
+                </span>
+                <span className="inline-flex h-8 items-center rounded-full border border-border/70 bg-card/85 px-3 tabular-nums shadow-sm backdrop-blur">
+                  {paragraphs.filter((item) => !item.author).length} {copy.blocks}
+                </span>
+                <span className="inline-flex h-8 items-center rounded-full border border-border/70 bg-card/85 px-3 tabular-nums shadow-sm backdrop-blur">
+                  {lesson.vocabulary?.length ?? 0}
+                  {m.common.words}
+                </span>
               </div>
             </div>
-            <span className="hidden rounded-full border border-border/70 bg-card/75 px-3 py-1.5 text-xs font-bold text-muted sm:inline-flex">
-              {paragraphs.filter((item) => !item.author).length} {copy.blocks}
-            </span>
           </div>
         </div>
-        <div className="relative overflow-hidden bg-[radial-gradient(circle_at_12%_18%,color-mix(in_srgb,var(--primary)_10%,transparent),transparent_24%),radial-gradient(circle_at_88%_16%,color-mix(in_srgb,var(--warning)_12%,transparent),transparent_22%),radial-gradient(circle_at_86%_84%,color-mix(in_srgb,var(--success)_9%,transparent),transparent_26%),linear-gradient(90deg,color-mix(in_srgb,var(--primary)_5%,transparent),transparent_13%,transparent_87%,color-mix(in_srgb,var(--primary)_5%,transparent)),linear-gradient(180deg,color-mix(in_srgb,var(--surface)_72%,transparent),color-mix(in_srgb,var(--card)_96%,transparent)_28%,color-mix(in_srgb,var(--surface)_56%,transparent))] px-4 py-7 sm:px-10 sm:py-11">
+        <div className="relative overflow-hidden bg-[radial-gradient(circle_at_12%_18%,color-mix(in_srgb,var(--primary)_10%,transparent),transparent_24%),radial-gradient(circle_at_88%_16%,color-mix(in_srgb,var(--warning)_12%,transparent),transparent_22%),radial-gradient(circle_at_86%_84%,color-mix(in_srgb,var(--success)_9%,transparent),transparent_26%),linear-gradient(90deg,color-mix(in_srgb,var(--primary)_5%,transparent),transparent_13%,transparent_87%,color-mix(in_srgb,var(--primary)_5%,transparent)),linear-gradient(180deg,color-mix(in_srgb,var(--surface)_72%,transparent),color-mix(in_srgb,var(--card)_96%,transparent)_28%,color-mix(in_srgb,var(--surface)_56%,transparent))] px-4 py-5 sm:px-9 sm:py-8">
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 opacity-[0.18] [background-image:linear-gradient(90deg,color-mix(in_srgb,var(--fg)_4%,transparent)_1px,transparent_1px)] [background-size:48px_48px]"
@@ -973,7 +971,7 @@ function ReadingLesson({
                   key={paragraph.id}
                   lang="ja"
                   className={[
-                    "relative mt-7 whitespace-pre-line text-[1.08rem] font-medium leading-[2.35] text-fg first:mt-0 before:absolute before:top-3 before:h-[calc(100%-1.5rem)] before:w-[3px] before:rounded-full before:bg-gradient-to-b before:from-primary/5 before:via-primary/30 before:to-primary/5 before:content-[''] sm:text-[1.14rem] sm:leading-[2.55]",
+                    "relative mt-4 whitespace-pre-line text-[1.06rem] font-medium leading-[2.05] text-fg first:mt-0 before:absolute before:top-3 before:h-[calc(100%-1.5rem)] before:w-[3px] before:rounded-full before:bg-gradient-to-b before:from-primary/5 before:via-primary/30 before:to-primary/5 before:content-[''] sm:text-[1.12rem] sm:leading-[2.25]",
                     sideLine,
                   ].join(" ")}
                 >

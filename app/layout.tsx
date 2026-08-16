@@ -102,6 +102,7 @@ export default async function RootLayout({
     <html
       lang={LOCALE_TAG[locale]}
       className={`${jakarta.variable} ${notoJp.variable} h-full`}
+      suppressHydrationWarning
     >
       <head>
         <script
@@ -120,7 +121,7 @@ export default async function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-full">
+      <body className="min-h-full" suppressHydrationWarning>
         <script
           type="application/ld+json"
           suppressHydrationWarning
