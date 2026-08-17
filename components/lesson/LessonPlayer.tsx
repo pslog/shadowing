@@ -42,6 +42,13 @@ import { LessonReview } from "./LessonReview";
 import { LessonVocabulary } from "./LessonVocabulary";
 import { LessonGuestWall } from "./LessonGuestWall";
 import { UpNextLessons } from "./UpNextLessons";
+import { ReadingArticle } from "./ReadingArticle";
+import { DialogueScript } from "./DialogueScript";
+import {
+  buildReadingParagraphs,
+  readingMemo,
+  readingWatermark,
+} from "./reading-content";
 import { Furigana } from "./Furigana";
 import { useI18n } from "@/components/i18n/useI18n";
 import { emitCompanionEvent } from "@/lib/gamification/companion-events";
@@ -100,127 +107,6 @@ const readingProgressPending = new Map<string, Promise<boolean>>();
 const lessonViewStatsCache = new Map<string, LessonViewStats>();
 const lessonViewStatsPending = new Map<string, Promise<LessonViewStats | null>>();
 
-function readingWatermark(lesson: Lesson) {
-  return lesson.reading_meta?.watermark ?? lesson.title.trim().charAt(0) ?? "読";
-}
-
-function readingMemo(lesson: Lesson, locale: Locale) {
-  return lesson.reading_meta?.memo?.[locale] ?? lesson.reading_meta?.memo?.ja ?? null;
-}
-
-interface ReadingParagraph {
-  id: string;
-  text: string;
-  translation: string | null;
-  author: boolean;
-}
-
-function joinReadingTranslation(items: LessonSentence[]) {
-  const text = items
-    .map((item) => item.vi_translation?.trim())
-    .filter(Boolean)
-    .join(" ");
-  return text.length > 0 ? text : null;
-}
-
-function buildReadingParagraphs(lesson: ReadingLessonProps["lesson"], sentences: LessonSentence[]) {
-  const source = sentences.map((sentence) => sentence.ja_text);
-  const makeParagraph = (start: number, end: number): ReadingParagraph => ({
-    id: sentences[start]?.id ?? String(start),
-    text: source.slice(start, end).join(""),
-    translation: joinReadingTranslation(sentences.slice(start, end)),
-    author: false,
-  });
-
-  if (lesson.slug === "kanji-shiawase-dokuhon-yasashii" && sentences.length >= 17) {
-    return [
-      makeParagraph(0, 7),
-      makeParagraph(7, 13),
-      makeParagraph(13, 16),
-      {
-        id: sentences[16].id,
-        text: sentences[16].ja_text,
-        translation: sentences[16].vi_translation,
-        author: true,
-      },
-    ];
-  }
-
-  if (lesson.slug === "kanji-shiawase-dokuhon-daijoubu" && sentences.length >= 27) {
-    return [
-      makeParagraph(0, 3),
-      {
-        id: sentences[3].id,
-        text: [
-          ...source.slice(3, 6),
-          source.slice(6, 9).join("\n"),
-          ...source.slice(9, 12),
-        ].join("\n"),
-        translation: joinReadingTranslation(sentences.slice(3, 12)),
-        author: false,
-      },
-      makeParagraph(12, 20),
-      {
-        id: sentences[20].id,
-        text: [source[20], source[21], ...source.slice(22, 26)].join("\n"),
-        translation: joinReadingTranslation(sentences.slice(20, 26)),
-        author: false,
-      },
-      {
-        id: sentences[26].id,
-        text: sentences[26].ja_text,
-        translation: sentences[26].vi_translation,
-        author: true,
-      },
-    ];
-  }
-
-  const paragraphs: ReadingParagraph[] = [];
-  let buffer: LessonSentence[] = [];
-
-  for (const sentence of sentences) {
-    if (sentence.ja_text.startsWith("☞") || sentence.ja_text.startsWith("―")) {
-      if (buffer.length > 0) {
-        paragraphs.push({
-          id: buffer[0].id,
-          text: buffer.map((item) => item.ja_text).join(""),
-          translation: joinReadingTranslation(buffer),
-          author: false,
-        });
-        buffer = [];
-      }
-      paragraphs.push({
-        id: sentence.id,
-        text: sentence.ja_text,
-        translation: sentence.vi_translation,
-        author: true,
-      });
-      continue;
-    }
-
-    buffer.push(sentence);
-    if (buffer.length >= 4) {
-      paragraphs.push({
-        id: buffer[0].id,
-        text: buffer.map((item) => item.ja_text).join(""),
-        translation: joinReadingTranslation(buffer),
-        author: false,
-      });
-      buffer = [];
-    }
-  }
-
-  if (buffer.length > 0) {
-    paragraphs.push({
-      id: buffer[0].id,
-      text: buffer.map((item) => item.ja_text).join(""),
-      translation: joinReadingTranslation(buffer),
-      author: false,
-    });
-  }
-
-  return paragraphs;
-}
 
 function ReadingCheck({
   questions,
@@ -739,6 +625,7 @@ function ReadingLesson({
           article: "本文",
           articleHint: "Đọc liền mạch, chú ý cách chữ Hán mở nghĩa trong câu chuyện.",
           markRead: "Mình đọc xong rồi",
+          missingTranslation: "Chưa có bản dịch tiếng Việt cho đoạn này.",
           blocks: "đoạn",
           back: "Về khóa học",
         }
@@ -751,6 +638,7 @@ function ReadingLesson({
           article: "本文",
           articleHint: "文章の流れと漢字に込められた意味を味わいながら読みましょう。",
           markRead: "読み終わりました",
+          missingTranslation: "この段落の訳はまだありません。",
           blocks: "段落",
           back: "コースへ戻る",
         };
@@ -881,224 +769,54 @@ function ReadingLesson({
           localizedHref={href}
         />
       )}
-      <article
-        id="reading-article"
-        className="scroll-mt-24 overflow-hidden rounded-[1.5rem] border border-border bg-card shadow-[var(--shadow-sm)]"
-      >
-        <div className="relative overflow-hidden border-b border-border bg-[radial-gradient(circle_at_10%_0%,color-mix(in_srgb,var(--primary)_12%,transparent),transparent_28%),linear-gradient(180deg,color-mix(in_srgb,var(--surface)_90%,transparent),color-mix(in_srgb,var(--card)_98%,transparent))] px-5 py-4 sm:px-7 sm:py-5">
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-1 brand-gradient" />
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -right-5 -top-7 select-none text-[8rem] font-black leading-none text-primary/[0.045] sm:right-4 sm:text-[10rem]"
-          >
-            {watermark}
-          </div>
-          <div className="relative">
-            <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
-              <p className="text-sm font-extrabold text-primary/75">{lessonLabel}</p>
-              <h1 lang="ja" className="mt-1 text-[2.45rem] font-black leading-none text-fg sm:text-[3.35rem]">
-                {lessonHeading}
-              </h1>
-              {readingNote && (
-                <div className="mt-3 max-w-3xl">
-                  <p
-                    lang="ja"
-                    className="inline-flex items-center justify-center rounded-full bg-primary/8 px-3 py-1 text-sm font-black leading-6 text-primary"
-                  >
-                    {readingNote.keyword}
-                  </p>
-                  <p className="mt-2 text-sm font-bold leading-6 text-muted sm:text-[0.95rem]">
-                    {readingNote.body}
-                  </p>
-                </div>
-              )}
-
-              <div className="mt-4 flex shrink-0 flex-wrap justify-center gap-2 text-xs font-bold text-muted">
-                <span className="inline-flex h-8 items-center rounded-full border border-primary/15 bg-primary/8 px-3 text-primary">
-                  {copy.label}
-                </span>
-                {lesson.level && (
-                  <span className="inline-flex h-8 items-center rounded-full border border-border/70 bg-card/85 px-3 shadow-sm backdrop-blur">
-                    {lesson.level}
-                  </span>
-                )}
-                <span
-                  className={[
-                    "inline-flex h-8 items-center gap-1.5 rounded-full px-3 shadow-sm backdrop-blur",
-                    isRead
-                      ? "bg-[var(--success-soft)] text-[var(--success)]"
-                      : "border border-border/70 bg-card/85 text-muted",
-                  ].join(" ")}
-                >
-                  {isRead && <Icon name="check" size={12} />}
-                  {isRead ? copy.read : copy.unread}
-                </span>
-                <span
-                  className="inline-flex h-8 items-center gap-1.5 rounded-full border border-border/70 bg-card/85 px-3 shadow-sm backdrop-blur"
-                  aria-label={`${lessonViewStats?.totalViews ?? 0} ${m.common.views}`}
-                  title={m.common.views}
-                >
-                  <Icon name="eye" size={13} />
-                  <span className="tabular-nums">
-                    {(lessonViewStats?.totalViews ?? 0).toLocaleString()}
-                  </span>
-                </span>
-                <span className="inline-flex h-8 items-center rounded-full border border-border/70 bg-card/85 px-3 tabular-nums shadow-sm backdrop-blur">
-                  {paragraphs.filter((item) => !item.author).length} {copy.blocks}
-                </span>
-                <span className="inline-flex h-8 items-center rounded-full border border-border/70 bg-card/85 px-3 tabular-nums shadow-sm backdrop-blur">
-                  {lesson.vocabulary?.length ?? 0}
-                  {m.common.words}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="relative overflow-hidden bg-[radial-gradient(circle_at_12%_18%,color-mix(in_srgb,var(--primary)_4%,transparent),transparent_24%),radial-gradient(circle_at_88%_16%,color-mix(in_srgb,var(--warning)_5%,transparent),transparent_22%),linear-gradient(90deg,color-mix(in_srgb,var(--fg)_2.5%,transparent),transparent_16%,transparent_84%,color-mix(in_srgb,var(--fg)_2.5%,transparent)),linear-gradient(180deg,#f6f4ee,#fbfaf6_28%,#f2efe7)] px-4 py-5 sm:px-9 sm:py-8">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 opacity-[0.18] [background-image:linear-gradient(90deg,color-mix(in_srgb,var(--fg)_4%,transparent)_1px,transparent_1px)] [background-size:48px_48px]"
-          />
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-x-8 top-6 bottom-6 rounded-[2rem] bg-[radial-gradient(ellipse_at_center,color-mix(in_srgb,var(--card)_72%,transparent),color-mix(in_srgb,var(--card)_24%,transparent)_64%,transparent)]"
-          />
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-x-6 top-8 bottom-8 grid grid-cols-3 content-around justify-items-center gap-y-10 text-primary/[0.045] sm:inset-x-12 sm:grid-cols-4 sm:gap-y-14"
-          >
-            {Array.from({ length: 20 }).map((_, index) => (
-              <span
-                key={index}
-                className="select-none text-[3.5rem] font-black leading-none sm:text-[5rem]"
-              >
-                {watermark}
+      <ReadingArticle
+        label={lessonLabel}
+        heading={lessonHeading}
+        note={readingNote}
+        watermark={watermark}
+        paragraphs={paragraphs}
+        missingTranslationText={copy.missingTranslation}
+        chips={
+          <div className="mt-4 flex shrink-0 flex-wrap justify-center gap-2 text-xs font-bold text-muted">
+            <span className="inline-flex h-8 items-center rounded-full border border-primary/15 bg-primary/8 px-3 text-primary">
+              {copy.label}
+            </span>
+            {lesson.level && (
+              <span className="inline-flex h-8 items-center rounded-full border border-border/70 bg-card/85 px-3 shadow-sm backdrop-blur">
+                {lesson.level}
               </span>
-            ))}
+            )}
+            <span
+              className={[
+                "inline-flex h-8 items-center gap-1.5 rounded-full px-3 shadow-sm backdrop-blur",
+                isRead
+                  ? "bg-[var(--success-soft)] text-[var(--success)]"
+                  : "border border-border/70 bg-card/85 text-muted",
+              ].join(" ")}
+            >
+              {isRead && <Icon name="check" size={12} />}
+              {isRead ? copy.read : copy.unread}
+            </span>
+            <span
+              className="inline-flex h-8 items-center gap-1.5 rounded-full border border-border/70 bg-card/85 px-3 shadow-sm backdrop-blur"
+              aria-label={`${lessonViewStats?.totalViews ?? 0} ${m.common.views}`}
+              title={m.common.views}
+            >
+              <Icon name="eye" size={13} />
+              <span className="tabular-nums">
+                {(lessonViewStats?.totalViews ?? 0).toLocaleString()}
+              </span>
+            </span>
+            <span className="inline-flex h-8 items-center rounded-full border border-border/70 bg-card/85 px-3 tabular-nums shadow-sm backdrop-blur">
+              {paragraphs.filter((item) => !item.author).length} {copy.blocks}
+            </span>
+            <span className="inline-flex h-8 items-center rounded-full border border-border/70 bg-card/85 px-3 tabular-nums shadow-sm backdrop-blur">
+              {lesson.vocabulary?.length ?? 0}
+              {m.common.words}
+            </span>
           </div>
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute right-8 top-7 select-none text-[8rem] font-black leading-none text-primary/[0.06] sm:right-12 sm:text-[11rem]"
-          >
-            {watermark}
-          </div>
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute left-10 top-24 select-none text-[4.5rem] font-black leading-none text-primary/[0.046] sm:left-20 sm:top-28 sm:text-[6rem]"
-          >
-            {watermark}
-          </div>
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute bottom-28 right-16 select-none text-[5.5rem] font-black leading-none text-primary/[0.048] sm:right-24 sm:text-[7rem]"
-          >
-            {watermark}
-          </div>
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute bottom-12 left-1/3 select-none text-[3.75rem] font-black leading-none text-primary/[0.02] sm:text-[5rem]"
-          >
-            {watermark}
-          </div>
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute left-1/2 top-12 select-none text-[3.25rem] font-black leading-none text-primary/[0.018] sm:text-[4.5rem]"
-          >
-            {watermark}
-          </div>
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute left-8 top-1/2 select-none text-[5rem] font-black leading-none text-primary/[0.018] sm:left-14 sm:text-[6.5rem]"
-          >
-            {watermark}
-          </div>
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute right-6 top-1/2 select-none text-[4rem] font-black leading-none text-primary/[0.02] sm:right-14 sm:text-[5.75rem]"
-          >
-            {watermark}
-          </div>
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute left-[18%] bottom-1/3 select-none text-[3.75rem] font-black leading-none text-primary/[0.018] sm:text-[5.25rem]"
-          >
-            {watermark}
-          </div>
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute right-[30%] bottom-1/4 select-none text-[4.25rem] font-black leading-none text-primary/[0.019] sm:text-[5.75rem]"
-          >
-            {watermark}
-          </div>
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute right-[18%] top-[34%] select-none text-[3.5rem] font-black leading-none text-primary/[0.017] sm:text-[4.75rem]"
-          >
-            {watermark}
-          </div>
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute left-[42%] top-[42%] select-none text-[3rem] font-black leading-none text-primary/[0.016] sm:text-[4.25rem]"
-          >
-            {watermark}
-          </div>
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute left-[58%] bottom-16 select-none text-[3.5rem] font-black leading-none text-primary/[0.018] sm:text-[4.75rem]"
-          >
-            {watermark}
-          </div>
-          <div className="relative mx-auto max-w-6xl bg-[linear-gradient(90deg,rgba(255,254,249,0.44)_0%,rgba(244,241,232,0.32)_49.5%,rgba(168,156,132,0.14)_50%,rgba(244,241,232,0.32)_50.5%,rgba(255,254,249,0.44)_100%)] px-3 py-4 sm:px-6 sm:py-6">
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-y-3 left-1/2 hidden w-10 -translate-x-1/2 bg-[radial-gradient(ellipse_at_center,rgba(82,70,48,0.09),rgba(82,70,48,0.028)_38%,transparent_72%)] lg:block"
-            />
-            <div className="relative space-y-4">
-                {paragraphs.map((paragraph, paragraphIndex) => {
-                  const missingTranslation = !paragraph.translation;
-                  const softOffset = paragraphIndex % 2 === 0 ? "" : "lg:translate-x-0.5";
-
-                  return (
-                    <div
-                      key={paragraph.id}
-                      className={[
-                        "grid gap-1.5 rounded-xl px-0 py-0.5 transition-colors lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-8",
-                        softOffset,
-                        paragraph.author ? "items-end" : "items-start",
-                      ].join(" ")}
-                    >
-                      <div>
-                        <p
-                          lang="ja"
-                          className={[
-                            "whitespace-pre-line text-fg",
-                            paragraph.author
-                              ? "text-right text-sm font-bold leading-7 text-muted sm:text-base"
-                              : "text-[1.04rem] font-medium leading-[2] sm:text-[1.1rem] sm:leading-[2.12]",
-                          ].join(" ")}
-                        >
-                          {paragraph.text}
-                        </p>
-                      </div>
-                      <div className="pl-3 lg:pl-0">
-                        <p
-                          className={[
-                            paragraph.author
-                              ? "text-right text-sm font-normal leading-7 text-muted sm:text-base"
-                              : "text-[0.98rem] font-normal leading-8 text-muted sm:text-[1.02rem] sm:leading-9",
-                            missingTranslation ? "text-muted/70" : "",
-                          ].join(" ")}
-                        >
-                          {paragraph.translation ?? "Chưa có bản dịch tiếng Việt cho đoạn này."}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-            </div>
-          </div>
-        </div>
-      </article>
+        }
+      />
 
       <UpNextLessons lesson={lesson} />
 
@@ -1268,136 +986,6 @@ function TranscriptToken({
     >
       {visibleText}
     </span>
-  );
-}
-
-function DialogueScript({
-  sentences,
-  activeIndex,
-  mediaUrl,
-  sourceUrl,
-  audioRef,
-  passedForSentence,
-  onPractice,
-  onTimeUpdate,
-  onStop,
-  t,
-}: {
-  sentences: LessonSentence[];
-  activeIndex: number;
-  mediaUrl: string | null;
-  sourceUrl: string | null;
-  audioRef: React.RefObject<HTMLAudioElement | null>;
-  passedForSentence: (id: string) => boolean;
-  onPractice: (index: number) => void;
-  onTimeUpdate: (e: React.SyntheticEvent<HTMLAudioElement>) => void;
-  onStop: () => void;
-  t: Dictionary["player"];
-}) {
-  return (
-    <section className="overflow-hidden rounded-[1.75rem] border border-border bg-card shadow-[var(--shadow-md)]">
-      <div className="brand-gradient relative overflow-hidden px-6 py-5 text-white">
-        <div className="pointer-events-none absolute -right-12 -top-16 h-40 w-40 rounded-full border border-white/20" />
-        <div className="relative">
-          <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/75">
-            Step 1
-          </p>
-          <h2 className="mt-1 text-2xl font-extrabold">{t.step1Title}</h2>
-          <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/82">
-            {t.step1Body}
-          </p>
-        </div>
-      </div>
-
-      <div className="space-y-2 p-3 sm:p-4">
-        {mediaUrl && (
-          <div className="mb-3 rounded-xl border border-border bg-surface/80 p-3">
-            <div className="mb-2 flex items-center gap-2 text-sm font-bold">
-              <Icon name="volume" size={16} />
-              {t.lessonAudio}
-            </div>
-            <audio
-              ref={audioRef}
-              src={mediaUrl}
-              controls
-              className="h-10 w-full"
-              onTimeUpdate={onTimeUpdate}
-              onPause={onStop}
-              onEnded={onStop}
-            />
-            {sourceUrl && (
-              <a
-                href={sourceUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-2 inline-flex text-xs font-semibold text-primary hover:underline"
-              >
-                {t.openDrive}
-              </a>
-            )}
-          </div>
-        )}
-
-        {sentences.map((sentence, i) => {
-          const active = i === activeIndex;
-          const passed = passedForSentence(sentence.id);
-          return (
-            <article
-              key={sentence.id}
-              className={[
-                "group relative flex items-start gap-3 transition-colors",
-                active ? "" : "",
-              ].join(" ")}
-            >
-              <button
-                type="button"
-                onClick={() => onPractice(i)}
-                className={[
-                  "focus-ring grid h-9 w-9 shrink-0 place-items-center rounded-full text-xs font-extrabold tabular-nums transition-all",
-                  active
-                    ? "bg-primary text-white shadow-[var(--shadow-glow)]"
-                    : passed
-                      ? "bg-[var(--success)] text-white"
-                      : "border border-border bg-surface text-muted group-hover:border-primary/40 group-hover:text-primary",
-                ].join(" ")}
-                aria-label={t.practiceSentence(i + 1)}
-              >
-                {passed ? "✓" : i + 1}
-              </button>
-
-              <div
-                className={[
-                  "min-w-0 flex-1 rounded-xl border px-3 py-2.5 transition-colors",
-                  active
-                    ? "border-primary/30 bg-primary/7"
-                    : "border-border bg-surface/70 group-hover:bg-card",
-                ].join(" ")}
-              >
-                <div className="mb-1.5 flex flex-wrap items-center gap-2">
-                  <span className="text-[11px] font-bold text-muted">
-                    {t.utterance(i + 1)}
-                  </span>
-                  {active && (
-                      <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[11px] font-bold text-primary">
-                      {t.practicing}
-                    </span>
-                  )}
-                  {passed && !active && (
-                      <span className="rounded-full bg-[var(--success-soft)] px-1.5 py-0.5 text-[11px] font-bold text-[var(--success)]">
-                      {t.passedTag}
-                    </span>
-                  )}
-                </div>
-
-                <p lang="ja" className="text-[0.93rem] font-semibold leading-[2] text-fg [&_rt]:text-[0.55em] [&_rt]:font-medium [&_rt]:text-muted">
-                  <Furigana sentence={sentence} />
-                </p>
-              </div>
-            </article>
-          );
-        })}
-      </div>
-    </section>
   );
 }
 

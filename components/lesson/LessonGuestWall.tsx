@@ -9,6 +9,13 @@ import { levelMascot } from "@/lib/gamification/level";
 import { stripLocale } from "@/lib/i18n";
 import { useI18n } from "@/components/i18n/useI18n";
 import type { Lesson, LessonSentence } from "@/lib/types";
+import { ReadingArticle } from "./ReadingArticle";
+import { DialogueScript } from "./DialogueScript";
+import {
+  buildReadingParagraphs,
+  readingMemo,
+  readingWatermark,
+} from "./reading-content";
 
 /**
  * What a signed-out visitor sees instead of a lesson.
@@ -21,7 +28,9 @@ import type { Lesson, LessonSentence } from "@/lib/types";
  *
  * The teaser runs long on purpose — long enough to get absorbed in — but never
  * includes audio or the recorder, so what it gives away is reading time, not
- * the lesson.
+ * the lesson. A 読解 passage is rendered by the REAL article component, faded
+ * out partway: the visitor sees the page they are being invited into, not a
+ * stripped-down quote of it.
  */
 export function LessonGuestWall({
   lesson,
@@ -41,13 +50,12 @@ export function LessonGuestWall({
   const next = stripLocale(pathname || "/");
   const mascot = levelMascot(1);
 
-  // Long enough to get pulled in — a couple of lines only proves the lesson
-  // exists, while most of a page makes stopping feel like an interruption.
-  // The mask still cuts it off mid-thought, and the recorder/audio stay behind
-  // the wall, so this gives away reading time, not the lesson itself.
-  const preview = reading
-    ? [sentences.slice(0, 14).map((sentence) => sentence.ja_text).join("")]
-    : sentences.slice(0, 8).map((sentence) => sentence.ja_text);
+  // Reading: the first paragraphs, through the article's own renderer.
+  const paragraphs = reading
+    ? buildReadingParagraphs(lesson, sentences).slice(0, 3)
+    : [];
+  const titleMatch = lesson.title.match(/^(.*?)\s*[「『]([^」』]+)[」』]\s*$/);
+  const preview = sentences.slice(0, 8);
 
   const copy =
     locale === "vi"
@@ -64,7 +72,6 @@ export function LessonGuestWall({
           cta: "Đăng nhập / Đăng ký miễn phí",
           back: "Về khóa học",
           note: "Không mất phí, chỉ cần email.",
-          teaserLabel: "Mở đầu bài",
         }
       : {
           free: "すべて無料",
@@ -79,11 +86,38 @@ export function LessonGuestWall({
           cta: "無料でログイン / 登録",
           back: "コースへ戻る",
           note: "料金はかかりません。メールアドレスだけで大丈夫です。",
-          teaserLabel: "冒頭",
         };
 
   return (
     <div className="space-y-5">
+      {reading ? (
+        <ReadingArticle
+          label={titleMatch?.[1] || (lesson.topic ?? "")}
+          heading={titleMatch?.[2] ?? lesson.title}
+          note={readingMemo(lesson, locale)}
+          watermark={readingWatermark(lesson)}
+          paragraphs={paragraphs}
+          missingTranslationText=""
+          fade
+          chips={
+            <div className="mt-4 flex flex-wrap justify-center gap-2 text-xs font-bold text-muted">
+              {lesson.level && (
+                <span className="inline-flex h-8 items-center rounded-full border border-border/70 bg-card/85 px-3 shadow-sm backdrop-blur">
+                  {lesson.level}
+                </span>
+              )}
+              <span className="inline-flex h-8 items-center rounded-full border border-border/70 bg-card/85 px-3 tabular-nums shadow-sm backdrop-blur">
+                {sentences.length}
+                {m.common.sentences}
+              </span>
+              <span className="inline-flex h-8 items-center rounded-full border border-border/70 bg-card/85 px-3 tabular-nums shadow-sm backdrop-blur">
+                {lesson.vocabulary?.length ?? 0}
+                {m.common.words}
+              </span>
+            </div>
+          }
+        />
+      ) : (
       <section className="relative overflow-hidden rounded-[1.75rem] border border-border bg-card shadow-[var(--shadow-sm)]">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-1 brand-gradient" />
         <div className="px-5 py-5 text-center sm:px-7 sm:py-6">
@@ -107,30 +141,14 @@ export function LessonGuestWall({
             {lesson.title}
           </h1>
         </div>
-
-        {/* The teaser: real content, cut off mid-thought by a mask rather than
-            by an ellipsis, so the page reads as "there is more" instead of
-            "there is nothing". */}
-        <div className="relative border-t border-border bg-surface/50 px-5 pb-12 pt-5 sm:px-7">
-          <p className="text-[11px] font-black uppercase tracking-[0.2em] text-muted">
-            {copy.teaserLabel}
-          </p>
-          <div
-            aria-hidden
-            className="mt-2 max-h-[22rem] space-y-2 overflow-hidden [mask-image:linear-gradient(180deg,#000_68%,transparent_99%)] sm:max-h-[26rem]"
-          >
-            {preview.map((line, i) => (
-              <p
-                key={i}
-                lang="ja"
-                className="select-none text-[1.05rem] font-medium leading-[2.1] text-fg/85"
-              >
-                {line}
-              </p>
-            ))}
-          </div>
-        </div>
       </section>
+      )}
+
+      {!reading && (
+        // The player's own Step-1 panel, in preview mode: same header, same line
+        // cards with furigana — just no audio, no practice buttons, faded out.
+        <DialogueScript sentences={preview} preview t={m.player} />
+      )}
 
       <section className="relative overflow-hidden rounded-[1.75rem] border border-primary/25 bg-primary/[0.06] p-5 sm:p-6">
         <div className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
