@@ -19,8 +19,9 @@ import type { Lesson, LessonSentence } from "@/lib/types";
  * underneath. Nothing here claims the content is paid: the account exists to
  * remember what you read and how far you got, and the copy says exactly that.
  *
- * The teaser is deliberately short (a couple of lines) and never includes audio
- * or the recorder — enough to recognise the lesson, not enough to replace it.
+ * The teaser runs long on purpose — long enough to get absorbed in — but never
+ * includes audio or the recorder, so what it gives away is reading time, not
+ * the lesson.
  */
 export function LessonGuestWall({
   lesson,
@@ -40,9 +41,13 @@ export function LessonGuestWall({
   const next = stripLocale(pathname || "/");
   const mascot = levelMascot(1);
 
+  // Long enough to get pulled in — a couple of lines only proves the lesson
+  // exists, while most of a page makes stopping feel like an interruption.
+  // The mask still cuts it off mid-thought, and the recorder/audio stay behind
+  // the wall, so this gives away reading time, not the lesson itself.
   const preview = reading
-    ? [sentences.slice(0, 4).map((sentence) => sentence.ja_text).join("")]
-    : sentences.slice(0, 3).map((sentence) => sentence.ja_text);
+    ? [sentences.slice(0, 14).map((sentence) => sentence.ja_text).join("")]
+    : sentences.slice(0, 8).map((sentence) => sentence.ja_text);
 
   const copy =
     locale === "vi"
@@ -106,13 +111,13 @@ export function LessonGuestWall({
         {/* The teaser: real content, cut off mid-thought by a mask rather than
             by an ellipsis, so the page reads as "there is more" instead of
             "there is nothing". */}
-        <div className="relative border-t border-border bg-surface/50 px-5 pb-10 pt-5 sm:px-7">
+        <div className="relative border-t border-border bg-surface/50 px-5 pb-12 pt-5 sm:px-7">
           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-muted">
             {copy.teaserLabel}
           </p>
           <div
             aria-hidden
-            className="mt-2 space-y-2 [mask-image:linear-gradient(180deg,#000_35%,transparent_95%)]"
+            className="mt-2 max-h-[22rem] space-y-2 overflow-hidden [mask-image:linear-gradient(180deg,#000_68%,transparent_99%)] sm:max-h-[26rem]"
           >
             {preview.map((line, i) => (
               <p
