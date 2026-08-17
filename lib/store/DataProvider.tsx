@@ -20,7 +20,12 @@ import type {
   VocabEntry,
 } from "@/lib/types";
 import { createClient as createSupabaseClient, hasSupabaseEnv } from "@/lib/supabase/client";
-import { applyAttempt, type AttemptOutcome } from "./engine";
+import {
+  applyAttempt,
+  applyReadingComplete,
+  type AttemptOutcome,
+  type ReadingOutcome,
+} from "./engine";
 import { isSuperAdminEmail, vocabKey } from "./selectors";
 import {
   buildSeed,
@@ -111,7 +116,14 @@ interface DataContextValue {
     audioEnd: number | null,
   ) => void;
   ensureLessonSentences: (lessonIds: string | string[]) => Promise<void>;
-  markReadingLessonRead: (lessonId: string) => void;
+  /**
+   * Mark a 読解 lesson read and pay out its XP. Returns null for guests (nothing
+   * to credit) and for a lesson already completed earlier.
+   */
+  markReadingLessonRead: (
+    lessonId: string,
+    result: { correct: number; total: number },
+  ) => ReadingOutcome | null;
   recordAttempt: (input: RecordAttemptInput) => AttemptOutcome;
   reset: () => void;
 }
@@ -630,6 +642,43 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
+  /** Mirrors a finished reading lesson: progress row, XP events, profile total. */
+  const persistSupabaseReading = useCallback(
+    async (next: AppState, outcome: ReadingOutcome, nowIso: string) => {
+      const supabase = await createSupabaseClient();
+      if (!supabase || !next.profile) return;
+
+      const progress = next.progress.find(
+        (item) =>
+          item.user_id === next.profile?.id && item.lesson_id === outcome.lessonId,
+      );
+      const newXpEvents = next.xpEvents.filter((item) => item.created_at === nowIso);
+
+      const writes = [
+        progress
+          ? supabase.from("lesson_progress").upsert(progress)
+          : Promise.resolve({ error: null }),
+        outcome.xpGained > 0
+          ? supabase
+              .from("profiles")
+              .update({
+                total_xp: next.profile.total_xp,
+                current_level: next.profile.current_level,
+              })
+              .eq("id", next.profile.id)
+          : Promise.resolve({ error: null }),
+        newXpEvents.length > 0
+          ? supabase.from("xp_events").insert(newXpEvents)
+          : Promise.resolve({ error: null }),
+      ];
+
+      const results = await Promise.all(writes);
+      const failed = results.find((result) => result.error);
+      if (failed?.error) throw failed.error;
+    },
+    [],
+  );
+
   useEffect(() => {
     let cancelled = false;
 
@@ -1122,39 +1171,25 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   );
 
   const markReadingLessonRead = useCallback(
-    (lessonId: string) => {
+    (
+      lessonId: string,
+      result: { correct: number; total: number },
+    ): ReadingOutcome | null => {
       const prev = stateRef.current;
-      if (!prev.profile) return;
+      if (!prev.profile) return null;
 
       const now = new Date().toISOString();
-      const total = prev.sentences.filter((sentence) => sentence.lesson_id === lessonId).length;
-      const existing = prev.progress.find(
-        (progress) =>
-          progress.user_id === prev.profile?.id && progress.lesson_id === lessonId,
+      const { state: next, outcome } = applyReadingComplete(
+        prev,
+        { lessonId, correct: result.correct, total: result.total },
+        now,
       );
-      const progress = {
-        id: existing?.id ?? uid(),
-        user_id: prev.profile.id,
-        lesson_id: lessonId,
-        status: "completed" as const,
-        passed_sentence_count: Math.max(existing?.passed_sentence_count ?? 0, total),
-        total_sentence_count: Math.max(existing?.total_sentence_count ?? 0, total),
-        completed_at: existing?.completed_at ?? now,
-        updated_at: now,
-      };
-      const nextProgress = existing
-        ? prev.progress.map((item) => (item.id === existing.id ? progress : item))
-        : [...prev.progress, progress];
+      commit(next);
 
-      commit({ ...prev, progress: nextProgress });
-
-      if (USING_SUPABASE) {
-        createSupabaseClient()
-          .then((supabase) => supabase?.from("lesson_progress").upsert(progress))
-          .then(undefined, console.error);
-      }
+      if (USING_SUPABASE) persistSupabaseReading(next, outcome, now).catch(console.error);
+      return outcome;
     },
-    [commit],
+    [commit, persistSupabaseReading],
   );
 
   const reset = useCallback(() => {

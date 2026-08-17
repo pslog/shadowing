@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AdminConsoleShell } from "@/components/admin/AdminConsoleShell";
+import { UserDetailDialog } from "@/components/admin/UserDetailDialog";
 import { AdminOnlyNotice } from "@/components/lesson/AdminOnlyNotice";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,8 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** Row whose full learning profile is open. */
+  const [detailUserId, setDetailUserId] = useState<string | null>(null);
 
   const canView = isAdminProfile(profile);
   const canChangeRoles = isSuperAdminProfile(profile);
@@ -181,9 +184,13 @@ export default function AdminUsersPage() {
                             fallbackClassName="bg-surface text-primary"
                           />
                           <div className="min-w-0">
-                            <p className="truncate font-semibold">
+                            <button
+                              type="button"
+                              onClick={() => setDetailUserId(user.id)}
+                              className="focus-ring truncate rounded font-semibold hover:text-primary hover:underline"
+                            >
                               {user.display_name || user.email || t.noName}
-                            </p>
+                            </button>
                             <p className="truncate text-xs text-muted">{user.email}</p>
                           </div>
                         </div>
@@ -203,6 +210,15 @@ export default function AdminUsersPage() {
                         {user.current_streak ?? 0} streak
                       </td>
                       <td className="px-5 py-4 text-right">
+                        <div className="flex justify-end gap-2">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setDetailUserId(user.id)}
+                        >
+                          {t.viewDetail}
+                        </Button>
                         <Button
                           type="button"
                           variant={nextRole === "admin" ? "primary" : "outline"}
@@ -216,6 +232,7 @@ export default function AdminUsersPage() {
                               ? t.makeAdmin
                               : t.makeUser}
                         </Button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -225,6 +242,13 @@ export default function AdminUsersPage() {
           </div>
         )}
       </Card>
+
+      {detailUserId && (
+        <UserDetailDialog
+          userId={detailUserId}
+          onClose={() => setDetailUserId(null)}
+        />
+      )}
     </AdminConsoleShell>
   );
 }

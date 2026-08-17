@@ -84,11 +84,16 @@ export function nextCompanionAction(
 ): CompanionAction {
   const profile = state.profile;
 
-  // A 読解 lesson still being read outranks everything below, including the
-  // streak and the login prompt. There is no recorder on that page, so "pass 3
-  // more sentences" or "log in to record" would both misread what the learner
-  // is doing and walk them off the passage they are halfway through. Those
-  // nudges find them again once the reading is done.
+  if (!profile) {
+    return { key: "guest", href: "/login" };
+  }
+
+  // A 読解 lesson still being read outranks everything below it, streak
+  // included. There is no recorder on that page, so "pass 3 more sentences"
+  // would both misread what the learner is doing and walk them off the passage
+  // they are halfway through; the streak nudge finds them again once the
+  // reading is done. Signed-out visitors are handled above, since they see the
+  // sign-in wall rather than the passage.
   const openLesson = ctx.lessonId
     ? state.lessons.find((item) => item.id === ctx.lessonId)
     : undefined;
@@ -101,10 +106,6 @@ export function nextCompanionAction(
       // The passage itself; it carries scroll-mt so the header does not cover it.
       return { key: "readingRead", href: "#reading-article", lessonId: ctx.lessonId };
     }
-  }
-
-  if (!profile) {
-    return { key: "guest", href: "/login" };
   }
 
   const mission = todayMission(state);

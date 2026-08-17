@@ -19,7 +19,7 @@ import {
   nextLessonInCourse,
   UNCATEGORIZED_COURSE_ID,
 } from "@/lib/store/selectors";
-import type { AttemptOutcome } from "@/lib/store/engine";
+import type { AttemptOutcome, ReadingOutcome } from "@/lib/store/engine";
 import { scoreSentence, estimateDurationSeconds } from "@/lib/client/score";
 import { extractContourFromUrl, contourMetrics } from "@/lib/speech/pitch";
 import { speakJa, cancelSpeech } from "@/lib/speech/tts";
@@ -40,6 +40,8 @@ import { isN2Course } from "@/lib/n2-course";
 import { ScoreResult } from "./ScoreResult";
 import { LessonReview } from "./LessonReview";
 import { LessonVocabulary } from "./LessonVocabulary";
+import { LessonGuestWall } from "./LessonGuestWall";
+import { UpNextLessons } from "./UpNextLessons";
 import { Furigana } from "./Furigana";
 import { useI18n } from "@/components/i18n/useI18n";
 import { emitCompanionEvent } from "@/lib/gamification/companion-events";
@@ -440,6 +442,7 @@ function ReadingCompleteDialog({
   locale,
   mascot,
   mascotTitle,
+  outcome,
   nextHref,
   hasNext,
   onClose,
@@ -450,6 +453,7 @@ function ReadingCompleteDialog({
   locale: Locale;
   mascot: MascotIdentity;
   mascotTitle: string;
+  outcome: ReadingOutcome | null;
   nextHref: string;
   hasNext: boolean;
   onClose: () => void;
@@ -459,7 +463,17 @@ function ReadingCompleteDialog({
   const primaryRef = useRef<HTMLAnchorElement | null>(null);
   const total = results.length;
   const correct = results.filter(Boolean).length;
-  const tier = correct === total ? "perfect" : correct * 2 >= total ? "good" : "low";
+  // Not every 読解 lesson carries a check. Without one there is no score to
+  // grade, so finishing the passage IS the full result: a complete ring, no
+  // dots, and the "read to the end" wording.
+  const hasCheck = total > 0;
+  const tier = !hasCheck
+    ? "low"
+    : correct === total
+      ? "perfect"
+      : correct * 2 >= total
+        ? "good"
+        : "low";
 
   useEffect(() => {
     primaryRef.current?.focus();
@@ -474,41 +488,57 @@ function ReadingCompleteDialog({
     locale === "vi"
       ? {
           eyebrow: "Đọc hiểu",
-          title: {
-            perfect: "Đúng hết rồi!",
-            good: "Làm tốt lắm!",
-            low: "Bạn đã đọc hết bài!",
-          }[tier],
-          body: {
-            perfect: "Bài này bạn nắm rất chắc. Giữ nhịp đọc này nhé!",
-            good: "Đúng phần lớn rồi. Xem giải thích mấy câu còn lại là trọn vẹn.",
-            low: "Kết quả chưa cao, nhưng bạn đã đi hết bài — đó mới là phần khó. Xem giải thích rồi đọc lại một lượt là khác ngay.",
-          }[tier],
+          title: !hasCheck
+            ? "Bạn đã đọc hết bài!"
+            : {
+                perfect: "Đúng hết rồi!",
+                good: "Làm tốt lắm!",
+                low: "Bạn đã đọc hết bài!",
+              }[tier],
+          body: !hasCheck
+            ? "Đọc trọn một bài tiếng Nhật không hề dễ. Lưu vài từ mới rồi mình đi tiếp nhé!"
+            : {
+                perfect: "Bài này bạn nắm rất chắc. Giữ nhịp đọc này nhé!",
+                good: "Đúng phần lớn rồi. Xem giải thích mấy câu còn lại là trọn vẹn.",
+                low: "Kết quả chưa cao, nhưng bạn đã đi hết bài — đó mới là phần khó. Xem giải thích rồi đọc lại một lượt là khác ngay.",
+              }[tier],
           resultLabel: "Kết quả",
           statusLabel: "Trạng thái",
           statusValue: "Đã đọc",
+          xpLabel: "Phần thưởng",
           questionShort: "Câu",
           review: "Xem giải thích",
+          stay: "Ở lại bài này",
           next: hasNext ? "Bài tiếp theo" : "Về khóa học",
+          levelUp: (level: number) => `Lên Lv.${level} rồi!`,
+          repeat: "Bài này bạn đã nhận XP từ lần đọc trước.",
         }
       : {
           eyebrow: "読解",
-          title: {
-            perfect: "全問正解！",
-            good: "よくできました！",
-            low: "本文を読み切りました！",
-          }[tier],
-          body: {
-            perfect: "内容をしっかりつかめています。このペースで続けましょう！",
-            good: "ほとんど正解です。残りの解説を読めば完璧です。",
-            low: "点数はまだ伸ばせますが、最後まで読み切ったことが一番大事です。解説を見て、もう一度読んでみましょう。",
-          }[tier],
+          title: !hasCheck
+            ? "本文を読み切りました！"
+            : {
+                perfect: "全問正解！",
+                good: "よくできました！",
+                low: "本文を読み切りました！",
+              }[tier],
+          body: !hasCheck
+            ? "日本語の文章を最後まで読むのは簡単ではありません。語彙をいくつか保存して次に進みましょう！"
+            : {
+                perfect: "内容をしっかりつかめています。このペースで続けましょう！",
+                good: "ほとんど正解です。残りの解説を読めば完璧です。",
+                low: "点数はまだ伸ばせますが、最後まで読み切ったことが一番大事です。解説を見て、もう一度読んでみましょう。",
+              }[tier],
           resultLabel: "結果",
           statusLabel: "状態",
           statusValue: "読了",
+          xpLabel: "ごほうび",
           questionShort: "問",
           review: "解説を見る",
+          stay: "このページに残る",
           next: hasNext ? "次のレッスン" : "コースへ戻る",
+          levelUp: (level: number) => `Lv.${level}にアップ！`,
+          repeat: "このレッスンのXPは前回受け取り済みです。",
         };
 
   // One ring, three tones: full marks reads as success, a decent score as brand
@@ -516,12 +546,13 @@ function ReadingCompleteDialog({
   const tone =
     tier === "perfect"
       ? "var(--success)"
-      : tier === "good"
+      : tier === "good" || !hasCheck
         ? "var(--primary)"
         : "var(--warning)";
+  const earnedXp = outcome?.xpGained ?? 0;
   const RADIUS = 34;
   const circumference = 2 * Math.PI * RADIUS;
-  const offset = circumference * (1 - correct / Math.max(1, total));
+  const offset = hasCheck ? circumference * (1 - correct / total) : 0;
 
   if (typeof document === "undefined") return null;
 
@@ -592,6 +623,7 @@ function ReadingCompleteDialog({
           <p className="mt-2 text-sm leading-6 text-muted">{copy.body}</p>
 
           {/* Per-question dots: which ones to go back to, without a table. */}
+          {hasCheck && (
           <div className="mt-4 flex flex-wrap items-center justify-center gap-1.5">
             {results.map((ok, i) => (
               <span
@@ -608,25 +640,54 @@ function ReadingCompleteDialog({
               </span>
             ))}
           </div>
+          )}
 
-          <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
-            <div className="rounded-xl bg-surface px-3 py-2">
-              <p className="text-xs font-bold text-muted">{copy.resultLabel}</p>
-              <p
-                className="mt-0.5 text-lg font-extrabold tabular-nums"
-                style={{ color: tone }}
-              >
-                {correct}/{total}
-              </p>
-            </div>
-            <div className="rounded-xl bg-surface px-3 py-2">
-              <p className="text-xs font-bold text-muted">{copy.statusLabel}</p>
-              <p className="mt-0.5 inline-flex items-center gap-1 text-lg font-extrabold text-[var(--success)]">
-                <Icon name="check" size={16} />
-                {copy.statusValue}
-              </p>
-            </div>
+          <div
+            className={[
+              "mt-4 grid gap-2 text-sm",
+              hasCheck ? "grid-cols-2" : "grid-cols-1",
+            ].join(" ")}
+          >
+            {hasCheck && (
+              <div className="rounded-xl bg-surface px-3 py-2">
+                <p className="text-xs font-bold text-muted">{copy.resultLabel}</p>
+                <p
+                  className="mt-0.5 text-lg font-extrabold tabular-nums"
+                  style={{ color: tone }}
+                >
+                  {correct}/{total}
+                </p>
+              </div>
+            )}
+            {/* Earned XP takes the second tile whenever there is any; the plain
+                "read" badge is the fallback for a re-read and for guests, whose
+                reward is offered below instead. */}
+            {earnedXp > 0 ? (
+              <div className="rounded-xl bg-primary/10 px-3 py-2">
+                <p className="text-xs font-bold text-primary/80">{copy.xpLabel}</p>
+                <p className="mt-0.5 text-lg font-extrabold tabular-nums text-primary">
+                  +{earnedXp} XP
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-xl bg-surface px-3 py-2">
+                <p className="text-xs font-bold text-muted">{copy.statusLabel}</p>
+                <p className="mt-0.5 inline-flex items-center gap-1 text-lg font-extrabold text-[var(--success)]">
+                  <Icon name="check" size={16} />
+                  {copy.statusValue}
+                </p>
+              </div>
+            )}
           </div>
+
+          {outcome?.leveledUp && (
+            <p className="mt-3 rounded-xl bg-primary/10 px-3 py-2 text-sm font-black text-primary">
+              {copy.levelUp(outcome.newLevel)}
+            </p>
+          )}
+          {outcome?.repeat && (
+            <p className="mt-3 text-xs font-semibold text-muted">{copy.repeat}</p>
+          )}
 
           <p className="mt-3 text-xs font-bold text-muted">{mascotTitle}</p>
 
@@ -639,8 +700,12 @@ function ReadingCompleteDialog({
               {copy.next}
               <Icon name="arrow-right" size={16} />
             </Link>
-            <Button variant="secondary" onClick={onReview} className="w-full">
-              {copy.review}
+            <Button
+              variant="secondary"
+              onClick={hasCheck ? onReview : onClose}
+              className="w-full"
+            >
+              {hasCheck ? copy.review : copy.stay}
             </Button>
           </div>
         </div>
@@ -661,6 +726,8 @@ function ReadingLesson({
   const [dbRead, setDbRead] = useState(false);
   /** Per-question results of the submitted check; non-null opens the dialog. */
   const [checkResults, setCheckResults] = useState<boolean[] | null>(null);
+  /** What the submission earned. Null for guests — the dialog invites them in. */
+  const [readingOutcome, setReadingOutcome] = useState<ReadingOutcome | null>(null);
   const copy =
     locale === "vi"
       ? {
@@ -671,6 +738,7 @@ function ReadingLesson({
             "Đọc chậm theo từng đoạn, giữ mạch văn tự nhiên rồi xem lại từ vựng ở cuối bài.",
           article: "本文",
           articleHint: "Đọc liền mạch, chú ý cách chữ Hán mở nghĩa trong câu chuyện.",
+          markRead: "Mình đọc xong rồi",
           blocks: "đoạn",
           back: "Về khóa học",
         }
@@ -682,6 +750,7 @@ function ReadingLesson({
             "段落ごとにゆっくり読み、文章の流れと漢字に込められた意味を味わいます。下の語彙も確認しましょう。",
           article: "本文",
           articleHint: "文章の流れと漢字に込められた意味を味わいながら読みましょう。",
+          markRead: "読み終わりました",
           blocks: "段落",
           back: "コースへ戻る",
         };
@@ -746,16 +815,23 @@ function ReadingLesson({
 
   const markRead = (results: boolean[]) => {
     const firstRead = !isRead;
+    const correct = results.filter(Boolean).length;
     setDbRead(true);
     setCheckResults(results);
-    markReadingLessonRead(lesson.id);
+    // Null for guests: nothing to credit yet, which is exactly what the dialog
+    // turns into an invitation to sign up.
+    const outcome = markReadingLessonRead(lesson.id, { correct, total: results.length });
+    setReadingOutcome(outcome);
     // Reading has its own companion vocabulary: no takes, no pass score, so the
     // comprehension result is the only thing there is to react to.
     emitCompanionEvent({
       kind: "reading",
-      correct: results.filter(Boolean).length,
+      correct,
       total: results.length,
       firstRead,
+      xpGained: outcome?.xpGained ?? 0,
+      leveledUp: outcome?.leveledUp ?? false,
+      newLevel: outcome?.newLevel ?? 0,
     });
     if (!usingSupabase) return;
 
@@ -790,6 +866,7 @@ function ReadingLesson({
           locale={locale}
           mascot={levelMascot(level)}
           mascotTitle={levelTitle(level, locale)}
+          outcome={readingOutcome}
           nextHref={nextLesson ? lessonHref(nextLesson) : courseHref}
           hasNext={Boolean(nextLesson)}
           onClose={() => setCheckResults(null)}
@@ -877,7 +954,7 @@ function ReadingLesson({
             </div>
           </div>
         </div>
-        <div className="relative overflow-hidden bg-[radial-gradient(circle_at_12%_18%,color-mix(in_srgb,var(--primary)_10%,transparent),transparent_24%),radial-gradient(circle_at_88%_16%,color-mix(in_srgb,var(--warning)_12%,transparent),transparent_22%),radial-gradient(circle_at_86%_84%,color-mix(in_srgb,var(--success)_9%,transparent),transparent_26%),linear-gradient(90deg,color-mix(in_srgb,var(--primary)_5%,transparent),transparent_13%,transparent_87%,color-mix(in_srgb,var(--primary)_5%,transparent)),linear-gradient(180deg,color-mix(in_srgb,var(--surface)_72%,transparent),color-mix(in_srgb,var(--card)_96%,transparent)_28%,color-mix(in_srgb,var(--surface)_56%,transparent))] px-4 py-5 sm:px-9 sm:py-8">
+        <div className="relative overflow-hidden bg-[radial-gradient(circle_at_12%_18%,color-mix(in_srgb,var(--primary)_4%,transparent),transparent_24%),radial-gradient(circle_at_88%_16%,color-mix(in_srgb,var(--warning)_5%,transparent),transparent_22%),linear-gradient(90deg,color-mix(in_srgb,var(--fg)_2.5%,transparent),transparent_16%,transparent_84%,color-mix(in_srgb,var(--fg)_2.5%,transparent)),linear-gradient(180deg,#f6f4ee,#fbfaf6_28%,#f2efe7)] px-4 py-5 sm:px-9 sm:py-8">
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 opacity-[0.18] [background-image:linear-gradient(90deg,color-mix(in_srgb,var(--fg)_4%,transparent)_1px,transparent_1px)] [background-size:48px_48px]"
@@ -971,18 +1048,21 @@ function ReadingLesson({
           >
             {watermark}
           </div>
-          <div className="relative mx-auto max-w-6xl">
-            <div className="overflow-hidden rounded-[1.6rem] border border-border/70 bg-[linear-gradient(90deg,color-mix(in_srgb,var(--card)_100%,transparent),color-mix(in_srgb,var(--surface)_38%,transparent)_50%,color-mix(in_srgb,var(--card)_98%,transparent))] px-5 py-6 shadow-[0_24px_70px_color-mix(in_srgb,var(--fg)_9%,transparent)] backdrop-blur sm:px-8 sm:py-8">
-              <div className="relative space-y-5">
+          <div className="relative mx-auto max-w-6xl bg-[linear-gradient(90deg,rgba(255,254,249,0.44)_0%,rgba(244,241,232,0.32)_49.5%,rgba(168,156,132,0.14)_50%,rgba(244,241,232,0.32)_50.5%,rgba(255,254,249,0.44)_100%)] px-3 py-4 sm:px-6 sm:py-6">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-3 left-1/2 hidden w-10 -translate-x-1/2 bg-[radial-gradient(ellipse_at_center,rgba(82,70,48,0.09),rgba(82,70,48,0.028)_38%,transparent_72%)] lg:block"
+            />
+            <div className="relative space-y-4">
                 {paragraphs.map((paragraph, paragraphIndex) => {
                   const missingTranslation = !paragraph.translation;
-                  const softOffset = paragraphIndex % 2 === 0 ? "" : "lg:translate-x-1";
+                  const softOffset = paragraphIndex % 2 === 0 ? "" : "lg:translate-x-0.5";
 
                   return (
                     <div
                       key={paragraph.id}
                       className={[
-                        "grid gap-2 rounded-2xl px-1 py-1 transition-colors lg:grid-cols-[minmax(0,1.02fr)_minmax(0,0.98fr)] lg:gap-6",
+                        "grid gap-1.5 rounded-xl px-0 py-0.5 transition-colors lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-8",
                         softOffset,
                         paragraph.author ? "items-end" : "items-start",
                       ].join(" ")}
@@ -1004,8 +1084,8 @@ function ReadingLesson({
                         <p
                           className={[
                             paragraph.author
-                              ? "text-right text-sm font-bold leading-7 text-muted sm:text-base"
-                              : "text-[0.98rem] font-medium leading-8 text-muted sm:text-[1.02rem] sm:leading-9",
+                              ? "text-right text-sm font-normal leading-7 text-muted sm:text-base"
+                              : "text-[0.98rem] font-normal leading-8 text-muted sm:text-[1.02rem] sm:leading-9",
                             missingTranslation ? "text-muted/70" : "",
                           ].join(" ")}
                         >
@@ -1015,19 +1095,30 @@ function ReadingLesson({
                     </div>
                   );
                 })}
-              </div>
             </div>
           </div>
         </div>
       </article>
 
+      <UpNextLessons lesson={lesson} />
+
       <LessonVocabulary vocabulary={lesson.vocabulary} lessonId={lesson.id} variant="reading" />
 
-      {readingCheck && (
-        <ReadingCheck
-          questions={readingCheck}
-          onSubmitComplete={markRead}
-        />
+      {readingCheck?.length ? (
+        <ReadingCheck questions={readingCheck} onSubmitComplete={markRead} />
+      ) : (
+        // Every 読解 lesson currently ships questions in `reading_meta`, but the
+        // editor happily saves one with none. Without a check there would be no
+        // way to finish the lesson and no XP for reading it, so the reader marks
+        // it done themselves — reaching the end is the achievement either way.
+        !isRead && (
+          <div className="flex justify-center">
+            <Button onClick={() => markRead([])} className="min-w-[14rem]">
+              <Icon name="check" size={16} />
+              {copy.markRead}
+            </Button>
+          </div>
+        )
       )}
 
       <div className="flex justify-end">
@@ -1551,7 +1642,23 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
       ? `${baseCourseHref}?mondai=${encodeURIComponent(fromMondai)}&exam=${encodeURIComponent(fromExam)}#n2-filter`
       : baseCourseHref;
 
-  if (lesson.topic === "読解" || parentCourse?.topic === "読解") {
+  const isReading = lesson.topic === "読解" || parentCourse?.topic === "読解";
+
+  // Signed out: show what the lesson is, then ask. Everything past this point
+  // writes progress somewhere (attempts, reading progress, XP), which is exactly
+  // what an account is for.
+  if (!state.profile) {
+    return (
+      <LessonGuestWall
+        lesson={lesson}
+        sentences={sentences}
+        reading={isReading}
+        backHref={courseHref}
+      />
+    );
+  }
+
+  if (isReading) {
     return (
       <ReadingLesson
         lesson={lesson}
@@ -2006,6 +2113,8 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
           )}
         </section>
       </div>
+
+      <UpNextLessons lesson={lesson} />
 
       <LessonVocabulary vocabulary={lesson.vocabulary} lessonId={lesson.id} />
     </div>

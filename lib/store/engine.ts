@@ -5,7 +5,12 @@
 import { todayKey } from "@/lib/date";
 import { advanceStreak, streakActiveToday } from "@/lib/gamification/streak";
 import { levelFromXp } from "@/lib/gamification/level";
-import { isStreakMilestone, xpForSentence, XP_RULES } from "@/lib/gamification/xp";
+import {
+  isStreakMilestone,
+  xpForReading,
+  xpForSentence,
+  XP_RULES,
+} from "@/lib/gamification/xp";
 import type {
   DailyMission,
   LessonProgress,
@@ -266,6 +271,102 @@ export function applyAttempt(
       leveledUp: newLevel > oldLevel,
       newLevel,
       currentStreak: streak.current_streak,
+    },
+  };
+}
+
+export interface ReadingCompleteInput {
+  lessonId: string;
+  correct: number;
+  total: number;
+}
+
+export interface ReadingOutcome {
+  lessonId: string;
+  correct: number;
+  total: number;
+  xpGained: number;
+  /** The lesson was already completed, so this pass earns nothing. */
+  repeat: boolean;
+  leveledUp: boolean;
+  newLevel: number;
+}
+
+/**
+ * Finish a 読解 lesson: mark it read and pay out XP.
+ *
+ * Reading used to be the one activity that moved no number at all, which made
+ * it read as filler next to shadowing. It now earns XP on the same ladder — but
+ * deliberately NOT streak or mission progress: those are defined in passed
+ * sentences, and quietly letting a page of reading satisfy "practise 5
+ * sentences today" would hollow out the streak rather than reward the reader.
+ *
+ * XP is paid once per lesson (`repeat`), so re-opening the check to read the
+ * explanations is free and never feels like farming.
+ */
+export function applyReadingComplete(
+  state: AppState,
+  input: ReadingCompleteInput,
+  nowIso: string,
+): { state: AppState; outcome: ReadingOutcome } {
+  const profile = state.profile;
+  if (!profile) throw new Error("applyReadingComplete: no profile");
+
+  const sentenceCount = state.sentences.filter(
+    (sentence) => sentence.lesson_id === input.lessonId,
+  ).length;
+  const existing = state.progress.find(
+    (item) => item.user_id === profile.id && item.lesson_id === input.lessonId,
+  );
+  const repeat = existing?.status === "completed";
+
+  const progressRow: LessonProgress = {
+    id: existing?.id ?? uid(),
+    user_id: profile.id,
+    lesson_id: input.lessonId,
+    status: "completed",
+    passed_sentence_count: Math.max(existing?.passed_sentence_count ?? 0, sentenceCount),
+    total_sentence_count: Math.max(existing?.total_sentence_count ?? 0, sentenceCount),
+    completed_at: existing?.completed_at ?? nowIso,
+    updated_at: nowIso,
+  };
+  const progress = existing
+    ? state.progress.map((item) => (item.id === existing.id ? progressRow : item))
+    : [...state.progress, progressRow];
+
+  const xpGained = repeat ? 0 : xpForReading(input.correct);
+  const xpEvents = [...state.xpEvents];
+  if (xpGained > 0) {
+    xpEvents.push({
+      id: uid(),
+      user_id: profile.id,
+      event_type: "reading_complete",
+      xp_amount: xpGained,
+      lesson_id: input.lessonId,
+      sentence_id: null,
+      created_at: nowIso,
+    });
+  }
+
+  const newTotalXp = profile.total_xp + xpGained;
+  const oldLevel = profile.current_level;
+  const newLevel = levelFromXp(newTotalXp);
+
+  return {
+    state: {
+      ...state,
+      profile: { ...profile, total_xp: newTotalXp, current_level: newLevel },
+      progress,
+      xpEvents,
+    },
+    outcome: {
+      lessonId: input.lessonId,
+      correct: input.correct,
+      total: input.total,
+      xpGained,
+      repeat,
+      leveledUp: newLevel > oldLevel,
+      newLevel,
     },
   };
 }

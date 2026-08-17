@@ -45,6 +45,10 @@ export interface ReadingEvent {
   total: number;
   /** The lesson had not been marked read before this submission. */
   firstRead: boolean;
+  /** XP credited for it; 0 for guests and for a lesson already completed. */
+  xpGained: number;
+  leveledUp: boolean;
+  newLevel: number;
 }
 
 export interface VocabEvent {
@@ -128,6 +132,17 @@ export function reactionFor(event: CompanionEvent): CompanionReaction | null {
 
   if (event.kind === "reading") {
     const { correct, total } = event;
+    // Reading now pays XP, so it can push someone over a level boundary — and a
+    // new mascot outranks any score line.
+    if (event.leveledUp) {
+      return {
+        key: "levelUp",
+        tier: "milestone",
+        mood: "cheer",
+        hold: 9_000,
+        level: event.newLevel,
+      };
+    }
     // Re-reading a lesson already marked read is worth a nod, not a fanfare.
     const tier: ReactionTier = event.firstRead ? "milestone" : "chatter";
     // Finishing the passage is the milestone; the score decides the tone. Even

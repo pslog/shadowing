@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useData } from "@/lib/store/DataProvider";
 import { Button } from "@/components/ui/button";
 import { Icon, type IconName } from "@/components/ui/icon";
@@ -26,7 +26,14 @@ export default function LoginPage() {
   const { state, ready, usingSupabase, login, sendEmailOtp, verifyEmailOtp } =
     useData();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { dictionary: dict, href } = useI18n();
+  // Where to land after signing in. Only same-site paths are honoured, so a
+  // crafted ?next=//evil.example cannot turn the login page into an open
+  // redirect. The locale prefix is added by href() as usual.
+  const rawNext = searchParams.get("next");
+  const nextPath =
+    rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
   const t = dict.login;
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -41,8 +48,8 @@ export default function LoginPage() {
   const [resendIn, setResendIn] = useState(0);
 
   useEffect(() => {
-    if (ready && state.profile) router.replace(href("/"));
-  }, [href, ready, state.profile, router]);
+    if (ready && state.profile) router.replace(href(nextPath));
+  }, [href, nextPath, ready, state.profile, router]);
 
   useEffect(() => {
     // Google chặn OAuth trong webview nhúng (Zalo/Messenger/FB/IG/Line…).
@@ -82,7 +89,7 @@ export default function LoginPage() {
         display_name: dict.common.guest,
         avatar_url: null,
       });
-      if (profile) router.replace(href("/"));
+      if (profile) router.replace(href(nextPath));
     } catch (err) {
       setError(err instanceof Error ? err.message : t.errorLoginFailed);
       setSubmitting(false);
@@ -119,7 +126,7 @@ export default function LoginPage() {
     try {
       const profile = await verifyEmailOtp(email.trim(), code);
       // Supabase: profile は onAuthStateChange 経由で反映され、上の useEffect が遷移する。
-      if (profile) router.replace(href("/"));
+      if (profile) router.replace(href(nextPath));
     } catch (err) {
       setError(err instanceof Error ? err.message : t.errorInvalidCode);
       setOtpBusy(false);

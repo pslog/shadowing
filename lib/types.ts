@@ -168,7 +168,9 @@ export type XpEventType =
   | "sentence_pass_high"
   | "lesson_complete"
   | "mission_complete"
-  | "streak_milestone";
+  | "streak_milestone"
+  /** A 読解 lesson read to the end and its comprehension check submitted. */
+  | "reading_complete";
 
 export interface XpEvent {
   id: string;
