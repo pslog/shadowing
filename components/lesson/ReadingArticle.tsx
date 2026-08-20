@@ -1,11 +1,15 @@
 "use client";
 
+import type { LessonSentence } from "@/lib/types";
+import { Furigana } from "./Furigana";
+
 /** One rendered block of the passage: Japanese, its translation, author line. */
 export interface ReadingParagraph {
   id: string;
   text: string;
   translation: string | null;
   author: boolean;
+  sentence?: LessonSentence;
 }
 
 /**
@@ -201,13 +205,13 @@ export function ReadingArticle({
                     <p
                       lang="ja"
                       className={[
-                        "whitespace-pre-line text-fg",
+                        "whitespace-pre-line text-fg [&_rt]:text-[0.5em] [&_rt]:font-semibold [&_rt]:leading-none [&_rt]:text-muted/75",
                         paragraph.author
-                          ? "text-right text-sm font-bold leading-7 text-muted sm:text-base"
-                          : "text-[1.02rem] font-medium leading-[1.85] sm:text-[1.08rem] sm:leading-[2]",
+                          ? "text-right text-sm font-bold leading-8 text-muted sm:text-base"
+                          : "text-[1.02rem] font-medium leading-[2.05] sm:text-[1.08rem] sm:leading-[2.15]",
                       ].join(" ")}
                     >
-                      {paragraph.text}
+                      {paragraph.sentence ? <Furigana sentence={paragraph.sentence} /> : paragraph.text}
                     </p>
                   </div>
                   <div className="pl-3 lg:pl-0">

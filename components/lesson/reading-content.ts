@@ -23,5 +23,6 @@ export function buildReadingParagraphs(lesson: Lesson, sentences: LessonSentence
     text: sentence.ja_text,
     translation: sentence.vi_translation?.trim() || null,
     author: sentence.ja_text.startsWith("☞") || sentence.ja_text.startsWith("―"),
+    sentence,
   }));
 }

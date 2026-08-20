@@ -1,7 +1,9 @@
-// Generate furigana (ruby) data for every lesson sentence using kuromoji, and
+// Generate furigana (ruby) data for lesson sentences using kuromoji, and
 // store it in lesson_sentences.furigana as JSON: an array of tokens where each
 // token is [surface] (plain) or [surface, hiraganaReading] (kanji → ruby).
-// Run: node scripts/gen-furigana.mjs   (DRY=1 to preview a few)
+// Run: node scripts/gen-furigana.mjs
+//      COURSE_SLUG=kanji-shiawase-dokuhon node scripts/gen-furigana.mjs
+//      DRY=1 node scripts/gen-furigana.mjs
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import pg from "pg";
@@ -69,17 +71,44 @@ await client.connect();
 console.log("connected to", host);
 try {
   await client.query("alter table public.lesson_sentences add column if not exists furigana text");
-  const { rows } = await client.query("select id, ja_text from public.lesson_sentences");
+  const courseSlug = process.env.COURSE_SLUG;
+  const { rows } = courseSlug
+    ? await client.query(
+        `select ls.id, ls.ja_text
+           from public.lesson_sentences ls
+           join public.lessons l on l.id = ls.lesson_id
+           join public.courses c on c.id = l.course_id
+           where c.slug = $1
+           order by l.id, ls.order_index`,
+        [courseSlug],
+      )
+    : await client.query("select id, ja_text from public.lesson_sentences order by lesson_id, order_index");
   console.log("sentences:", rows.length);
+  const batchSize = Number(process.env.BATCH_SIZE) || 200;
   let n = 0;
-  for (const r of rows) {
-    const furigana = JSON.stringify(furiganaFor(r.ja_text));
-    await client.query("update public.lesson_sentences set furigana=$1 where id=$2", [
-      furigana,
-      r.id,
-    ]);
-    n++;
-    if (n % 100 === 0) console.log(`  ${n}/${rows.length}`);
+  for (let i = 0; i < rows.length; i += batchSize) {
+    const batch = rows.slice(i, i + batchSize);
+    const valuesSql = [];
+    const params = [];
+
+    batch.forEach((r, index) => {
+      const base = index * 2;
+      valuesSql.push(`($${base + 1}, $${base + 2})`);
+      params.push(r.id, JSON.stringify(furiganaFor(r.ja_text)));
+    });
+
+    if (batch.length) {
+      await client.query(
+        `update public.lesson_sentences as ls
+           set furigana = v.furigana
+           from (values ${valuesSql.join(",")}) as v(id, furigana)
+           where ls.id = v.id::uuid`,
+        params,
+      );
+    }
+
+    n += batch.length;
+    console.log(`  ${n}/${rows.length}`);
   }
   console.log(`done: ${n} sentences updated`);
 } finally {
