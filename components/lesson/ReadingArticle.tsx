@@ -183,7 +183,7 @@ export function ReadingArticle({
           aria-hidden="true"
           className="pointer-events-none absolute inset-y-3 left-1/2 hidden w-10 -translate-x-1/2 bg-[radial-gradient(ellipse_at_center,rgba(82,70,48,0.09),rgba(82,70,48,0.028)_38%,transparent_72%)] lg:block"
         />
-        <div className="relative space-y-4">
+        <div className="relative space-y-2.5">
             {paragraphs.map((paragraph, paragraphIndex) => {
               const missingTranslation = !paragraph.translation;
               const softOffset = paragraphIndex % 2 === 0 ? "" : "lg:translate-x-0.5";
@@ -192,7 +192,7 @@ export function ReadingArticle({
                 <div
                   key={paragraph.id}
                   className={[
-                    "grid gap-1.5 rounded-xl px-0 py-0.5 transition-colors lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-8",
+                    "grid gap-1 rounded-xl px-0 py-0.5 transition-colors lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-8",
                     softOffset,
                     paragraph.author ? "items-end" : "items-start",
                   ].join(" ")}
@@ -204,7 +204,7 @@ export function ReadingArticle({
                         "whitespace-pre-line text-fg",
                         paragraph.author
                           ? "text-right text-sm font-bold leading-7 text-muted sm:text-base"
-                          : "text-[1.04rem] font-medium leading-[2] sm:text-[1.1rem] sm:leading-[2.12]",
+                          : "text-[1.02rem] font-medium leading-[1.85] sm:text-[1.08rem] sm:leading-[2]",
                       ].join(" ")}
                     >
                       {paragraph.text}
@@ -215,7 +215,7 @@ export function ReadingArticle({
                       className={[
                         paragraph.author
                           ? "text-right text-sm font-normal leading-7 text-muted sm:text-base"
-                          : "text-[0.98rem] font-normal leading-8 text-muted sm:text-[1.02rem] sm:leading-9",
+                          : "text-[0.98rem] font-normal leading-7 text-muted sm:text-[1.02rem] sm:leading-8",
                         missingTranslation ? "text-muted/70" : "",
                       ].join(" ")}
                     >
