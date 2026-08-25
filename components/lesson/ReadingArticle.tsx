@@ -1,6 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import type { LessonSentence } from "@/lib/types";
+import { useI18n } from "@/components/i18n/useI18n";
+import { Icon } from "@/components/ui/icon";
 import { Furigana } from "./Furigana";
 
 /** One rendered block of the passage: Japanese, its translation, author line. */
@@ -42,6 +45,20 @@ export function ReadingArticle({
   fade?: boolean;
   missingTranslationText: string;
 }) {
+  const { locale } = useI18n();
+  // Furigana starts hidden: the passage is meant to be read as real Japanese
+  // first, with the readings there for the moment a kanji actually blocks you.
+  const [showFurigana, setShowFurigana] = useState(false);
+  const hasFurigana = paragraphs.some((paragraph) => paragraph.sentence?.furigana);
+  const furiganaLabel =
+    locale === "vi"
+      ? showFurigana
+        ? "Ẩn furigana"
+        : "Hiện furigana"
+      : showFurigana
+        ? "ふりがなを隠す"
+        : "ふりがなを表示";
+
   return (
   <article
     id="reading-article"
@@ -187,6 +204,26 @@ export function ReadingArticle({
           aria-hidden="true"
           className="pointer-events-none absolute inset-y-3 left-1/2 hidden w-10 -translate-x-1/2 bg-[radial-gradient(ellipse_at_center,rgba(82,70,48,0.09),rgba(82,70,48,0.028)_38%,transparent_72%)] lg:block"
         />
+        {hasFurigana && !fade && (
+          // Sits with the text, not with the title: it is a reading control,
+          // reached mid-passage the moment a kanji stops you.
+          <div className="relative mb-3 flex justify-end">
+            <button
+              type="button"
+              onClick={() => setShowFurigana((shown) => !shown)}
+              aria-pressed={showFurigana}
+              className={[
+                "inline-flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-[0.7rem] font-bold transition-colors",
+                showFurigana
+                  ? "border-primary/25 bg-primary/10 text-primary"
+                  : "border-[rgba(82,70,48,0.16)] bg-[rgba(255,254,249,0.7)] text-muted hover:text-fg",
+              ].join(" ")}
+            >
+              <Icon name={showFurigana ? "eye-off" : "eye"} size={12} />
+              {furiganaLabel}
+            </button>
+          </div>
+        )}
         <div className="relative space-y-2.5">
             {paragraphs.map((paragraph, paragraphIndex) => {
               const missingTranslation = !paragraph.translation;
@@ -211,7 +248,11 @@ export function ReadingArticle({
                           : "text-[1.02rem] font-medium leading-[2.05] sm:text-[1.08rem] sm:leading-[2.15]",
                       ].join(" ")}
                     >
-                      {paragraph.sentence ? <Furigana sentence={paragraph.sentence} /> : paragraph.text}
+                      {showFurigana && paragraph.sentence ? (
+                        <Furigana sentence={paragraph.sentence} />
+                      ) : (
+                        paragraph.text
+                      )}
                     </p>
                   </div>
                   <div className="pl-3 lg:pl-0">

@@ -8,6 +8,7 @@ export type IconName =
   | "home"
   | "book"
   | "eye"
+  | "eye-off"
   | "users"
   | "trending"
   | "flame"
@@ -48,6 +49,14 @@ const PATHS: Record<IconName, React.ReactNode> = {
     <>
       <path d="M2.1 12.4a10.7 10.7 0 0 1 19.8 0 10.7 10.7 0 0 1-19.8 0Z" />
       <circle cx="12" cy="12" r="3" />
+    </>
+  ),
+  "eye-off": (
+    <>
+      <path d="M10.7 5.1A10.9 10.9 0 0 1 12 5c5 0 8.6 3.4 9.9 7a12.6 12.6 0 0 1-2.5 3.9" />
+      <path d="M6.6 6.6A12.4 12.4 0 0 0 2.1 12a10.7 10.7 0 0 0 15.3 5.4" />
+      <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
+      <path d="m2 2 20 20" />
     </>
   ),
   users: (
