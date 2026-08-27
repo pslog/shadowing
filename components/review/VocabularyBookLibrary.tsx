@@ -34,6 +34,9 @@ type Copy = {
   readings: string;
   vocabulary: string;
   contents: string;
+  filterAll: (count: number) => string;
+  filterUnlearned: (count: number) => string;
+  filterLearned: (count: number) => string;
   quickPractice: string;
   quickPracticeBody: string;
   quickComplete: string;
@@ -78,6 +81,9 @@ export const vocabularyBookCopy = {
     readings: "Cách đọc",
     vocabulary: "Từ vựng",
     contents: "Nội dung sổ",
+    filterAll: (count: number) => `Tất cả (${count})`,
+    filterUnlearned: (count: number) => `Chưa thuộc (${count})`,
+    filterLearned: (count: number) => `Đã thuộc (${count})`,
     quickPractice: "Luyện nhanh",
     quickPracticeBody: "Từng câu một, sai sẽ quay lại để ôn thêm.",
     quickComplete: "Đã hoàn thành lượt luyện",
@@ -120,6 +126,9 @@ export const vocabularyBookCopy = {
     readings: "読み方",
     vocabulary: "語彙",
     contents: "目次",
+    filterAll: (count: number) => `すべて (${count})`,
+    filterUnlearned: (count: number) => `未習得 (${count})`,
+    filterLearned: (count: number) => `習得済み (${count})`,
     quickPractice: "クイック練習",
     quickPracticeBody: "1問ずつ答え、間違えた語はもう一度出題されます。",
     quickComplete: "練習を完了しました",
@@ -728,6 +737,7 @@ export function VocabularyBookStudy({
   const [quickPracticeOpen, setQuickPracticeOpen] = useState(false);
   const [testListOpen, setTestListOpen] = useState(false);
   const [testScope, setTestScope] = useState<TestScope | null>(null);
+  const [filter, setFilter] = useState<"all" | "unlearned" | "learned">("all");
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -782,6 +792,13 @@ export function VocabularyBookStudy({
   const learnedCount = useMemo(
     () => [...progress.values()].filter(Boolean).length,
     [progress],
+  );
+  const filteredEntries = useMemo(
+    () => entries.filter((entry) => {
+      const learned = progress.get(entry.id) ?? false;
+      return filter === "all" || (filter === "learned" ? learned : !learned);
+    }),
+    [entries, filter, progress],
   );
 
   async function setLearned(learned: boolean) {
@@ -879,17 +896,12 @@ export function VocabularyBookStudy({
   if (!deck) {
     return (
       <div className="mx-auto max-w-3xl space-y-5">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <button type="button" onClick={onBack} className="focus-ring inline-flex items-center gap-1 text-sm font-bold text-muted hover:text-fg">
-              <Icon name="arrow-left" size={16} /> {copy.back}
-            </button>
-            <h1 className="mt-3 text-2xl font-extrabold">{book.title}</h1>
-            {book.description && <p className="mt-1 text-sm text-muted">{book.description}</p>}
-          </div>
-          <span className="shrink-0 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-bold tabular-nums text-muted">
-            {learnedCount}/{entries.length} {copy.learned}
-          </span>
+        <div>
+          <button type="button" onClick={onBack} className="focus-ring inline-flex items-center gap-1 text-sm font-bold text-muted hover:text-fg">
+            <Icon name="arrow-left" size={16} /> {copy.back}
+          </button>
+          <h1 className="mt-3 text-2xl font-extrabold">{book.title}</h1>
+          {book.description && <p className="mt-1 text-sm text-muted">{book.description}</p>}
         </div>
 
         <div className="flex flex-wrap gap-2 border-y border-border py-4">
@@ -907,15 +919,35 @@ export function VocabularyBookStudy({
         </div>
 
         <section>
-          <h2 className="mb-2 text-sm font-extrabold text-muted">{copy.contents}</h2>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-sm font-extrabold text-muted">{copy.contents}</h2>
+            <div className="flex gap-1.5">
+              {(
+                [
+                  ["all", copy.filterAll(entries.length)],
+                  ["unlearned", copy.filterUnlearned(entries.length - learnedCount)],
+                  ["learned", copy.filterLearned(learnedCount)],
+                ] as ["all" | "unlearned" | "learned", string][]
+              ).map(([key, label]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setFilter(key)}
+                  className={`focus-ring rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${filter === key ? "brand-gradient text-white shadow-[var(--shadow-glow)]" : "border border-border bg-surface text-muted hover:text-fg"}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
           <ul className="overflow-hidden rounded-lg border border-border bg-card">
-            {entries.map((entry, entryIndex) => {
+            {filteredEntries.map((entry, entryIndex) => {
               const learned = progress.get(entry.id) ?? false;
               return (
                 <li key={entry.id} className="border-b border-border last:border-b-0">
                   <button
                     type="button"
-                    onClick={() => begin(entries.slice(entryIndex))}
+                    onClick={() => begin(filteredEntries.slice(entryIndex))}
                     className="focus-ring flex w-full items-center gap-4 px-4 py-3 text-left transition-colors hover:bg-surface"
                   >
                     <span className="w-6 text-xs font-bold tabular-nums text-muted">{entry.order_index}</span>
