@@ -87,6 +87,45 @@ export interface SavedVocab {
   created_at: string;
 }
 
+/** A public, admin-curated vocabulary notebook. */
+export interface VocabularyBook {
+  id: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  level: string | null;
+  accent: string | null;
+  entry_count: number;
+  order_index: number;
+  is_public: boolean;
+  created_at: string;
+}
+
+/** One Kanji-focused card in a public vocabulary notebook. */
+export interface VocabularyBookEntry {
+  id: string;
+  book_id: string;
+  order_index: number;
+  kanji: string;
+  related: string | null;
+  han_viet: string | null;
+  meaning: string;
+  structure: string | null;
+  mnemonic: string | null;
+  readings: string[];
+  vocabulary: { word: string; reading: string; meaning: string }[];
+  created_at: string;
+}
+
+/** Per-user learned state for a public book entry. */
+export interface VocabularyBookProgress {
+  id: string;
+  user_id: string;
+  entry_id: string;
+  learned: boolean;
+  updated_at: string;
+}
+
 export interface Lesson {
   id: string;
   user_id: string;

@@ -14,6 +14,7 @@ import { Icon } from "@/components/ui/icon";
 import { useI18n } from "@/components/i18n/useI18n";
 import { emitCompanionEvent } from "@/lib/gamification/companion-events";
 import type { Dictionary } from "@/lib/i18n";
+import { VocabularyBookLibrary } from "@/components/review/VocabularyBookLibrary";
 
 type Filter = "all" | "unlearned" | "learned";
 
@@ -24,11 +25,12 @@ interface VocabStat {
 
 export default function ReviewPage() {
   const { state, ready, setVocabLearned, removeSavedVocab } = useData();
-  const { dictionary, href } = useI18n();
+  const { dictionary, href, locale } = useI18n();
   const t = dictionary.review;
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const [deck, setDeck] = useState<SavedVocab[] | null>(null);
+  const [showNotebook, setShowNotebook] = useState(false);
 
   const all = savedVocabList(state);
   const learnedCount = all.filter((v) => v.learned).length;
@@ -91,23 +93,6 @@ export default function ReviewPage() {
 
   if (!ready) return <FullScreenLoading />;
 
-  if (!state.profile) {
-    return (
-      <AppShell>
-        <div className="card mx-auto max-w-md p-8 text-center">
-          <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-primary">
-            <Icon name="bookmark" size={28} filled />
-          </div>
-          <h1 className="mt-4 text-xl font-extrabold">{t.title}</h1>
-          <p className="mt-2 text-sm text-muted">{t.guestBody}</p>
-          <Link href={href("/login")} className={`${buttonClasses("primary")} mt-5`}>
-            {dictionary.common.login}
-          </Link>
-        </div>
-      </AppShell>
-    );
-  }
-
   if (deck) {
     return (
       <AppShell>
@@ -121,9 +106,46 @@ export default function ReviewPage() {
     );
   }
 
+  if (!showNotebook) {
+    return (
+      <AppShell>
+        <VocabularyBookLibrary
+          locale={locale}
+          signedIn={Boolean(state.profile)}
+          profileId={state.profile?.id ?? null}
+          savedCount={all.length}
+          onOpenNotebook={() => setShowNotebook(true)}
+          onLogin={() => window.location.assign(href("/login"))}
+        />
+      </AppShell>
+    );
+  }
+
+  if (!state.profile) {
+    return (
+      <AppShell>
+        <div className="card mx-auto max-w-md p-8 text-center">
+          <h1 className="text-xl font-extrabold">{t.title}</h1>
+          <p className="mt-2 text-sm text-muted">{t.guestBody}</p>
+          <Link href={href("/login")} className={`${buttonClasses("primary")} mt-5`}>
+            {dictionary.common.login}
+          </Link>
+        </div>
+      </AppShell>
+    );
+  }
+
   return (
     <AppShell>
       <div className="space-y-5">
+        <button
+          type="button"
+          onClick={() => setShowNotebook(false)}
+          className="focus-ring inline-flex items-center gap-1 text-sm font-bold text-muted hover:text-fg"
+        >
+          <Icon name="arrow-left" size={16} />
+          {locale === "ja" ? "単語帳一覧" : "Tất cả sổ từ vựng"}
+        </button>
         <section className="relative overflow-hidden rounded-[2rem] border border-primary/15 bg-card p-5 shadow-[var(--shadow-md)] sm:p-6">
           <div className="pointer-events-none absolute -right-16 -top-24 h-56 w-56 rounded-full bg-primary/10 blur-3xl" />
           <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

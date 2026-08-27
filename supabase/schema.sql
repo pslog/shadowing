@@ -126,6 +126,67 @@ create table if not exists public.saved_vocab (
 create index if not exists saved_vocab_user_idx
   on public.saved_vocab(user_id, created_at);
 
+-- ---------------------------------------------------------------------------
+--  vocabulary_books / vocabulary_book_entries
+--  Admin-curated notebooks are public. A learner's completion state stays
+--  private in vocabulary_book_progress, separate from their saved lesson words.
+-- ---------------------------------------------------------------------------
+create table if not exists public.vocabulary_books (
+  id uuid primary key default gen_random_uuid(),
+  slug text not null unique,
+  title text not null,
+  description text,
+  level text,
+  accent text,
+  entry_count int not null default 0,
+  order_index int not null default 0,
+  is_public boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.vocabulary_book_entries (
+  id uuid primary key default gen_random_uuid(),
+  book_id uuid not null references public.vocabulary_books(id) on delete cascade,
+  order_index int not null,
+  kanji text not null,
+  related text,
+  han_viet text,
+  meaning text not null,
+  structure text,
+  mnemonic text,
+  readings jsonb not null default '[]'::jsonb,
+  vocabulary jsonb not null default '[]'::jsonb,
+  created_at timestamptz not null default now(),
+  unique (book_id, order_index)
+);
+create index if not exists vocabulary_book_entries_book_idx
+  on public.vocabulary_book_entries(book_id, order_index);
+
+create table if not exists public.vocabulary_book_progress (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  entry_id uuid not null references public.vocabulary_book_entries(id) on delete cascade,
+  learned boolean not null default false,
+  updated_at timestamptz not null default now(),
+  unique (user_id, entry_id)
+);
+create index if not exists vocabulary_book_progress_user_idx
+  on public.vocabulary_book_progress(user_id, updated_at desc);
+
+-- Per-word quiz state keeps successful vocabulary out of the next drill while
+-- incorrect words remain available for review.
+create table if not exists public.vocabulary_book_quiz_progress (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  book_id uuid not null references public.vocabulary_books(id) on delete cascade,
+  word_key text not null,
+  mastered boolean not null default false,
+  updated_at timestamptz not null default now(),
+  unique (user_id, book_id, word_key)
+);
+create index if not exists vocabulary_book_quiz_progress_user_book_idx
+  on public.vocabulary_book_quiz_progress(user_id, book_id, updated_at desc);
+
 -- Aggregate popularity per word across ALL users (how many saved it / learned
 -- it). security_invoker=false so it runs as owner and bypasses saved_vocab RLS,
 -- exposing only counts (never who saved). Readable by everyone.
@@ -493,6 +554,10 @@ alter table public.lessons           enable row level security;
 alter table public.lesson_sentences  enable row level security;
 alter table public.sentence_attempts enable row level security;
 alter table public.saved_vocab       enable row level security;
+alter table public.vocabulary_books enable row level security;
+alter table public.vocabulary_book_entries enable row level security;
+alter table public.vocabulary_book_progress enable row level security;
+alter table public.vocabulary_book_quiz_progress enable row level security;
 alter table public.lesson_progress   enable row level security;
 alter table public.lesson_views      enable row level security;
 alter table public.site_visits       enable row level security;
@@ -519,6 +584,12 @@ drop policy if exists "lessons admin all" on public.lessons;
 drop policy if exists "sentences admin all" on public.lesson_sentences;
 drop policy if exists "attempts self" on public.sentence_attempts;
 drop policy if exists "saved_vocab self" on public.saved_vocab;
+drop policy if exists "vocabulary books public read" on public.vocabulary_books;
+drop policy if exists "vocabulary books admin write" on public.vocabulary_books;
+drop policy if exists "vocabulary book entries public read" on public.vocabulary_book_entries;
+drop policy if exists "vocabulary book entries admin write" on public.vocabulary_book_entries;
+drop policy if exists "vocabulary book progress self" on public.vocabulary_book_progress;
+drop policy if exists "vocabulary book quiz progress self" on public.vocabulary_book_quiz_progress;
 drop policy if exists "progress self" on public.lesson_progress;
 drop policy if exists "lesson_views insert readable lesson" on public.lesson_views;
 drop policy if exists "lesson_views admin read" on public.lesson_views;
@@ -589,6 +660,23 @@ create policy "sentences admin all" on public.lesson_sentences
 create policy "attempts self" on public.sentence_attempts
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "saved_vocab self" on public.saved_vocab
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "vocabulary books public read" on public.vocabulary_books
+  for select using (is_public = true or public.current_user_is_admin());
+create policy "vocabulary books admin write" on public.vocabulary_books
+  for all using (public.current_user_is_admin()) with check (public.current_user_is_admin());
+create policy "vocabulary book entries public read" on public.vocabulary_book_entries
+  for select using (
+    exists (
+      select 1 from public.vocabulary_books b
+      where b.id = book_id and (b.is_public = true or public.current_user_is_admin())
+    )
+  );
+create policy "vocabulary book entries admin write" on public.vocabulary_book_entries
+  for all using (public.current_user_is_admin()) with check (public.current_user_is_admin());
+create policy "vocabulary book progress self" on public.vocabulary_book_progress
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "vocabulary book quiz progress self" on public.vocabulary_book_quiz_progress
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "progress self" on public.lesson_progress
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
