@@ -184,6 +184,9 @@ create table if not exists public.vocabulary_book_quiz_progress (
   updated_at timestamptz not null default now(),
   unique (user_id, book_id, word_key)
 );
+alter table public.vocabulary_book_quiz_progress
+  add column if not exists correct_streak int not null default 0,
+  add column if not exists next_review_at timestamptz;
 create index if not exists vocabulary_book_quiz_progress_user_book_idx
   on public.vocabulary_book_quiz_progress(user_id, book_id, updated_at desc);
 

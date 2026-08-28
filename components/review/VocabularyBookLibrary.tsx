@@ -17,11 +17,15 @@ import type {
 type Copy = {
   library: string;
   libraryBody: string;
+  bookDescription: string;
   mine: string;
   mineBody: (count: number) => string;
   loginToOpen: string;
   openNotebook: string;
   cards: (count: number) => string;
+  progress: (learned: number, total: number, unit: string) => string;
+  nextBatch: (count: number, unit: string) => string;
+  dueReview: (count: number) => string;
   learn: string;
   loading: string;
   back: string;
@@ -30,15 +34,27 @@ type Copy = {
   finish: string;
   next: string;
   listen: string;
+  flipBack: string;
   mnemonic: string;
+  category: string;
+  example: string;
   readings: string;
   vocabulary: string;
   contents: string;
   filterAll: (count: number) => string;
   filterUnlearned: (count: number) => string;
   filterLearned: (count: number) => string;
+  search: string;
+  phraseSearch: string;
+  phraseList: string;
+  cushionDescription: string;
+  tapToFlip: string;
+  scopeMeta: (items: number, vocabulary: number, itemLabel: string) => string;
+  randomScopeMeta: (items: number, questions: number) => string;
   quickPractice: string;
   quickPracticeBody: string;
+  quickTurn: (turn: number) => string;
+  requeued: string;
   quickComplete: string;
   correctAnswer: string;
   wrongAnswer: string;
@@ -54,6 +70,8 @@ type Copy = {
   mondai1Body: string;
   mondai2: string;
   mondai2Body: string;
+  clozeTitle: string;
+  clozeBody: string;
   explanation: string;
   submit: string;
   retake: string;
@@ -64,11 +82,15 @@ export const vocabularyBookCopy = {
   vi: {
     library: "Sổ từ vựng",
     libraryBody: "Chọn một sổ để học theo nhịp của bạn.",
+    bookDescription: "Học Kanji qua cấu tạo, cách nhớ, cách đọc và từ ví dụ.",
     mine: "Sổ của bạn",
     mineBody: (count: number) => `${count} từ bạn đã lưu từ các bài học`,
     loginToOpen: "Đăng nhập để mở sổ",
     openNotebook: "Mở sổ",
     cards: (count: number) => `${count} thẻ`,
+    progress: (learned: number, total: number, unit: string) => `${learned}/${total} ${unit} đã thuộc`,
+    nextBatch: (count: number, unit: string) => `Học ${count} ${unit} tiếp theo`,
+    dueReview: (count: number) => `${count} từ cần ôn lại`,
     learn: "Học flashcard",
     loading: "Đang tải sổ...",
     back: "Quay lại sổ",
@@ -77,20 +99,32 @@ export const vocabularyBookCopy = {
     finish: "Hoàn thành",
     next: "Thẻ tiếp",
     listen: "Nghe",
+    flipBack: "Xem mặt trước",
     mnemonic: "Cách nhớ",
+    category: "Tình huống",
+    example: "Ví dụ",
     readings: "Cách đọc",
     vocabulary: "Từ vựng",
     contents: "Nội dung sổ",
     filterAll: (count: number) => `Tất cả (${count})`,
     filterUnlearned: (count: number) => `Chưa thuộc (${count})`,
     filterLearned: (count: number) => `Đã thuộc (${count})`,
+    search: "Tìm Kanji hoặc nghĩa...",
+    phraseSearch: "Tìm cụm từ, cách đọc hoặc nghĩa...",
+    phraseList: "Danh sách cụm từ",
+    cushionDescription: "70 cách mở lời lịch sự để nhờ vả, xác nhận và trao đổi công việc tự nhiên hơn.",
+    tapToFlip: "Chạm để xem nghĩa và ví dụ",
+    scopeMeta: (items: number, vocabulary: number, itemLabel: string) => `${items} ${itemLabel} · ${vocabulary} từ · 10 câu`,
+    randomScopeMeta: (items: number, questions: number) => `${questions} câu ngẫu nhiên từ ${items} cụm từ`,
     quickPractice: "Luyện nhanh",
     quickPracticeBody: "Từng câu một, sai sẽ quay lại để ôn thêm.",
+    quickTurn: (turn: number) => `Câu ${turn}`,
+    requeued: "Đã đưa thẻ này xuống cuối lượt để ôn lại.",
     quickComplete: "Đã hoàn thành lượt luyện",
     correctAnswer: "Chính xác",
     wrongAnswer: "Chưa đúng",
     continue: "Câu tiếp",
-    quiz: "Kiểm tra N2",
+    quiz: "Kiểm tra",
     quizBody: (count: number) => `${count} câu từ vựng trong bài kiểm tra này.`,
     result: "Kết quả",
     reviewAnswers: "Xem đáp án và giải thích",
@@ -98,9 +132,11 @@ export const vocabularyBookCopy = {
     mondai1Body: "Chọn cách đọc đúng của từ Kanji.",
     mondai2: "問題2 · Cách viết",
     mondai2Body: "Chọn cách viết Kanji đúng của từ đã cho.",
+    clozeTitle: "Điền cụm từ phù hợp",
+    clozeBody: "Chọn cụm từ mở đầu phù hợp nhất với ngữ cảnh công việc.",
     explanation: "Giải thích",
     submit: "Nộp bài",
-    tests: "Danh sách bài kiểm tra",
+    tests: "Chọn phạm vi để làm 10 câu.",
     test: (index: number) => `Bài ${String(index).padStart(2, "0")}`,
     testComplete: "Đã hoàn thành",
     retake: "Làm lại",
@@ -109,11 +145,15 @@ export const vocabularyBookCopy = {
   ja: {
     library: "単語帳",
     libraryBody: "学びたい一冊を選んで、あなたのペースで進めましょう。",
+    bookDescription: "漢字の構造・覚え方・読み方・例語を、一つずつ身につけましょう。",
     mine: "あなたの単語帳",
     mineBody: (count: number) => `レッスンから保存した ${count} 語`,
     loginToOpen: "ログインして単語帳を開く",
     openNotebook: "単語帳を開く",
     cards: (count: number) => `${count} 枚`,
+    progress: (learned: number, total: number, unit: string) => `${learned}/${total} ${unit}を習得`,
+    nextBatch: (count: number, unit: string) => `次の ${count} ${unit}を学ぶ`,
+    dueReview: (count: number) => `${count} 語を復習`,
     learn: "フラッシュカードで学ぶ",
     loading: "単語帳を読み込んでいます...",
     back: "単語帳一覧に戻る",
@@ -122,20 +162,32 @@ export const vocabularyBookCopy = {
     finish: "完了",
     next: "次のカード",
     listen: "聞く",
+    flipBack: "表に戻る",
     mnemonic: "覚え方",
+    category: "場面",
+    example: "例文",
     readings: "読み方",
     vocabulary: "語彙",
     contents: "目次",
     filterAll: (count: number) => `すべて (${count})`,
     filterUnlearned: (count: number) => `未習得 (${count})`,
     filterLearned: (count: number) => `習得済み (${count})`,
+    search: "漢字・意味を検索...",
+    phraseSearch: "フレーズ・読み方・意味を検索...",
+    phraseList: "フレーズ一覧",
+    cushionDescription: "依頼・確認・相談をやわらかく伝える、仕事で使えるクッション言葉70選。",
+    tapToFlip: "タップして意味と例文を見る",
+    scopeMeta: (items: number, vocabulary: number, itemLabel: string) => `${items} ${itemLabel} · ${vocabulary} 語 · 10問`,
+    randomScopeMeta: (items: number, questions: number) => `${items} フレーズからランダムに ${questions} 問`,
     quickPractice: "クイック練習",
     quickPracticeBody: "1問ずつ答え、間違えた語はもう一度出題されます。",
+    quickTurn: (turn: number) => `${turn}問目`,
+    requeued: "このカードは最後にもう一度出題されます。",
     quickComplete: "練習を完了しました",
     correctAnswer: "正解です",
     wrongAnswer: "もう一度確認しましょう",
     continue: "次の問題",
-    quiz: "N2チェック",
+    quiz: "チェック",
     quizBody: (count: number) => `このテストにある語彙から ${count} 問です。`,
     result: "結果",
     reviewAnswers: "答えと解説を見る",
@@ -143,9 +195,11 @@ export const vocabularyBookCopy = {
     mondai1Body: "漢字の読み方として最もよいものを選びます。",
     mondai2: "問題2　表記",
     mondai2Body: "ひらがなで書かれた語の表記として最もよいものを選びます。",
+    clozeTitle: "クッション言葉を補う",
+    clozeBody: "ビジネスの文脈に最も合う、文頭のクッション言葉を選びます。",
     explanation: "解説",
     submit: "答え合わせ",
-    tests: "テスト一覧",
+    tests: "範囲を選んで、10問に挑戦しましょう。",
     test: (index: number) => `テスト ${String(index).padStart(2, "0")}`,
     testComplete: "完了",
     retake: "もう一度",
@@ -369,16 +423,19 @@ function QuizResultDialog({
 
 type QuickPracticeItem = QuizItem;
 type TestScope = { label: string; entryIds: string[] };
+type QuizWordProgress = { mastered: boolean; correct_streak: number; next_review_at: string | null };
 
 function QuickVocabularyPractice({
   entries,
   masteredWordKeys,
+  dueReviewWordKeys,
   copy,
   onBack,
   onProgress,
 }: {
   entries: VocabularyBookEntry[];
   masteredWordKeys: Set<string>;
+  dueReviewWordKeys: Set<string>;
   copy: Copy;
   onBack: () => void;
   onProgress: (results: { wordKey: string; mastered: boolean }[]) => void;
@@ -391,7 +448,9 @@ function QuickVocabularyPractice({
       seen.add(key);
       return true;
     });
-    const source = words.filter((word) => !masteredWordKeys.has(quizWordKey(word.word, word.reading)));
+    const dueWords = words.filter((word) => dueReviewWordKeys.has(quizWordKey(word.word, word.reading)));
+    const unmasteredWords = words.filter((word) => !masteredWordKeys.has(quizWordKey(word.word, word.reading)));
+    const source = dueWords.length > 0 ? dueWords : unmasteredWords;
     const selected = (source.length >= 4 ? source : words).slice(0, Math.min(10, words.length));
     const readings = words.map((word) => word.reading);
     const notations = words.map((word) => word.word);
@@ -410,11 +469,12 @@ function QuickVocabularyPractice({
           : `「${word.word}」の読み方は「${word.reading}」です。意味は「${word.meaning}」です。`,
       };
     });
-  }, [copy, entries, masteredWordKeys]);
+  }, [copy, dueReviewWordKeys, entries, masteredWordKeys]);
   const [sessionItems] = useState<QuickPracticeItem[]>(() => initialItems);
   const [queue, setQueue] = useState<QuickPracticeItem[]>(() => sessionItems);
   const [selected, setSelected] = useState<string | null>(null);
   const [correctCount, setCorrectCount] = useState(0);
+  const [turn, setTurn] = useState(1);
   const question = queue[0];
   const isCorrect = selected === question?.answer;
 
@@ -433,6 +493,7 @@ function QuickVocabularyPractice({
       return isCorrect ? rest : [...rest, question];
     });
     setSelected(null);
+    setTurn((current) => current + 1);
   }
 
   if (!question) {
@@ -456,7 +517,7 @@ function QuickVocabularyPractice({
       <div className="mt-5 rounded-xl border border-border bg-card p-5 shadow-[var(--shadow-sm)] sm:p-7">
         <div className="flex items-center justify-between gap-3 text-xs font-bold text-muted">
           <span>{question.kind === "reading" ? copy.mondai1 : copy.mondai2}</span>
-          <span className="tabular-nums">{Math.min(correctCount + 1, sessionItems.length)} / {sessionItems.length}</span>
+          <span className="tabular-nums">{copy.quickTurn(turn)}</span>
         </div>
         <p className="mt-7 text-center text-4xl font-extrabold text-fg" lang="ja">
           {question.kind === "reading" ? question.word : question.reading}
@@ -489,24 +550,36 @@ function QuickVocabularyPractice({
 function VocabularyTestList({
   entries,
   masteredWordKeys,
+  itemLabel,
+  randomizeTests,
   copy,
   onBack,
   onOpen,
 }: {
   entries: VocabularyBookEntry[];
   masteredWordKeys: Set<string>;
+  itemLabel: string;
+  randomizeTests: boolean;
   copy: Copy;
   onBack: () => void;
   onOpen: (scope: TestScope) => void;
 }) {
   const scopes = useMemo(() => {
-    return Array.from({ length: Math.ceil(entries.length / 50) }, (_, index) => {
-      const group = entries.slice(index * 50, index * 50 + 50);
+    if (randomizeTests) {
+      const shuffled = [...entries].sort((left, right) => stableEntryOrder(left.id) - stableEntryOrder(right.id));
+      const groupSize = Math.ceil(shuffled.length / 4);
+      return Array.from({ length: 4 }, (_, index) => {
+        const group = shuffled.slice(index * groupSize, index * groupSize + groupSize);
+        return { label: copy.test(index + 1), entryIds: group.map((entry) => entry.id) };
+      }).filter((scope) => scope.entryIds.length > 0);
+    }
+    return Array.from({ length: Math.ceil(entries.length / 20) }, (_, index) => {
+      const group = entries.slice(index * 20, index * 20 + 20);
       const first = group[0]?.order_index ?? 0;
       const last = group.at(-1)?.order_index ?? first;
       return { label: `${first} - ${last}`, entryIds: group.map((entry) => entry.id) };
     });
-  }, [entries]);
+  }, [copy, entries, randomizeTests]);
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -527,8 +600,8 @@ function VocabularyTestList({
               <button type="button" onClick={() => onOpen(scope)} className="focus-ring flex w-full items-center gap-4 px-4 py-3.5 text-left transition-colors hover:bg-surface">
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-sm font-extrabold text-primary">{String(index + 1).padStart(2, "0")}</span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-extrabold text-fg">Kanji {scope.label}</span>
-                  <span className="mt-0.5 block text-xs text-muted">{scopeEntries.length} Kanji · {words.length} {copy.vocabulary.toLowerCase()}</span>
+                  <span className="block text-sm font-extrabold text-fg">{randomizeTests ? scope.label : `${itemLabel} ${scope.label}`}</span>
+                  <span className="mt-0.5 block text-xs text-muted">{randomizeTests ? copy.randomScopeMeta(scopeEntries.length, Math.min(10, scopeEntries.length)) : copy.scopeMeta(scopeEntries.length, words.length, itemLabel)}</span>
                 </span>
                 {complete ? (
                   <span className="inline-flex items-center gap-1 text-xs font-bold text-[var(--success)]"><Icon name="check" size={15} />{copy.testComplete}</span>
@@ -542,10 +615,27 @@ function VocabularyTestList({
   );
 }
 
-function VocabularyQuiz({
+function stableEntryOrder(value: string) {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+type CushionQuizItem = {
+  entry: VocabularyBookEntry;
+  answer: string;
+  choices: string[];
+  maskedExample: string;
+};
+
+function CushionPhraseQuiz({
   entries,
   masteredWordKeys,
   scope,
+  itemLabel,
   copy,
   onBack,
   onSubmitted,
@@ -553,6 +643,128 @@ function VocabularyQuiz({
   entries: VocabularyBookEntry[];
   masteredWordKeys: Set<string>;
   scope: TestScope;
+  itemLabel: string;
+  copy: Copy;
+  onBack: () => void;
+  onSubmitted: (results: { wordKey: string; mastered: boolean }[]) => void;
+}) {
+  const [attempt, setAttempt] = useState(0);
+  const [activeMasteredWords, setActiveMasteredWords] = useState(() => new Set(masteredWordKeys));
+  const [pendingMasteredWords, setPendingMasteredWords] = useState(() => new Set(masteredWordKeys));
+  const items = useMemo<CushionQuizItem[]>(() => {
+    const scopedEntries = entries.filter((entry) => scope.entryIds.includes(entry.id) && entry.mnemonic && entry.readings[0]);
+    const unmastered = scopedEntries.filter((entry) => !activeMasteredWords.has(quizWordKey(entry.kanji, entry.readings[0])));
+    const source = unmastered.length >= 2 ? unmastered : scopedEntries;
+    const selected = source
+      .map((entry, index) => ({ entry, order: (index * 13 + attempt * 7) % source.length }))
+      .sort((left, right) => left.order - right.order)
+      .slice(0, Math.min(10, source.length))
+      .map(({ entry }) => entry);
+    const phrasePool = scopedEntries.map((entry) => entry.kanji);
+    return selected.map((entry, index) => ({
+      entry,
+      answer: entry.kanji,
+      choices: buildChoices(entry.kanji, phrasePool, index + attempt),
+      maskedExample: entry.mnemonic?.replace(entry.kanji, "＿＿＿＿＿＿＿＿") ?? "",
+    }));
+  }, [activeMasteredWords, attempt, entries, scope]);
+  const [answers, setAnswers] = useState<(string | null)[]>(() => items.map(() => null));
+  const [submitted, setSubmitted] = useState(false);
+  const [showResult, setShowResult] = useState(false);
+  const correct = answers.reduce((total, answer, index) => total + Number(answer === items[index]?.answer), 0);
+  const complete = answers.every(Boolean);
+
+  function retake() {
+    setAnswers(items.map(() => null));
+    setSubmitted(false);
+    setShowResult(false);
+    setActiveMasteredWords(new Set(pendingMasteredWords));
+    setAttempt((current) => current + 1);
+  }
+
+  return (
+    <div className="mx-auto max-w-3xl space-y-5">
+      <div className="flex items-center justify-between gap-4">
+        <button type="button" onClick={onBack} className="focus-ring inline-flex items-center gap-1 text-sm font-bold text-muted hover:text-fg">
+          <Icon name="arrow-left" size={16} /> {copy.contents}
+        </button>
+        {submitted && <span className="text-sm font-extrabold text-primary">{copy.score(correct, items.length)}</span>}
+      </div>
+      <div className="border-b border-border pb-4">
+        <p className="text-xs font-extrabold text-primary">BUSINESS JAPANESE</p>
+        <h1 className="mt-1 text-2xl font-extrabold">{scope.label}</h1>
+        <h2 className="mt-4 text-base font-extrabold text-fg">{copy.clozeTitle}</h2>
+        <p className="mt-1 text-sm leading-6 text-muted">{copy.clozeBody}</p>
+      </div>
+      <ol className="space-y-4">
+        {items.map((item, index) => {
+          const answer = answers[index];
+          return (
+            <li key={item.entry.id} className="rounded-lg border border-border bg-card p-4 sm:p-5">
+              <div className="flex items-center gap-2">
+                <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/10 text-xs font-extrabold text-primary">{index + 1}</span>
+                {item.entry.related && <span className="rounded-full bg-surface px-2 py-0.5 text-[11px] font-bold text-muted">{item.entry.related}</span>}
+              </div>
+              <p lang="ja" className="mt-4 rounded-md border-l-4 border-primary/35 bg-surface px-4 py-3 text-base font-semibold leading-8 text-fg sm:text-lg">
+                {item.maskedExample}
+              </p>
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                {item.choices.map((choice) => {
+                  const selected = answer === choice;
+                  const tone = submitted
+                    ? choice === item.answer
+                      ? "border-[var(--success)] bg-[var(--success-soft)] text-[var(--success)]"
+                      : selected
+                        ? "border-[var(--danger)] bg-[var(--danger-soft)] text-[var(--danger)]"
+                        : "border-border text-muted"
+                    : selected
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border text-fg hover:border-primary/35 hover:bg-surface";
+                  return <button key={choice} type="button" disabled={submitted} onClick={() => setAnswers((current) => current.map((value, itemIndex) => itemIndex === index ? choice : value))} className={`focus-ring min-h-12 rounded-md border px-3 py-2 text-left text-sm font-semibold leading-6 transition-colors disabled:cursor-default ${tone}`}><span lang="ja">{choice}</span></button>;
+                })}
+              </div>
+              {submitted && (
+                <div className="mt-4 border-t border-border pt-3 text-sm leading-6 text-muted">
+                  <p className="font-extrabold text-fg"><span className="mr-2">{copy.explanation}</span><span lang="ja">{item.answer}</span></p>
+                  <p className="mt-1">{item.entry.meaning}</p>
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+      {items.length > 0 && <div className="flex justify-end gap-2">
+        {submitted && <Button variant="secondary" onClick={retake}><Icon name="retry" size={16} />{copy.retake}</Button>}
+        {!submitted && <Button disabled={!complete} onClick={() => {
+          const results = items.map((item, index) => ({ wordKey: quizWordKey(item.entry.kanji, item.entry.readings[0]), mastered: answers[index] === item.answer }));
+          setPendingMasteredWords((current) => {
+            const next = new Set(current);
+            for (const result of results) result.mastered ? next.add(result.wordKey) : next.delete(result.wordKey);
+            return next;
+          });
+          onSubmitted(results);
+          setSubmitted(true);
+          setShowResult(true);
+        }}><Icon name="check" size={16} />{copy.submit}</Button>}
+      </div>}
+      {showResult && <QuizResultDialog correct={correct} total={items.length} copy={copy} onClose={() => setShowResult(false)} />}
+    </div>
+  );
+}
+
+function VocabularyQuiz({
+  entries,
+  masteredWordKeys,
+  scope,
+  itemLabel,
+  copy,
+  onBack,
+  onSubmitted,
+}: {
+  entries: VocabularyBookEntry[];
+  masteredWordKeys: Set<string>;
+  scope: TestScope;
+  itemLabel: string;
   copy: Copy;
   onBack: () => void;
   onSubmitted: (results: { wordKey: string; mastered: boolean }[]) => void;
@@ -630,7 +842,7 @@ function VocabularyQuiz({
         {submitted && <span className="text-sm font-extrabold text-primary">{copy.score(correct, items.length)}</span>}
       </div>
       <div>
-        <h1 className="text-2xl font-extrabold">Kanji {scope.label}</h1>
+        <h1 className="text-2xl font-extrabold">{itemLabel} {scope.label}</h1>
         <p className="mt-1 text-sm text-muted">{copy.quizBody(items.length)}</p>
       </div>
       {(["reading", "notation"] as const).map((kind) => {
@@ -732,21 +944,23 @@ export function VocabularyBookStudy({
 }) {
   const [entries, setEntries] = useState<VocabularyBookEntry[]>([]);
   const [progress, setProgress] = useState<Map<string, boolean>>(new Map());
-  const [masteredQuizWords, setMasteredQuizWords] = useState<Set<string>>(new Set());
+  const [quizProgress, setQuizProgress] = useState<Map<string, QuizWordProgress>>(new Map());
   const [deck, setDeck] = useState<VocabularyBookEntry[] | null>(null);
   const [quickPracticeOpen, setQuickPracticeOpen] = useState(false);
   const [testListOpen, setTestListOpen] = useState(false);
   const [testScope, setTestScope] = useState<TestScope | null>(null);
   const [filter, setFilter] = useState<"all" | "unlearned" | "learned">("all");
+  const [query, setQuery] = useState("");
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
+  const [requeued, setRequeued] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     createClient()
       .then(async (client) => {
-        if (!client) return { entries: [], progress: [] as VocabularyBookProgress[], quizProgress: [] as { word_key: string; mastered: boolean }[] };
+        if (!client) return { entries: [], progress: [] as VocabularyBookProgress[], quizProgress: [] as ({ word_key: string } & QuizWordProgress)[] };
         const { data: entryData } = await client
           .from("vocabulary_book_entries")
           .select("*")
@@ -762,22 +976,21 @@ export function VocabularyBookStudy({
             .in("entry_id", nextEntries.map((entry) => entry.id)),
           client
             .from("vocabulary_book_quiz_progress")
-            .select("word_key, mastered")
+            .select("word_key, mastered, correct_streak, next_review_at")
             .eq("user_id", profileId)
-            .eq("book_id", book.id)
-            .eq("mastered", true),
+            .eq("book_id", book.id),
         ]);
         return {
           entries: nextEntries,
           progress: (progressData ?? []) as VocabularyBookProgress[],
-          quizProgress: (quizProgressData ?? []) as { word_key: string; mastered: boolean }[],
+          quizProgress: (quizProgressData ?? []) as ({ word_key: string } & QuizWordProgress)[],
         };
       })
       .then((data) => {
         if (cancelled) return;
         setEntries(data.entries);
         setProgress(new Map(data.progress.map((item) => [item.entry_id, item.learned])));
-        setMasteredQuizWords(new Set(data.quizProgress.map((item) => item.word_key)));
+        setQuizProgress(new Map(data.quizProgress.map((item) => [item.word_key, item])));
       })
       .catch(() => undefined)
       .finally(() => {
@@ -793,12 +1006,34 @@ export function VocabularyBookStudy({
     () => [...progress.values()].filter(Boolean).length,
     [progress],
   );
+  const masteredQuizWords = useMemo(
+    () => new Set([...quizProgress].filter(([, item]) => item.mastered).map(([wordKey]) => wordKey)),
+    [quizProgress],
+  );
+  const dueReviewWordKeys = useMemo(() => {
+    const now = Date.now();
+    return new Set([...quizProgress].filter(([, item]) => !item.mastered && (!item.next_review_at || Date.parse(item.next_review_at) <= now)).map(([wordKey]) => wordKey));
+  }, [quizProgress]);
+  const unlearnedEntries = useMemo(
+    () => entries.filter((entry) => !(progress.get(entry.id) ?? false)),
+    [entries, progress],
+  );
+  const nextStudyDeck = useMemo(
+    () => (unlearnedEntries.length > 0 ? unlearnedEntries : entries).slice(0, 10),
+    [entries, unlearnedEntries],
+  );
+  const isBusinessPhraseBook = book.slug === "business-cushion-words";
+  const studyUnit = isBusinessPhraseBook ? (copy.learned === "Đã thuộc" ? "cụm từ" : "フレーズ") : (copy.learned === "Đã thuộc" ? "Kanji" : "漢字");
   const filteredEntries = useMemo(
     () => entries.filter((entry) => {
       const learned = progress.get(entry.id) ?? false;
-      return filter === "all" || (filter === "learned" ? learned : !learned);
+      if (filter !== "all" && (filter === "learned" ? !learned : learned)) return false;
+      const normalized = query.trim().toLowerCase();
+      return !normalized || [entry.kanji, entry.meaning, entry.han_viet, entry.readings.join(" ")]
+        .filter(Boolean)
+        .some((value) => value?.toLowerCase().includes(normalized));
     }),
-    [entries, filter, progress],
+    [entries, filter, progress, query],
   );
 
   async function setLearned(learned: boolean) {
@@ -816,19 +1051,17 @@ export function VocabularyBookStudy({
   }
 
   async function saveQuizProgress(results: { wordKey: string; mastered: boolean }[]) {
-    const nextMasteredWords = new Set(masteredQuizWords);
+    const now = new Date();
+    const nextQuizProgress = new Map(quizProgress);
     for (const result of results) {
-      if (result.mastered) nextMasteredWords.add(result.wordKey);
-      else nextMasteredWords.delete(result.wordKey);
+      const previous = nextQuizProgress.get(result.wordKey) ?? { mastered: false, correct_streak: 0, next_review_at: null };
+      const correctStreak = result.mastered ? previous.correct_streak + 1 : 0;
+      const mastered = correctStreak >= 2;
+      const nextReviewAt = new Date(now.getTime() + (mastered ? 3 : 1) * 24 * 60 * 60 * 1000).toISOString();
+      nextQuizProgress.set(result.wordKey, { mastered, correct_streak: correctStreak, next_review_at: nextReviewAt });
     }
-    setMasteredQuizWords((current) => {
-      const next = new Set(current);
-      for (const result of results) {
-        if (result.mastered) next.add(result.wordKey);
-        else next.delete(result.wordKey);
-      }
-      return next;
-    });
+    setQuizProgress(nextQuizProgress);
+    const nextMasteredWords = new Set([...nextQuizProgress].filter(([, item]) => item.mastered).map(([wordKey]) => wordKey));
     const newlyLearnedEntries = entries.filter((entry) => {
       const wordKeys = [...new Set(entry.vocabulary
         .filter((word) => word.word && word.reading && word.meaning)
@@ -849,7 +1082,9 @@ export function VocabularyBookStudy({
         user_id: profileId,
         book_id: book.id,
         word_key: result.wordKey,
-        mastered: result.mastered,
+        mastered: nextQuizProgress.get(result.wordKey)?.mastered ?? false,
+        correct_streak: nextQuizProgress.get(result.wordKey)?.correct_streak ?? 0,
+        next_review_at: nextQuizProgress.get(result.wordKey)?.next_review_at ?? null,
         updated_at: new Date().toISOString(),
       })),
       { onConflict: "user_id,book_id,word_key" },
@@ -869,7 +1104,22 @@ export function VocabularyBookStudy({
 
   function next() {
     setFlipped(false);
+    setRequeued(false);
     setIndex((current) => Math.min(current + 1, deck?.length ?? 0));
+  }
+
+  async function markNotLearned() {
+    if (!card) return;
+    await setLearned(false);
+    setDeck((current) => {
+      if (!current || current.length <= 1) return current;
+      const nextDeck = [...current];
+      nextDeck.splice(index, 1);
+      nextDeck.push(card);
+      return nextDeck;
+    });
+    setFlipped(false);
+    setRequeued(true);
   }
 
   function begin(nextDeck: VocabularyBookEntry[]) {
@@ -882,45 +1132,60 @@ export function VocabularyBookStudy({
   if (loading) return <p className="py-10 text-sm text-muted">{copy.loading}</p>;
 
   if (quickPracticeOpen) {
-    return <QuickVocabularyPractice entries={entries} masteredWordKeys={masteredQuizWords} copy={copy} onBack={() => setQuickPracticeOpen(false)} onProgress={saveQuizProgress} />;
+    return <QuickVocabularyPractice entries={entries} masteredWordKeys={masteredQuizWords} dueReviewWordKeys={dueReviewWordKeys} copy={copy} onBack={() => setQuickPracticeOpen(false)} onProgress={saveQuizProgress} />;
   }
 
   if (testScope) {
-    return <VocabularyQuiz entries={entries} masteredWordKeys={masteredQuizWords} scope={testScope} copy={copy} onBack={() => setTestScope(null)} onSubmitted={saveQuizProgress} />;
+    if (isBusinessPhraseBook) {
+      return <CushionPhraseQuiz entries={entries} masteredWordKeys={masteredQuizWords} scope={testScope} itemLabel={studyUnit} copy={copy} onBack={() => setTestScope(null)} onSubmitted={saveQuizProgress} />;
+    }
+    return <VocabularyQuiz entries={entries} masteredWordKeys={masteredQuizWords} scope={testScope} itemLabel={studyUnit} copy={copy} onBack={() => setTestScope(null)} onSubmitted={saveQuizProgress} />;
   }
 
   if (testListOpen) {
-    return <VocabularyTestList entries={entries} masteredWordKeys={masteredQuizWords} copy={copy} onBack={() => setTestListOpen(false)} onOpen={setTestScope} />;
+    return <VocabularyTestList entries={entries} masteredWordKeys={masteredQuizWords} itemLabel={studyUnit} randomizeTests={isBusinessPhraseBook} copy={copy} onBack={() => setTestListOpen(false)} onOpen={setTestScope} />;
   }
 
   if (!deck) {
     return (
       <div className="mx-auto max-w-3xl space-y-5">
-        <div>
+        <section className="relative overflow-hidden rounded-lg border border-border bg-card px-5 py-6 shadow-[var(--shadow-sm)] sm:px-7">
+          <div className="pointer-events-none absolute right-0 top-0 h-32 w-32 bg-primary/5 blur-3xl" />
           <button type="button" onClick={onBack} className="focus-ring inline-flex items-center gap-1 text-sm font-bold text-muted hover:text-fg">
             <Icon name="arrow-left" size={16} /> {copy.back}
           </button>
-          <h1 className="mt-3 text-2xl font-extrabold">{book.title}</h1>
-          {book.description && <p className="mt-1 text-sm text-muted">{book.description}</p>}
-        </div>
-
-        <div className="flex flex-wrap gap-2 border-y border-border py-4">
-          <Button onClick={() => setQuickPracticeOpen(true)}>
-            <Icon name="target" size={16} />
-            {copy.quickPractice}
-          </Button>
-          <Button variant="secondary" onClick={() => begin(entries)}>
-            {copy.learn} ({entries.length})
-          </Button>
-          <Button variant="secondary" onClick={() => setTestListOpen(true)}>
-            <Icon name="trophy" size={16} />
-            {copy.quiz}
-          </Button>
-        </div>
+          <div className="relative mt-4 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              {isBusinessPhraseBook && <p className="mb-2 text-xs font-extrabold text-primary">BUSINESS JAPANESE</p>}
+              <h1 className="text-2xl font-extrabold">{book.title}</h1>
+              <p className="mt-1 max-w-xl text-sm leading-6 text-muted">{isBusinessPhraseBook ? copy.cushionDescription : copy.bookDescription}</p>
+            </div>
+            <div className="min-w-52 sm:text-right">
+              <p className="text-sm font-extrabold tabular-nums text-fg">{copy.progress(learnedCount, entries.length, studyUnit)}</p>
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface">
+                <div className="h-full rounded-full bg-[var(--success)] transition-[width] duration-300" style={{ width: `${entries.length === 0 ? 0 : (learnedCount / entries.length) * 100}%` }} />
+              </div>
+            </div>
+          </div>
+          <div className="relative mt-5 flex flex-wrap items-center gap-2">
+            <Button onClick={() => begin(nextStudyDeck)} disabled={nextStudyDeck.length === 0}>
+              <Icon name="play" size={16} />
+              {copy.nextBatch(nextStudyDeck.length, studyUnit)}
+            </Button>
+            <Button variant="secondary" onClick={() => setQuickPracticeOpen(true)}>
+              <Icon name="target" size={16} />
+              {dueReviewWordKeys.size > 0 ? copy.dueReview(dueReviewWordKeys.size) : copy.quickPractice}
+            </Button>
+            <Button variant="secondary" onClick={() => setTestListOpen(true)}>
+              <Icon name="trophy" size={16} />
+              {copy.quiz}
+            </Button>
+          </div>
+        </section>
 
         <section>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-sm font-extrabold text-muted">{copy.contents}</h2>
+            <h2 className="text-sm font-extrabold text-muted">{isBusinessPhraseBook ? copy.phraseList : copy.contents}</h2>
             <div className="flex gap-1.5">
               {(
                 [
@@ -940,26 +1205,43 @@ export function VocabularyBookStudy({
               ))}
             </div>
           </div>
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={isBusinessPhraseBook ? copy.phraseSearch : copy.search}
+            className="focus-ring mb-3 h-10 w-full rounded-lg border border-border bg-card px-3 text-sm text-fg placeholder:text-muted"
+          />
           <ul className="overflow-hidden rounded-lg border border-border bg-card">
             {filteredEntries.map((entry, entryIndex) => {
               const learned = progress.get(entry.id) ?? false;
+              if (isBusinessPhraseBook) {
+                return (
+                  <li key={entry.id} className="border-b border-border last:border-b-0">
+                    <button type="button" onClick={() => begin(filteredEntries.slice(entryIndex))} className="focus-ring flex w-full items-start gap-3 px-4 py-4 text-left transition-colors hover:bg-surface sm:gap-4 sm:px-5">
+                      <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary/10 text-[11px] font-extrabold tabular-nums text-primary">{entry.order_index}</span>
+                      <span className="min-w-0 flex-1">
+                        {entry.related && <span className="inline-flex rounded-full bg-surface px-2 py-0.5 text-[11px] font-bold text-muted">{entry.related}</span>}
+                        <span lang="ja" className="mt-1.5 block text-lg font-extrabold leading-7 text-fg sm:text-xl">{entry.kanji}</span>
+                        <span lang="ja" className="mt-1 block text-sm font-semibold text-primary">{entry.readings.join(" · ")}</span>
+                        <span className="mt-1 block text-sm leading-5 text-fg/85">{entry.meaning}</span>
+                        {entry.mnemonic && <span lang="ja" className="mt-2 block line-clamp-1 border-l-2 border-primary/25 pl-2 text-sm leading-5 text-muted">{entry.mnemonic}</span>}
+                      </span>
+                      <span className={learned ? "mt-2 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--success-soft)] text-[var(--success)]" : "mt-2 grid h-8 w-8 shrink-0 place-items-center rounded-full border border-border text-muted"}>
+                        <Icon name={learned ? "check" : "chevron-right"} size={16} />
+                      </span>
+                    </button>
+                  </li>
+                );
+              }
               return (
                 <li key={entry.id} className="border-b border-border last:border-b-0">
-                  <button
-                    type="button"
-                    onClick={() => begin(filteredEntries.slice(entryIndex))}
-                    className="focus-ring flex w-full items-center gap-4 px-4 py-3 text-left transition-colors hover:bg-surface"
-                  >
+                  <button type="button" onClick={() => begin(filteredEntries.slice(entryIndex))} className="focus-ring flex w-full items-center gap-4 px-4 py-3 text-left transition-colors hover:bg-surface">
                     <span className="w-6 text-xs font-bold tabular-nums text-muted">{entry.order_index}</span>
                     <span lang="ja" className="w-10 text-2xl font-extrabold text-fg">{entry.kanji}</span>
                     <span className="min-w-0 flex-1 py-0.5">
                       <span className="block text-sm font-bold text-fg">{entry.meaning}</span>
                       <span lang="ja" className="mt-0.5 block text-xs text-primary">{entry.readings.join(" · ")}</span>
-                      {entry.mnemonic && (
-                        <span className="mt-1 block line-clamp-1 text-sm leading-5 text-muted">
-                          {entry.mnemonic}
-                        </span>
-                      )}
+                      {entry.mnemonic && <span className="mt-1 block line-clamp-1 text-sm leading-5 text-muted">{entry.mnemonic}</span>}
                     </span>
                     <span className={learned ? "grid h-8 w-8 place-items-center rounded-full bg-[var(--success-soft)] text-[var(--success)]" : "grid h-8 w-8 place-items-center rounded-full border border-border text-muted"}>
                       <Icon name={learned ? "check" : "chevron-right"} size={16} />
@@ -993,6 +1275,8 @@ export function VocabularyBookStudy({
   }
 
   const learned = progress.get(card.id) ?? false;
+  const deckTotal = deck?.length ?? 0;
+  const deckPosition = index + 1;
   return (
     <div className="mx-auto max-w-2xl">
       <div className="flex items-center justify-between gap-4">
@@ -1000,56 +1284,87 @@ export function VocabularyBookStudy({
           <Icon name="arrow-left" size={16} /> {copy.contents}
         </button>
         <span className="text-sm font-bold tabular-nums text-muted">
-          {index + 1} / {deck.length}
+          {deckPosition} / {deckTotal}
         </span>
       </div>
       <div className="mt-4 h-1 overflow-hidden rounded-full bg-surface">
-        <div className="h-full bg-primary transition-[width] duration-200" style={{ width: `${((index + 1) / deck.length) * 100}%` }} />
+        <div className="h-full bg-primary transition-[width] duration-200" style={{ width: `${deckTotal === 0 ? 0 : (deckPosition / deckTotal) * 100}%` }} />
       </div>
 
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={() => setFlipped((value) => !value)}
-        onKeyDown={(event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            setFlipped((value) => !value);
-          }
-        }}
-        aria-label={card.kanji}
-        className="focus-ring mt-6 block w-full text-left"
-        style={{ perspective: "1400px" }}
-      >
-        <div className="flashcard-flip relative min-h-[27rem] w-full" style={{ transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)" }}>
-          <div className="absolute inset-0 flex flex-col items-center justify-center overflow-hidden rounded-lg border border-primary/20 bg-card p-7 text-center shadow-[var(--shadow-md)]" style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}>
-            <span className="absolute left-5 top-5 text-xs font-bold text-muted">{book.title}</span>
-            <p lang="ja" className="text-8xl font-bold text-fg">{card.kanji}</p>
-            <p className="mt-5 text-sm text-muted">{copy.learn}</p>
+      <div className="mt-6 w-full" style={{ perspective: "1400px" }}>
+        <div className={`flashcard-flip relative w-full ${isBusinessPhraseBook ? "min-h-[30rem]" : "min-h-[27rem]"}`} style={{ transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)" }}>
+          <div
+            role="button"
+            tabIndex={flipped ? -1 : 0}
+            aria-hidden={flipped}
+            aria-label={card.kanji}
+            onClick={() => setFlipped(true)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                setFlipped(true);
+              }
+            }}
+            className={`focus-ring absolute inset-0 flex cursor-pointer flex-col overflow-hidden rounded-lg border border-primary/20 bg-card text-center shadow-[var(--shadow-md)] ${isBusinessPhraseBook ? "items-start justify-between p-6 text-left sm:p-9" : "items-center justify-center p-7"}`}
+            style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}
+          >
+            {isBusinessPhraseBook ? (
+              <>
+                <div className="flex w-full items-center justify-between gap-3">
+                  <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">{card.related}</span>
+                  <span className="text-xs font-bold text-muted">{book.title}</span>
+                </div>
+                <div className="my-auto w-full py-8 sm:py-12">
+                  <p className="text-xs font-bold text-muted">クッション言葉</p>
+                  <p lang="ja" className="mt-4 max-w-2xl text-3xl font-extrabold leading-[1.65] text-fg sm:text-4xl">{card.kanji}</p>
+                  <p lang="ja" className="mt-5 text-base font-semibold text-primary sm:text-lg">{card.readings.join(" · ")}</p>
+                  <p className="mt-4 max-w-xl text-base leading-7 text-fg/80">{card.meaning}</p>
+                </div>
+                <p className="w-full text-center text-sm text-muted">{copy.tapToFlip}</p>
+              </>
+            ) : (
+              <>
+                <span className="absolute left-5 top-5 text-xs font-bold text-muted">{book.title}</span>
+                <p lang="ja" className="text-8xl font-bold text-fg">{card.kanji}</p>
+                <p className="mt-5 text-sm text-muted">{copy.learn}</p>
+              </>
+            )}
           </div>
-          <div className="absolute inset-0 overflow-y-auto rounded-lg border border-primary/20 bg-card p-6 shadow-[var(--shadow-md)]" style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
+          <div
+            aria-hidden={!flipped}
+            onClick={() => setFlipped(false)}
+            className="absolute inset-0 cursor-pointer overflow-y-auto rounded-lg border border-primary/20 bg-card p-6 shadow-[var(--shadow-md)]"
+            style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
+          >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p lang="ja" className="text-4xl font-extrabold text-fg">{card.kanji}</p>
+                {isBusinessPhraseBook && <p className="mb-2 text-xs font-bold text-primary">{card.related}</p>}
+                <p lang="ja" className={isBusinessPhraseBook ? "text-2xl font-extrabold leading-[1.6] text-fg sm:text-3xl" : "text-4xl font-extrabold text-fg"}>{card.kanji}</p>
                 <p className="mt-1 text-sm font-bold text-primary">{card.meaning}</p>
               </div>
-              <button type="button" onClick={(event) => { event.stopPropagation(); speakJa(card.kanji); }} className="focus-ring grid h-10 w-10 place-items-center rounded-full bg-primary/10 text-primary" aria-label={copy.listen}>
-                <Icon name="volume" size={18} />
-              </button>
+              <div className="flex items-center gap-1">
+                <button type="button" onClick={(event) => { event.stopPropagation(); setFlipped(false); }} className="focus-ring grid h-10 w-10 place-items-center rounded-full text-muted hover:bg-surface" aria-label={copy.flipBack}>
+                  <Icon name="retry" size={17} />
+                </button>
+                <button type="button" onClick={(event) => { event.stopPropagation(); speakJa(card.kanji); }} className="focus-ring grid h-10 w-10 place-items-center rounded-full bg-primary/10 text-primary" aria-label={copy.listen}>
+                  <Icon name="volume" size={18} />
+                </button>
+              </div>
             </div>
             <dl className="mt-5 grid gap-4 text-sm sm:grid-cols-2">
               {card.readings.length > 0 && <div><dt className="text-xs font-bold text-muted">{copy.readings}</dt><dd className="mt-1 font-semibold text-fg">{card.readings.join(" · ")}</dd></div>}
-              {card.structure && <div><dt className="text-xs font-bold text-muted">構造</dt><dd className="mt-1 font-semibold text-fg">{card.structure}</dd></div>}
-              {card.mnemonic && <div className="sm:col-span-2"><dt className="text-xs font-bold text-muted">{copy.mnemonic}</dt><dd className="mt-1 leading-6 text-fg/85">{card.mnemonic}</dd></div>}
-              {card.vocabulary.length > 0 && <div className="sm:col-span-2"><dt className="text-xs font-bold text-muted">{copy.vocabulary}</dt><dd className="mt-2 grid gap-1.5 sm:grid-cols-2">{card.vocabulary.map((word) => <span key={`${word.word}-${word.reading}`} className="rounded-md bg-surface px-2.5 py-2"><b lang="ja">{word.word}</b> <span lang="ja" className="text-primary">{word.reading}</span><span className="block mt-0.5 text-xs text-muted">{word.meaning}</span></span>)}</dd></div>}
+              {(card.structure || (isBusinessPhraseBook && card.related)) && <div><dt className="text-xs font-bold text-muted">{isBusinessPhraseBook ? copy.category : "構造"}</dt><dd className="mt-1 font-semibold text-fg">{isBusinessPhraseBook ? card.related : card.structure}</dd></div>}
+              {card.mnemonic && <div className={isBusinessPhraseBook ? "sm:col-span-2 rounded-md border-l-4 border-primary/35 bg-surface px-4 py-3" : "sm:col-span-2"}><dt className="text-xs font-bold text-muted">{isBusinessPhraseBook ? copy.example : copy.mnemonic}</dt><dd lang={isBusinessPhraseBook ? "ja" : undefined} className="mt-1 leading-7 text-fg/85">{card.mnemonic}</dd></div>}
+              {!isBusinessPhraseBook && card.vocabulary.length > 0 && <div className="sm:col-span-2"><dt className="text-xs font-bold text-muted">{copy.vocabulary}</dt><dd className="mt-2 grid gap-1.5 sm:grid-cols-2">{card.vocabulary.map((word) => <span key={`${word.word}-${word.reading}`} className="rounded-md bg-surface px-2.5 py-2"><b lang="ja">{word.word}</b> <span lang="ja" className="text-primary">{word.reading}</span><span className="block mt-0.5 text-xs text-muted">{word.meaning}</span></span>)}</dd></div>}
             </dl>
           </div>
         </div>
       </div>
       <div className="mt-5 grid grid-cols-2 gap-3">
-        <Button variant="secondary" onClick={() => setLearned(false)}><Icon name="retry" size={16} />{copy.notLearned}</Button>
+        <Button variant="secondary" onClick={markNotLearned}><Icon name="retry" size={16} />{copy.notLearned}</Button>
         <Button onClick={async () => { await setLearned(true); next(); }}><Icon name="check" size={16} />{learned ? copy.next : copy.learned}</Button>
       </div>
+      {requeued && <p className="mt-3 text-center text-sm font-semibold text-primary">{copy.requeued}</p>}
     </div>
   );
 }

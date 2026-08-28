@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useData } from "@/lib/store/DataProvider";
 import { lessonById, lessonHref, savedVocabList, vocabKey } from "@/lib/store/selectors";
 import { createClient } from "@/lib/supabase/client";
@@ -26,11 +27,13 @@ interface VocabStat {
 export default function ReviewPage() {
   const { state, ready, setVocabLearned, removeSavedVocab } = useData();
   const { dictionary, href, locale } = useI18n();
+  const pathname = usePathname();
+  const router = useRouter();
   const t = dictionary.review;
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const [deck, setDeck] = useState<SavedVocab[] | null>(null);
-  const [showNotebook, setShowNotebook] = useState(false);
+  const isNotebookPage = pathname?.endsWith("/review/my-book") ?? false;
 
   const all = savedVocabList(state);
   const learnedCount = all.filter((v) => v.learned).length;
@@ -106,7 +109,7 @@ export default function ReviewPage() {
     );
   }
 
-  if (!showNotebook) {
+  if (!isNotebookPage) {
     return (
       <AppShell>
         <VocabularyBookLibrary
@@ -114,7 +117,7 @@ export default function ReviewPage() {
           signedIn={Boolean(state.profile)}
           profileId={state.profile?.id ?? null}
           savedCount={all.length}
-          onOpenNotebook={() => setShowNotebook(true)}
+          onOpenNotebook={() => router.push(href("/review/my-book"))}
           onLogin={() => window.location.assign(href("/login"))}
         />
       </AppShell>
@@ -140,7 +143,7 @@ export default function ReviewPage() {
       <div className="space-y-5">
         <button
           type="button"
-          onClick={() => setShowNotebook(false)}
+          onClick={() => router.push(href("/review"))}
           className="focus-ring inline-flex items-center gap-1 text-sm font-bold text-muted hover:text-fg"
         >
           <Icon name="arrow-left" size={16} />

@@ -11,6 +11,7 @@
     "build:resource-seed": "node scripts/build-resource-seed-sql.mjs",
     "seed:minna": "node scripts/seed-minna.mjs",
     "seed:kanji-n2-vocab": "node scripts/seed-kanji-n2-vocabulary-book.mjs",
+    "seed:cushion-words": "node scripts/seed-cushion-words-vocabulary-book.mjs",
     "mascots:prompts": "node scripts/gen-mascot-prompts.mjs",
     "mascots:manifest": "node scripts/gen-mascot-manifest.mjs"
   },
