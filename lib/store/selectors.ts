@@ -19,6 +19,7 @@ import type {
   Course,
   DailyMission,
   Lesson,
+  LessonProgress,
   LessonSentence,
   LessonStatus,
   LessonWithSentences,
@@ -272,18 +273,65 @@ export function isSentencePassed(state: AppState, sentenceId: string): boolean {
 }
 
 /**
+ * The persisted per-lesson progress row for the signed-in user, if any.
+ *
+ * This is the only progress source that does not depend on `state.sentences`,
+ * which is loaded LAZILY (one lesson at a time — the N2 course alone has 900+
+ * lessons, so loading every sentence up front is not an option). Any status or
+ * percentage computed only from the loaded sentences therefore reads
+ * "not started · 0%" on a course page for lessons the learner has finished.
+ * lesson_progress is written on every passed sentence (lib/store/engine.ts) and
+ * loaded in full at sign-in, so it is what these selectors trust when the
+ * sentence rows are not in memory.
+ */
+export function lessonProgressRow(
+  state: AppState,
+  lessonId: string,
+): LessonProgress | null {
+  const uid = state.profile?.id;
+  if (!uid) return null;
+  return (
+    state.progress.find((p) => p.user_id === uid && p.lesson_id === lessonId) ??
+    null
+  );
+}
+
+/**
+ * Sentence count for a lesson. The loaded rows when they are in memory, else
+ * the count map, else what the progress row recorded — in that order, because
+ * that is also the order of freshness.
+ */
+export function lessonSentenceTotal(state: AppState, lessonId: string): number {
+  const loaded = sentencesForLesson(state, lessonId).length;
+  if (loaded > 0) return loaded;
+  const counted = state.sentenceCounts?.[lessonId];
+  if (counted != null) return counted;
+  return lessonProgressRow(state, lessonId)?.total_sentence_count ?? 0;
+}
+
+/**
  * Average of the best score per sentence across a lesson (over sentences the
  * user has actually attempted). null if none attempted yet.
+ *
+ * Computed from the attempts, which carry `lesson_id` themselves, so a course
+ * page gets real averages without the lesson's sentences being loaded.
  */
 export function lessonAverageScore(
   state: AppState,
   lessonId: string,
 ): number | null {
-  const bests = sentencesForLesson(state, lessonId)
-    .map((s) => bestAttemptForSentence(state, s.id)?.total_score)
-    .filter((v): v is number => v != null);
-  if (bests.length === 0) return null;
-  return Math.round(bests.reduce((a, b) => a + b, 0) / bests.length);
+  const uid = state.profile?.id;
+  if (!uid) return null;
+  const best = new Map<string, number>();
+  for (const a of state.attempts) {
+    if (a.user_id !== uid || a.lesson_id !== lessonId) continue;
+    const cur = best.get(a.sentence_id);
+    if (cur == null || a.total_score > cur) best.set(a.sentence_id, a.total_score);
+  }
+  if (best.size === 0) return null;
+  let sum = 0;
+  for (const v of best.values()) sum += v;
+  return Math.round(sum / best.size);
 }
 
 export function passedCountForLesson(
@@ -291,7 +339,11 @@ export function passedCountForLesson(
   lessonId: string,
 ): number {
   const ids = sentencesForLesson(state, lessonId).map((s) => s.id);
-  return ids.filter((id) => isSentencePassed(state, id)).length;
+  const loaded = ids.filter((id) => isSentencePassed(state, id)).length;
+  // Whichever knows more: the recorded count when the sentences are not loaded,
+  // the live count while the learner is in the lesson (it moves first).
+  const recorded = lessonProgressRow(state, lessonId)?.passed_sentence_count ?? 0;
+  return Math.max(loaded, recorded);
 }
 
 export function lastAttemptAtForLesson(
@@ -309,11 +361,13 @@ export function lessonStatus(
   state: AppState,
   lessonId: string,
 ): LessonStatus {
-  const total = sentencesForLesson(state, lessonId).length;
+  const total = lessonSentenceTotal(state, lessonId);
   const passed = passedCountForLesson(state, lessonId);
-  if (passed === 0) return "not_started";
   if (total > 0 && passed >= total) return "completed";
-  return "in_progress";
+  if (passed > 0) return "in_progress";
+  // A recorded "completed" survives even if the counts are unknown; a lesson
+  // that later gained sentences falls back to in_progress above, which is right.
+  return lessonProgressRow(state, lessonId)?.status ?? "not_started";
 }
 
 /** Most recently practiced lesson that is still in progress. */

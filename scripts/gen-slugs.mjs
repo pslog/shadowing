@@ -87,6 +87,7 @@ const COURSE_SLUGS = {
   "00000000-0000-0000-0000-0000000c0009": "jlpt-n2-mondai4-sokuji-outou",
   "00000000-0000-0000-0000-0000000c000a": "jlpt-n2-mondai5-tougou-rikai",
   "00000000-0000-0000-0000-0000000c000f": "jlpt-n2-choukai",
+  "00000000-0000-0000-0000-0000000c0102": "it-nihongo-supertrans",
 };
 
 await getTokenizer();

@@ -139,7 +139,7 @@ interface DataContextValue {
 
 const DataContext = createContext<DataContextValue | null>(null);
 const USING_SUPABASE = hasSupabaseEnv();
-const SUPABASE_SHELL_CACHE_KEY = "shadowing-jp-supabase-shell-v7";
+const SUPABASE_SHELL_CACHE_KEY = "shadowing-jp-supabase-shell-v8";
 const SUPABASE_SHELL_CACHE_TTL_MS = 5 * 60 * 1000;
 
 interface SupabaseShellCache {
@@ -210,6 +210,17 @@ function loadSupabaseShellCache(): AppState | null {
   }
 }
 
+/** rows from lesson_sentence_counts -> { [lessonId]: count } */
+function sentenceCountsFrom(
+  rows: { lesson_id: string; sentence_count: number | null }[] | null | undefined,
+): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const row of rows ?? []) {
+    if (row?.lesson_id) out[row.lesson_id] = row.sentence_count ?? 0;
+  }
+  return out;
+}
+
 function writeSupabaseShellCache(state: AppState): void {
   try {
     const shellState: AppState = {
@@ -220,8 +231,9 @@ function writeSupabaseShellCache(state: AppState): void {
         const lesson = state.lessons.find((item) => item.id === sentence.lesson_id);
         return lesson?.topic === "読解";
       }),
+      sentenceCounts: state.sentenceCounts,
       attempts: [],
-      progress: [],
+      progress: state.progress,
       missions: [],
       xpEvents: [],
       savedVocab: [],
@@ -317,6 +329,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         .order("order_index", { ascending: true })
         .then((r) => r, () => ({ data: [], error: null })),
       fetchAll("lessons", [["title", true]]),
+      supabase
+        .from("lesson_sentence_counts")
+        .select("lesson_id,sentence_count")
+        .then((r) => r, () => ({ data: [], error: null })),
     ]);
     const user = authResult.data.user;
     const lessons = lessonsAll as Lesson[];
@@ -332,6 +348,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             .order("lesson_id", { ascending: true })
             .order("order_index", { ascending: true })
         : { data: [], error: null };
+    const countsResult = await supabase
+      .from("lesson_sentence_counts")
+      .select("lesson_id,sentence_count")
+      .then((r) => r, () => ({ data: [], error: null }));
     if (readingSentencesResult.error) throw readingSentencesResult.error;
 
     return {
@@ -339,6 +359,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       courses: (coursesResult.data ?? []) as Course[],
       lessons,
       sentences: (readingSentencesResult.data ?? []) as LessonSentence[],
+      sentenceCounts: sentenceCountsFrom(countsResult.data),
       attempts: [],
       progress: [],
       missions: [],
@@ -402,6 +423,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       xpEventsResult,
       savedVocabResult,
       lessonsAll,
+      countsAllResult,
     ] = await Promise.all([
       supabase
         .from("courses")
@@ -436,6 +458,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             .order("created_at", { ascending: false })
         : Promise.resolve({ data: [], error: null }),
       fetchAll("lessons", [["title", true]]),
+      supabase
+        .from("lesson_sentence_counts")
+        .select("lesson_id,sentence_count")
+        .then((r) => r, () => ({ data: [], error: null })),
     ]);
 
     return {
@@ -443,6 +469,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       courses: (coursesResult.data ?? []) as Course[],
       lessons: lessonsAll as Lesson[],
       sentences: stateRef.current.sentences,
+      sentenceCounts: sentenceCountsFrom(countsAllResult.data),
       attempts: (attemptsResult.data ?? []) as AppState["attempts"],
       progress: (progressResult.data ?? []) as AppState["progress"],
       missions: (missionsResult.data ?? []) as AppState["missions"],
@@ -518,6 +545,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       ...base,
       profile,
       sentences: stateRef.current.sentences,
+      sentenceCounts: base.sentenceCounts,
       attempts: (attemptsResult.data ?? []) as AppState["attempts"],
       progress: (progressResult.data ?? []) as AppState["progress"],
       missions: (missionsResult.data ?? []) as AppState["missions"],

@@ -13,6 +13,7 @@ import {
   lastAttemptAtForLesson,
   lessonAverageScore,
   lessonHref,
+  lessonSentenceTotal,
   lessonStatus,
   passedCountForLesson,
   sentencesForLesson,
@@ -319,7 +320,7 @@ export function N2CourseLessonGrid({
                 lesson={lesson}
                 status={lessonStatus(state, lesson.id)}
                 passed={passedCountForLesson(state, lesson.id)}
-                total={sentencesForLesson(state, lesson.id).length}
+                total={lessonSentenceTotal(state, lesson.id)}
                 lastAttemptAt={lastAttemptAtForLesson(state, lesson.id)}
                 averageScore={lessonAverageScore(state, lesson.id)}
                 engagement={engagementStats[lesson.id]}

@@ -12,6 +12,7 @@ import {
   lastAttemptAtForLesson,
   lessonAverageScore,
   lessonHref,
+  lessonSentenceTotal,
   lessonStatus,
   lessonsForCourse,
   nextLessonInCourse,
@@ -437,7 +438,7 @@ function CourseLessonCards({ lessons, state }: { lessons: Lesson[]; state: AppSt
             lesson={l}
             status={lessonStatus(state, l.id)}
             passed={passedCountForLesson(state, l.id)}
-            total={sentencesForLesson(state, l.id).length}
+            total={lessonSentenceTotal(state, l.id)}
             lastAttemptAt={lastAttemptAtForLesson(state, l.id)}
             averageScore={lessonAverageScore(state, l.id)}
             engagement={engagementStats[l.id]}

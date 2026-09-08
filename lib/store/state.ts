@@ -19,6 +19,15 @@ export interface AppState {
   courses: Course[];
   lessons: Lesson[];
   sentences: LessonSentence[];
+  /**
+   * lesson id -> number of sentences it has, for every lesson.
+   *
+   * `sentences` is loaded lazily (one lesson at a time), so course pages have no
+   * way to say "5/18 câu" from it. This map comes from one small aggregate read
+   * (`lesson_sentence_counts`) and keeps those totals exact without pulling
+   * 11k sentence rows into the browser.
+   */
+  sentenceCounts: Record<string, number>;
   attempts: SentenceAttempt[];
   progress: LessonProgress[];
   missions: DailyMission[];
@@ -144,6 +153,7 @@ export function emptyState(nowIso: string): AppState {
     courses: seed.courses,
     lessons: seed.lessons,
     sentences: seed.sentences,
+    sentenceCounts: {},
     attempts: [],
     progress: [],
     missions: [],
