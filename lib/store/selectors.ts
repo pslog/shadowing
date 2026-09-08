@@ -132,6 +132,30 @@ export function visibleCourses(state: AppState): Course[] {
     .sort((a, b) => a.order_index - b.order_index);
 }
 
+/**
+ * Courses to put in front of someone who has not started yet.
+ *
+ * Curated, not just the top of the shelf: the shelf is ordered by level (Minna
+ * first) while the app's own audience is IT workers, so the two IT courses are
+ * the ones worth suggesting on the dashboard. Falls back to shelf order if a
+ * slug is missing, so this never renders an empty section.
+ */
+const SUGGESTED_COURSE_SLUGS = ["it-software-development", "it-nihongo-supertrans"];
+
+export function suggestedCourses(state: AppState, n = 2): Course[] {
+  const visible = visibleCourses(state);
+  const picked: Course[] = [];
+  for (const slug of SUGGESTED_COURSE_SLUGS) {
+    const found = visible.find((course) => course.slug === slug);
+    if (found) picked.push(found);
+  }
+  for (const course of visible) {
+    if (picked.length >= n) break;
+    if (!picked.includes(course)) picked.push(course);
+  }
+  return picked.slice(0, n);
+}
+
 export function courseById(state: AppState, id: string): Course | undefined {
   return (state.courses ?? []).find((c) => c.id === id);
 }

@@ -28,6 +28,7 @@ import {
   passedCountForLesson,
   recentAttemptedLessons,
   sentencesForLesson,
+  suggestedCourses,
   todayMission,
   todayQuestBoard,
   visibleCourses,
@@ -47,7 +48,10 @@ export default function DashboardPage() {
   const lessons = visibleLessons(state);
   const courses = visibleCourses(state);
   const recentLessons = recentAttemptedLessons(state, 3);
-  const featuredCourse = courses[0] ?? null;
+  // The suggestion drives the hero too, so "Bắt đầu bài đầu tiên" and the
+  // shelf below it point at the same course.
+  const suggested = suggestedCourses(state, 2);
+  const featuredCourse = suggested[0] ?? courses[0] ?? null;
   const featuredLesson = featuredCourse
     ? nextLessonInCourse(state, featuredCourse.id)
     : (lessons[0] ?? null);
@@ -103,7 +107,7 @@ export default function DashboardPage() {
     : copy.guest;
   // Two, signed in or not: four filled two rows of tall cards and pushed the
   // rest of the page below the fold. The full shelf is one click away.
-  const featuredCourses = courses.slice(0, 2);
+  const featuredCourses = suggested;
 
   return (
     <AppShell>
