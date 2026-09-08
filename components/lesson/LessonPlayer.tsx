@@ -51,6 +51,11 @@ import {
 } from "./reading-content";
 import { Furigana } from "./Furigana";
 import { useI18n } from "@/components/i18n/useI18n";
+import {
+  QuestToast,
+  hasCelebration,
+  type QuestCelebration,
+} from "@/components/gamification/QuestToast";
 import { emitCompanionEvent } from "@/lib/gamification/companion-events";
 import {
   levelMascot,
@@ -614,6 +619,13 @@ function ReadingLesson({
   const [checkResults, setCheckResults] = useState<boolean[] | null>(null);
   /** What the submission earned. Null for guests — the dialog invites them in. */
   const [readingOutcome, setReadingOutcome] = useState<ReadingOutcome | null>(null);
+  /**
+   * Quest news the reading dialog cannot tell (it only knows this lesson). The
+   * dialog is full-screen and the toast sits above it, so the toast waits until
+   * the learner has dismissed the dialog rather than landing on top of it.
+   */
+  const [celebration, setCelebration] = useState<QuestCelebration | null>(null);
+  const queuedCelebration = useRef<QuestCelebration | null>(null);
   const copy =
     locale === "vi"
       ? {
@@ -710,6 +722,12 @@ function ReadingLesson({
     // turns into an invitation to sign up.
     const outcome = markReadingLessonRead(lesson.id, { correct, total: results.length });
     setReadingOutcome(outcome);
+    if (outcome && hasCelebration(outcome)) {
+      queuedCelebration.current = {
+        quests: outcome.questsCompletedNow,
+        perfect: outcome.perfectDayNow,
+      };
+    }
     // Reading has its own companion vocabulary: no takes, no pass score, so the
     // comprehension result is the only thing there is to react to.
     emitCompanionEvent({
@@ -748,6 +766,7 @@ function ReadingLesson({
 
   return (
     <div className="space-y-6">
+      <QuestToast celebration={celebration} onDone={() => setCelebration(null)} />
       {checkResults && (
         <ReadingCompleteDialog
           results={checkResults}
@@ -757,7 +776,11 @@ function ReadingLesson({
           outcome={readingOutcome}
           nextHref={nextLesson ? lessonHref(nextLesson) : courseHref}
           hasNext={Boolean(nextLesson)}
-          onClose={() => setCheckResults(null)}
+          onClose={() => {
+            setCheckResults(null);
+            setCelebration(queuedCelebration.current);
+            queuedCelebration.current = null;
+          }}
           onReview={() => {
             setCheckResults(null);
             requestAnimationFrame(() => {
@@ -1080,13 +1103,13 @@ function InlineScore({
             {t.dimPronunciation} {score.pronunciation}
           </span>
           <span>
-            {t.dimCoverage} {score.coverage ?? "—"}
+            {t.dimCoverage} {score.coverage ?? "-"}
           </span>
           <span>
             {t.dimSpeed} {score.speed}
           </span>
           <span>
-            {t.dimIntonation} {score.intonation ?? "—"}
+            {t.dimIntonation} {score.intonation ?? "-"}
           </span>
         </div>
       </div>
@@ -1102,6 +1125,10 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
   const [index, setIndex] = useState(0);
   const [fresh, setFresh] = useState<FreshResult | null>(null);
   const [missionAlert, setMissionAlert] = useState<AttemptOutcome | null>(null);
+  /** The perfect-day bonus, which the mission dialog knows nothing about. */
+  const [celebration, setCelebration] = useState<QuestCelebration | null>(null);
+  /** Held back while the mission dialog covers the screen. */
+  const queuedCelebration = useRef<QuestCelebration | null>(null);
   const [scoring, setScoring] = useState(false);
   const [recorderKey, setRecorderKey] = useState(0);
   const [lessonViewStats, setLessonViewStats] = useState<LessonViewStats | null>(null);
@@ -1409,6 +1436,11 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
       if (outcome.missionCompletedNow) {
         setMissionAlert(outcome);
       }
+      if (outcome.perfectDayNow) {
+        const news = { quests: outcome.questsCompletedNow, perfect: true };
+        if (outcome.missionCompletedNow) queuedCelebration.current = news;
+        else setCelebration(news);
+      }
       requestAnimationFrame(() => {
         inlineScoreRef.current?.scrollIntoView({
           behavior: "smooth",
@@ -1426,16 +1458,23 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
 
   return (
     <div className="space-y-6">
+      <QuestToast celebration={celebration} onDone={() => setCelebration(null)} />
       {missionAlert && (
         <MissionCompleteDialog
           outcome={missionAlert}
-          onClose={() => setMissionAlert(null)}
+          onClose={() => {
+            setMissionAlert(null);
+            if (queuedCelebration.current) {
+              setCelebration(queuedCelebration.current);
+              queuedCelebration.current = null;
+            }
+          }}
           t={t}
           dayLabel={m.common.days}
         />
       )}
-      <section className="relative overflow-hidden rounded-[2rem] border border-primary/15 bg-card p-5 shadow-[var(--shadow-md)] sm:p-6">
-        <div className="pointer-events-none absolute -right-16 -top-24 h-56 w-56 rounded-full bg-primary/10 blur-3xl" />
+      <section className="relative overflow-hidden rounded-[0.875rem] border border-border bg-card p-5 shadow-[var(--shadow-sm)] sm:p-6">
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-[3px] bg-accent" />
         <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0">
             <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -1467,14 +1506,14 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
                 </span>
               </span>
             </div>
-            <h1 lang="ja" className="text-2xl font-extrabold leading-tight sm:text-3xl">
+            <h1 lang="ja" className="text-2xl font-bold leading-tight tracking-[-0.025em] sm:text-3xl">
               {lesson.title}
             </h1>
             <p className="mt-2 text-sm text-muted">{t.intro}</p>
             <button
               type="button"
               onClick={() => goTo(index, true)}
-              className="focus-ring mt-4 inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-white shadow-[var(--shadow-glow)] transition-all hover:brightness-110 active:scale-[0.97]"
+              className={buttonClasses("primary", "md", "mt-5")}
             >
               {t.goShadowing}
               <Icon name="arrow-right" size={16} />
@@ -1489,7 +1528,7 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
             )}
           </div>
 
-          <div className="w-full rounded-3xl border border-border bg-surface/80 p-4 lg:w-80">
+          <div className="w-full rounded-xl border border-border bg-surface p-4 lg:w-80">
             <div className="mb-2 flex items-center justify-between text-sm">
               <span className="font-semibold">{t.progress}</span>
               <span className="font-bold tabular-nums text-primary">
@@ -1498,15 +1537,15 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
             </div>
             <ProgressBar value={progressPct} />
             <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
-              <div className="rounded-2xl bg-card px-2 py-2">
+              <div className="border-r border-border px-2 py-1">
                 <p className="font-bold text-fg">{total}</p>
                 <p className="text-muted">{t.statAll}</p>
               </div>
-              <div className="rounded-2xl bg-card px-2 py-2">
+              <div className="border-r border-border px-2 py-1">
                 <p className="font-bold text-[var(--success)]">{passed}</p>
                 <p className="text-muted">{t.statPass}</p>
               </div>
-              <div className="rounded-2xl bg-card px-2 py-2">
+              <div className="px-2 py-1">
                 <p className="font-bold text-primary">{index + 1}</p>
                 <p className="text-muted">{t.statCurrent}</p>
               </div>
@@ -1515,7 +1554,7 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
         </div>
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(24rem,0.95fr)]">
+      <div className="grid items-start gap-5 xl:grid-cols-[minmax(20rem,0.78fr)_minmax(0,1.22fr)]">
         <DialogueScript
           sentences={sentences}
           activeIndex={index}
@@ -1532,23 +1571,20 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
         />
 
         <section id="shadowing-panel" className="min-w-0 scroll-mt-24 space-y-4">
-          <div className="overflow-hidden rounded-[1.75rem] border border-border bg-card shadow-[var(--shadow-md)]">
-            <div className="border-b border-border bg-surface/70 px-5 py-4">
+          <div className="overflow-hidden rounded-[0.875rem] border border-border bg-card shadow-[var(--shadow-md)]">
+            <div className="practice-hero relative overflow-hidden border-b border-border px-5 py-5 text-fg sm:px-6">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.22em] text-primary">
-                    Step 2
-                  </p>
-                  <h2 className="mt-1 text-2xl font-extrabold">Shadowing</h2>
+                  <h2 className="text-2xl font-extrabold tracking-[-0.025em]">Shadowing</h2>
                   <p className="mt-1 text-sm text-muted">{t.step2Body}</p>
                 </div>
-                <Badge tone={currentPassed ? "success" : "primary"}>
+                <Badge tone={currentPassed ? "success" : "neutral"} className="relative border-border bg-white/75 text-fg">
                   {index + 1}/{total}
                 </Badge>
               </div>
             </div>
 
-            <div className="space-y-3 p-4">
+            <div className="space-y-4 p-4 sm:p-5">
               <SentenceNumberNav
                 sentences={sentences}
                 activeIndex={index}
@@ -1561,30 +1597,29 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
                 pointsLabel={m.common.points}
               />
 
-              <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-surface text-center">
-                <div className="pointer-events-none absolute inset-x-8 top-0 h-px brand-gradient" />
-                <div className="px-4 py-3.5">
+              <div className="relative overflow-hidden rounded-xl border border-border bg-surface text-center">
+                <div className="relative px-4 py-8 sm:px-8 sm:py-10">
                   <span
                     className={[
                       "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold",
                       currentPassed
                         ? "bg-[var(--success-soft)] text-[var(--success)]"
-                        : "bg-primary/10 text-primary",
+                        : "bg-accent/10 text-accent",
                     ].join(" ")}
                   >
                     <Icon name={currentPassed ? "check" : "mic"} size={14} />
                     {currentPassed ? t.passedTag : t.speakThis}
                   </span>
-                  <p lang="ja" className="mx-auto mt-2.5 max-w-2xl text-[0.92rem] font-bold leading-[2.1] sm:text-base sm:leading-[2.2] [&_rt]:text-[0.55em] [&_rt]:font-medium [&_rt]:text-muted">
+                  <p lang="ja" className="mx-auto mt-6 max-w-2xl text-xl font-bold leading-[2.1] tracking-[-0.015em] sm:text-3xl sm:leading-[2] [&_rt]:text-[0.46em] [&_rt]:font-medium [&_rt]:text-muted">
                     <Furigana sentence={current} />
                   </p>
                   {current.vi_translation && (
-                    <p className="mx-auto mt-1.5 max-w-xl rounded-lg bg-card px-2.5 py-1.5 text-[11px] leading-4 text-muted sm:text-xs sm:leading-5">
+                    <p className="mx-auto mt-3 max-w-xl border-t border-border px-2.5 pt-3 text-xs leading-5 text-muted sm:text-sm">
                       {current.vi_translation}
                     </p>
                   )}
 
-                  <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+                  <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
                     <button
                       type="button"
                       onClick={() => goTo(index - 1)}

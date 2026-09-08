@@ -2,11 +2,22 @@
 // import only what they need and the logic stays testable.
 
 import { lastNDays, todayKey } from "@/lib/date";
+import {
+  DAILY_MAX_QUEST_XP,
+  emptyMission,
+  isQuestDone,
+  PERFECT_DAY_XP,
+  QUEST_IDS,
+  questBoard,
+  type QuestId,
+  type QuestView,
+} from "@/lib/gamification/quests";
 import { N2_COURSE_ID, N2_COURSE_SLUG } from "@/lib/n2-course";
 import { DAILY_TARGET } from "./engine";
 import type { AppState } from "./state";
 import type {
   Course,
+  DailyMission,
   Lesson,
   LessonSentence,
   LessonStatus,
@@ -189,6 +200,24 @@ export function isReadingLesson(state: AppState, lesson: Lesson | undefined): bo
   return course?.topic === "読解";
 }
 
+/**
+ * A 読解 lesson to send the daily reading quest at: the first one the user has
+ * not finished, falling back to the first one at all so a learner who has read
+ * everything still gets a working link (re-reading re-earns the quest).
+ */
+export function nextReadingLesson(state: AppState): Lesson | null {
+  const reading = visibleLessons(state).filter((lesson) =>
+    isReadingLesson(state, lesson),
+  );
+  const uid = state.profile?.id;
+  const completed = new Set(
+    state.progress
+      .filter((item) => item.user_id === uid && item.status === "completed")
+      .map((item) => item.lesson_id),
+  );
+  return reading.find((lesson) => !completed.has(lesson.id)) ?? reading[0] ?? null;
+}
+
 export function nextLessonInCourse(
   state: AppState,
   courseId: string,
@@ -318,6 +347,7 @@ export interface MissionView {
   completed: boolean;
 }
 
+/** The shadowing quest alone — what the streak and its copy are phrased in. */
 export function todayMission(state: AppState): MissionView {
   const passed = passedSentencesToday(state);
   return {
@@ -325,6 +355,109 @@ export function todayMission(state: AppState): MissionView {
     target: DAILY_TARGET,
     completed: passed >= DAILY_TARGET,
   };
+}
+
+/** Today's quest row, or undefined before the user has done anything today. */
+export function todayMissionRow(state: AppState): DailyMission | undefined {
+  const uid = state.profile?.id;
+  if (!uid) return undefined;
+  const today = todayKey();
+  return state.missions.find(
+    (m) => m.user_id === uid && m.mission_date === today,
+  );
+}
+
+export interface QuestBoardView {
+  quests: QuestView[];
+  cleared: number;
+  total: number;
+  /** All quests done — the bonus is either paid or about to be. */
+  perfect: boolean;
+  /** XP still on the table today, bonus included. */
+  xpRemaining: number;
+  /** XP the board has already paid out today. */
+  xpEarned: number;
+}
+
+/**
+ * The whole daily board, ready to render.
+ *
+ * Shadowing is recomputed from today's attempts rather than trusted from the
+ * row: attempts sync on every submission, while the row can lag behind a device
+ * that went offline mid-session, and a progress bar that reads low after real
+ * work is the one bug that makes a quest board feel broken.
+ */
+export function todayQuestBoard(state: AppState): QuestBoardView {
+  const row = todayMissionRow(state);
+  const merged: DailyMission | undefined = row
+    ? { ...row, passed_sentence_count: passedSentencesToday(state) }
+    : state.profile
+      ? {
+          ...emptyMission(state.profile.id, new Date().toISOString()),
+          passed_sentence_count: passedSentencesToday(state),
+        }
+      : undefined;
+
+  const quests = questBoard(merged);
+  const cleared = quests.filter((q) => q.completed).length;
+  const perfect = cleared === quests.length;
+  const bonusPaid = row?.bonus_awarded ?? false;
+  const xpEarned =
+    quests.reduce((sum, q) => sum + (q.completed ? q.xp : 0), 0) +
+    (bonusPaid || perfect ? PERFECT_DAY_XP : 0);
+
+  return {
+    quests,
+    cleared,
+    total: quests.length,
+    perfect,
+    xpRemaining: DAILY_MAX_QUEST_XP - xpEarned,
+    xpEarned,
+  };
+}
+
+export interface QuestDayStat {
+  date: string;
+  done: Record<QuestId, boolean>;
+  cleared: number;
+  perfect: boolean;
+}
+
+/**
+ * Which quests were cleared on each of the last `n` days, oldest first.
+ *
+ * This is the retrospective half of the quest board: the board answers "what
+ * is left today", this answers "have I been showing up". Past days come from
+ * the stored rows; today's shadowing count is recomputed from attempts for the
+ * same reason `todayQuestBoard` does it — the row can lag a device that went
+ * offline, and the strip must not contradict the board sitting above it.
+ */
+export function questHistory(state: AppState, n: number): QuestDayStat[] {
+  const uid = state.profile?.id;
+  const today = todayKey();
+  const passedToday = passedSentencesToday(state);
+
+  const byDate = new Map<string, DailyMission>();
+  if (uid) {
+    for (const row of state.missions) {
+      if (row.user_id === uid) byDate.set(row.mission_date, row);
+    }
+  }
+
+  return lastNDays(n).map((date) => {
+    let row = byDate.get(date);
+    if (date === today && uid) {
+      const base = row ?? emptyMission(uid, new Date().toISOString(), date);
+      row = { ...base, passed_sentence_count: passedToday };
+    }
+    const done = {
+      shadowing: isQuestDone(row, "shadowing"),
+      reading: isQuestDone(row, "reading"),
+      vocab: isQuestDone(row, "vocab"),
+    };
+    const cleared = QUEST_IDS.filter((id) => done[id]).length;
+    return { date, done, cleared, perfect: cleared === QUEST_IDS.length };
+  });
 }
 
 export interface DayStat {

@@ -73,7 +73,7 @@ function LanguageSwitch({
     <div
       role="group"
       aria-label={labels.label}
-      className="flex items-center rounded-full border border-border bg-surface p-0.5 text-[11px] font-black"
+      className="flex items-center rounded-xl border border-border bg-surface p-0.5 text-[11px] font-black"
     >
       {(["vi", "ja"] as Locale[]).map((item) => (
         <Link
@@ -81,9 +81,9 @@ function LanguageSwitch({
           href={switchHref(item)}
           aria-current={locale === item ? "true" : undefined}
           className={cn(
-            "rounded-full px-2 py-1 transition-colors sm:px-2.5",
+            "rounded-[0.55rem] px-2 py-1 transition-colors sm:px-2.5",
             locale === item
-              ? "brand-gradient text-white shadow-[var(--shadow-glow)]"
+              ? "bg-primary text-white"
               : "text-muted hover:text-fg",
           )}
           hrefLang={item}
@@ -92,8 +92,8 @@ function LanguageSwitch({
             labels.viShort
           ) : (
             <>
-              <span className="md:hidden">{labels.jaShort}</span>
-              <span className="hidden md:inline">{labels.ja}</span>
+              <span className="lg:hidden">{labels.jaShort}</span>
+              <span className="hidden lg:inline">{labels.ja}</span>
             </>
           )}
         </Link>
@@ -244,22 +244,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   return (
-    <div className="flex min-h-dvh flex-col pb-16 md:pb-0">
-      <header className="glass sticky top-0 z-30 pt-[env(safe-area-inset-top)]">
-        <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4">
-          <Link href={href("/")} className="flex items-center gap-2.5 font-bold">
+    <div className="flex min-h-dvh flex-col pb-16 lg:pb-0">
+      <header className="glass sticky top-0 z-30 border-b border-white/80 pt-[env(safe-area-inset-top)] shadow-[0_6px_24px_-24px_rgba(41,75,112,0.45)]">
+        <div className="mx-auto flex h-[4.25rem] max-w-6xl items-center gap-3 px-4 sm:gap-5">
+          <Link href={href("/")} className="group flex items-center gap-3 font-bold">
             <Image
               src="/logo-mark-256.webp"
               alt="Shadowing JP"
-              width={40}
-              height={40}
-              className="h-10 w-10 object-contain"
+              width={36}
+              height={36}
+              className="h-9 w-9 rounded-[0.65rem] object-contain transition-transform duration-200 group-hover:scale-[1.03]"
               quality={75}
             />
-            <span className="hidden text-lg sm:inline text-gradient">Shadowing JP</span>
+            <span className="hidden whitespace-nowrap text-[0.95rem] font-extrabold tracking-[-0.02em] text-fg sm:block">Shadowing JP</span>
           </Link>
 
-          <nav className="ml-2 hidden items-center gap-1 md:flex">
+          <nav className="ml-2 hidden items-center gap-1 lg:flex">
             {NAV.map((item) => {
               const active = isActive(item);
               return (
@@ -267,10 +267,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   key={item.href}
                   href={href(item.href)}
                   className={cn(
-                    "flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-2 text-sm transition-all",
+                    "relative flex min-h-11 items-center gap-1.5 whitespace-nowrap px-3.5 py-2 text-sm font-semibold transition-colors after:absolute after:inset-x-3 after:-bottom-[0.7rem] after:h-0.5 after:origin-left after:scale-x-0 after:bg-accent after:transition-transform",
                     active
-                      ? "brand-gradient font-semibold text-white shadow-[var(--shadow-glow)]"
-                      : "text-muted hover:bg-surface/70 hover:text-fg",
+                      ? "text-fg after:scale-x-100"
+                      : "text-muted hover:text-fg",
                   )}
                 >
                   <Icon name={item.icon} size={16} />
@@ -288,7 +288,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             />
             {profile ? (
               <>
-                <span className="hidden md:inline">
+                <span className="hidden lg:inline">
                   <Badge tone="warning">
                     <Icon name="flame" size={13} filled />
                     {profile.current_streak}
@@ -307,7 +307,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     onClick={() => setMenuOpen((value) => !value)}
                     aria-haspopup="menu"
                     aria-expanded={menuOpen}
-                    className="focus-ring flex h-11 items-center gap-2 rounded-full border border-border bg-surface py-1 pl-1 pr-3 text-sm"
+                    className="focus-ring flex h-11 items-center gap-2 rounded-xl border border-border bg-card py-1 pl-1 pr-3 text-sm shadow-[var(--shadow-sm)]"
                     title={levelTitle(profileLevel, locale)}
                   >
                     <Avatar
@@ -370,7 +370,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </div>
               </>
             ) : (
-              <Link href={href("/login")} className={buttonClasses("primary", "sm")}>
+              <Link href={href("/login")} className={buttonClasses("primary", "sm", "whitespace-nowrap")}>
                 {m.common.login}
               </Link>
             )}
@@ -380,7 +380,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:py-8">{children}</main>
 
-      <footer className="mt-8 border-t border-border/70">
+      <footer className="mt-12 border-t border-border bg-white/80">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-2 px-4 py-5 text-center sm:flex-row sm:justify-between sm:text-left">
           <div className="flex items-center gap-2.5">
             <Image
@@ -392,7 +392,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               quality={75}
             />
             <div>
-              <p className="text-sm font-bold text-gradient">Shadowing JP</p>
+              <p className="text-sm font-extrabold text-fg">Shadowing JP</p>
               <p className="text-xs text-muted">{m.footer.tagline}</p>
             </div>
           </div>
@@ -434,7 +434,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <MascotCompanion />
 
-      <nav className="glass fixed inset-x-0 bottom-0 z-40 border-t border-border/70 pb-[env(safe-area-inset-bottom)] md:hidden">
+      <nav className="glass fixed inset-x-0 bottom-0 z-40 border-t border-border pb-[env(safe-area-inset-bottom)] lg:hidden">
         <div className="mx-auto flex max-w-md items-stretch">
           {NAV.map((item) => {
             const active = isActive(item);
@@ -444,7 +444,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 href={href(item.href)}
                 className={cn(
                   "flex min-h-16 flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-semibold transition-colors",
-                  active ? "text-primary" : "text-muted",
+                  active ? "bg-accent/[0.07] text-accent" : "text-muted",
                 )}
               >
                 <Icon name={item.icon} size={22} filled={active} />

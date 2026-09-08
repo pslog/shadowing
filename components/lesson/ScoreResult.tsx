@@ -75,7 +75,7 @@ function Dim({
           {measured ? value : note ?? "—"}
         </span>
       </div>
-      <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--muted)_20%,transparent)]">
+      <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--primary)_13%,var(--surface))]">
         <div
           className="h-full rounded-full transition-all"
           style={{ width: `${measured ? value : 0}%`, background: hue }}

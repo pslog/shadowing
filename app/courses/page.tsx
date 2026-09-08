@@ -40,7 +40,7 @@ export default function CoursesPage() {
           description: m.courses.uncategorizedDescription,
           topic: null,
           level: null,
-          accent: "#64748b",
+          accent: "#5f7da3",
           image_url: null,
           order_index: 999,
           is_public: true,
@@ -50,10 +50,11 @@ export default function CoursesPage() {
 
   return (
     <AppShell>
-      <div className="mb-5 flex items-center justify-between gap-3">
+      <div className="mb-7 flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">{m.courses.title}</h1>
-          <p className="text-muted">
+          <p lang="ja" className="text-xs font-bold tracking-[0.08em] text-accent">学習コース</p>
+          <h1 className="mt-2 text-3xl font-extrabold tracking-[-0.035em] sm:text-4xl">{m.courses.title}</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted sm:text-base">
             {m.courses.subtitle}
           </p>
         </div>
@@ -73,6 +74,7 @@ export default function CoursesPage() {
               stats={courseStats(state, c.id)}
               engagement={engagementStats[c.id]}
               href={courseHref(c)}
+              priority={i === 0}
             />
           </div>
         ))}

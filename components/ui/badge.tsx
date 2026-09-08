@@ -3,8 +3,10 @@ import { cn } from "@/lib/cn";
 type Tone = "neutral" | "primary" | "success" | "warning" | "danger";
 
 const tones: Record<Tone, string> = {
-  neutral: "bg-surface text-muted border border-border",
-  primary: "bg-primary/10 text-primary border border-primary/20",
+  neutral:
+    "border border-primary/20 bg-[color-mix(in_srgb,var(--primary)_9%,var(--card))] text-primary",
+  primary:
+    "border border-transparent bg-[linear-gradient(135deg,var(--g1),var(--g2))] text-white shadow-[0_4px_12px_-6px_color-mix(in_srgb,var(--accent)_70%,transparent)]",
   success:
     "bg-[var(--success-soft)] text-[var(--success)] border border-[var(--success)]/25",
   warning:

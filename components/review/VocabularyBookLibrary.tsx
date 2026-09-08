@@ -8,6 +8,12 @@ import { Icon } from "@/components/ui/icon";
 import { createClient } from "@/lib/supabase/client";
 import { speakJa } from "@/lib/speech/tts";
 import { useI18n } from "@/components/i18n/useI18n";
+import {
+  QuestToast,
+  hasCelebration,
+  type QuestCelebration,
+} from "@/components/gamification/QuestToast";
+import { useData } from "@/lib/store/DataProvider";
 import type {
   VocabularyBook,
   VocabularyBookEntry,
@@ -227,7 +233,6 @@ export function VocabularyBookLibrary({
   const { href } = useI18n();
   const [books, setBooks] = useState<VocabularyBook[]>([]);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     let cancelled = false;
     createClient()
@@ -268,7 +273,7 @@ export function VocabularyBookLibrary({
           count={copy.cards(savedCount)}
           action={signedIn ? copy.openNotebook : copy.loginToOpen}
           mark={locale === "ja" ? "私" : "MY"}
-          accent="#5168ad"
+          accent="#4d67c9"
           onClick={signedIn ? onOpenNotebook : onLogin}
         />
 
@@ -283,7 +288,7 @@ export function VocabularyBookLibrary({
               count={copy.cards(book.entry_count)}
               action={copy.learn}
               mark={book.level || "語"}
-              accent={book.accent || "#9a596d"}
+              accent={book.accent || "#b3567a"}
               onClick={() => router.push(href(`/review/books/${book.slug}`))}
             />
           ))
@@ -931,16 +936,38 @@ function VocabularyQuiz({
   );
 }
 
-export function VocabularyBookStudy({
+/**
+ * The study screen renders one of several full-page modes (flashcards, quick
+ * practice, tests), each an early return. The quest toast has to survive all of
+ * them, so it is owned by this thin wrapper and fed from the inside.
+ */
+export function VocabularyBookStudy(props: {
+  book: VocabularyBook;
+  profileId: string | null;
+  copy: Copy;
+  onBack: () => void;
+}) {
+  const [celebration, setCelebration] = useState<QuestCelebration | null>(null);
+  return (
+    <>
+      <VocabularyBookStudyView {...props} onQuestCleared={setCelebration} />
+      <QuestToast celebration={celebration} onDone={() => setCelebration(null)} />
+    </>
+  );
+}
+
+function VocabularyBookStudyView({
   book,
   profileId,
   copy,
   onBack,
+  onQuestCleared,
 }: {
   book: VocabularyBook;
   profileId: string | null;
   copy: Copy;
   onBack: () => void;
+  onQuestCleared: (celebration: QuestCelebration) => void;
 }) {
   const [entries, setEntries] = useState<VocabularyBookEntry[]>([]);
   const [progress, setProgress] = useState<Map<string, boolean>>(new Map());
@@ -955,6 +982,20 @@ export function VocabularyBookStudy({
   const [flipped, setFlipped] = useState(false);
   const [requeued, setRequeued] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const { recordVocabLearned } = useData();
+
+  /** Credit words to today's vocabulary quest and surface anything it cleared. */
+  function creditVocabQuest(learned: number) {
+    if (learned <= 0) return;
+    const outcome = recordVocabLearned(learned);
+    if (outcome && hasCelebration(outcome)) {
+      onQuestCleared({
+        quests: outcome.questsCompletedNow,
+        perfect: outcome.perfectDayNow,
+      });
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -1038,6 +1079,9 @@ export function VocabularyBookStudy({
 
   async function setLearned(learned: boolean) {
     if (!card) return;
+    // Only the false -> true transition is new learning; re-flipping a card the
+    // user already knew must not move the quest.
+    if (learned && !progress.get(card.id)) creditVocabQuest(1);
     setProgress((current) => new Map(current).set(card.id, learned));
     if (profileId) {
       const client = await createClient();
@@ -1061,6 +1105,15 @@ export function VocabularyBookStudy({
       nextQuizProgress.set(result.wordKey, { mastered, correct_streak: correctStreak, next_review_at: nextReviewAt });
     }
     setQuizProgress(nextQuizProgress);
+    // A word counts for the quest the moment it crosses into mastered — never
+    // on every correct answer, or a single deck could clear the board twice.
+    creditVocabQuest(
+      results.filter(
+        (result) =>
+          (nextQuizProgress.get(result.wordKey)?.mastered ?? false) &&
+          !(quizProgress.get(result.wordKey)?.mastered ?? false),
+      ).length,
+    );
     const nextMasteredWords = new Set([...nextQuizProgress].filter(([, item]) => item.mastered).map(([wordKey]) => wordKey));
     const newlyLearnedEntries = entries.filter((entry) => {
       const wordKeys = [...new Set(entry.vocabulary

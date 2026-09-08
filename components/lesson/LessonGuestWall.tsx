@@ -62,7 +62,7 @@ export function LessonGuestWall({
       ? {
           free: "Miễn phí 100%",
           title: "Đăng nhập để mở bài học",
-          body: "Toàn bộ bài học ở đây đều miễn phí. Mình chỉ cần bạn đăng nhập để nhớ hôm nay bạn đã học gì và đang đi tới đâu — streak, XP và linh vật theo level đều lớn lên từ đó.",
+          body: "Toàn bộ bài học ở đây đều miễn phí. Đăng nhập giúp lưu tiến độ, streak, XP và linh vật theo level.",
           perks: [
             "Ghi nhớ tiến độ mỗi ngày",
             "Streak & XP",
@@ -118,8 +118,8 @@ export function LessonGuestWall({
           }
         />
       ) : (
-      <section className="relative overflow-hidden rounded-[1.75rem] border border-border bg-card shadow-[var(--shadow-sm)]">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-1 brand-gradient" />
+      <section className="relative overflow-hidden rounded-[0.875rem] border border-border bg-card shadow-[var(--shadow-sm)]">
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-[3px] bg-accent" />
         <div className="px-5 py-5 text-center sm:px-7 sm:py-6">
           <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-bold">
             {lesson.topic && (
@@ -137,7 +137,7 @@ export function LessonGuestWall({
               {m.common.sentences}
             </span>
           </div>
-          <h1 lang="ja" className="mt-3 text-3xl font-black leading-tight text-fg sm:text-4xl">
+          <h1 lang="ja" className="mt-4 text-3xl font-bold leading-tight tracking-[-0.025em] text-fg sm:text-4xl">
             {lesson.title}
           </h1>
         </div>
@@ -150,8 +150,8 @@ export function LessonGuestWall({
         <DialogueScript sentences={preview} preview t={m.player} />
       )}
 
-      <section className="relative overflow-hidden rounded-[1.75rem] border border-primary/25 bg-primary/[0.06] p-5 sm:p-6">
-        <div className="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
+      <section className="relative overflow-hidden rounded-[0.875rem] border border-border bg-card p-5 shadow-[var(--shadow-md)] sm:p-7">
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-[3px] bg-accent" />
         <div className="relative flex flex-col items-center gap-4 text-center">
           <MascotBadge slug={mascot.slug} accent={mascot.accent} size={64} />
           <div>

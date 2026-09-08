@@ -90,7 +90,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover", // enables env(safe-area-inset-*) on notch devices
-  themeColor: "#6360f2",
+  themeColor: "#fdfbff",
 };
 
 export default async function RootLayout({

@@ -11,6 +11,12 @@ import {
   xpForSentence,
   XP_RULES,
 } from "@/lib/gamification/xp";
+import {
+  emptyMission,
+  QUEST_TARGETS,
+  settleQuests,
+  type QuestId,
+} from "@/lib/gamification/quests";
 import type {
   DailyMission,
   LessonProgress,
@@ -21,7 +27,18 @@ import type {
 import type { AppState } from "./state";
 import { uid } from "./state";
 
-export const DAILY_TARGET = 5;
+export const DAILY_TARGET = QUEST_TARGETS.shadowing;
+
+/** Today's quest row for a user, or undefined when the day is untouched. */
+function findMission(
+  missions: DailyMission[],
+  userId: string,
+  date: string,
+): number {
+  return missions.findIndex(
+    (m) => m.user_id === userId && m.mission_date === date,
+  );
+}
 
 export interface AttemptInput {
   sentenceId: string;
@@ -40,6 +57,10 @@ export interface AttemptOutcome {
   xpGained: number;
   lessonCompletedNow: boolean;
   missionCompletedNow: boolean;
+  /** Quests that flipped to done on this attempt (shadowing, and any knock-on). */
+  questsCompletedNow: QuestId[];
+  /** All three daily quests are now cleared, for the first time today. */
+  perfectDayNow: boolean;
   streakIncreased: boolean;
   leveledUp: boolean;
   newLevel: number;
@@ -190,32 +211,27 @@ export function applyAttempt(
   const missionCount = passedSentencesToday.size;
 
   const missions = [...state.missions];
-  let mission = missions.find(
-    (m) => m.user_id === profile.id && m.mission_date === today,
-  );
-  const missionWasCompleted = mission?.is_completed ?? false;
-  const missionNowCompleted = missionCount >= DAILY_TARGET;
+  const missionIndex = findMission(missions, profile.id, today);
+  const missionBefore = missionIndex >= 0 ? missions[missionIndex] : undefined;
+  const settlement = settleQuests({
+    before: missionBefore,
+    after: {
+      ...(missionBefore ?? { ...emptyMission(profile.id, nowIso, today), id: uid() }),
+      passed_sentence_count: missionCount,
+    },
+    lessonId,
+    nowIso,
+    newId: uid,
+  });
+  if (missionIndex >= 0) missions[missionIndex] = settlement.mission;
+  else missions.push(settlement.mission);
 
-  if (!mission) {
-    mission = {
-      id: uid(),
-      user_id: profile.id,
-      mission_date: today,
-      target_sentence_count: DAILY_TARGET,
-      passed_sentence_count: 0,
-      is_completed: false,
-      created_at: nowIso,
-    };
-    missions.push(mission);
-  }
-  const updatedMission: DailyMission = {
-    ...mission,
-    passed_sentence_count: missionCount,
-    is_completed: missionNowCompleted || missionWasCompleted,
-  };
-  missions[missions.indexOf(mission)] = updatedMission;
+  // Quest payouts (shadowing + the perfect-day bonus if this attempt closed the
+  // board) are settled centrally so every entry point pays them identically.
+  xpGained += settlement.xp;
+  xpEvents.push(...settlement.events);
 
-  const missionCompletedNow = !missionWasCompleted && missionNowCompleted;
+  const missionCompletedNow = settlement.newlyCompleted.includes("shadowing");
 
   // ---- streak (only on the mission-completing transition) ------------- //
   let streak = {
@@ -228,13 +244,9 @@ export function applyAttempt(
     const before = streak.current_streak;
     streak = advanceStreak(streak);
     streakIncreased = streak.current_streak !== before || before === 0;
-    addXp(XP_RULES.missionComplete, "mission_complete");
     if (isStreakMilestone(streak.current_streak)) {
       addXp(XP_RULES.streakMilestone, "streak_milestone");
     }
-  } else if (missionCompletedNow) {
-    // Mission completed but streak already kept today (edge): still award once.
-    addXp(XP_RULES.missionComplete, "mission_complete");
   }
 
   // ---- profile (xp / level / streak) ---------------------------------- //
@@ -267,6 +279,8 @@ export function applyAttempt(
       xpGained,
       lessonCompletedNow,
       missionCompletedNow,
+      questsCompletedNow: settlement.newlyCompleted,
+      perfectDayNow: settlement.perfectDayNow,
       streakIncreased,
       leveledUp: newLevel > oldLevel,
       newLevel,
@@ -288,6 +302,10 @@ export interface ReadingOutcome {
   xpGained: number;
   /** The lesson was already completed, so this pass earns nothing. */
   repeat: boolean;
+  /** This read counted toward the daily 読解 quest. */
+  countedToday: boolean;
+  questsCompletedNow: QuestId[];
+  perfectDayNow: boolean;
   leveledUp: boolean;
   newLevel: number;
 }
@@ -296,13 +314,16 @@ export interface ReadingOutcome {
  * Finish a 読解 lesson: mark it read and pay out XP.
  *
  * Reading used to be the one activity that moved no number at all, which made
- * it read as filler next to shadowing. It now earns XP on the same ladder — but
- * deliberately NOT streak or mission progress: those are defined in passed
- * sentences, and quietly letting a page of reading satisfy "practise 5
- * sentences today" would hollow out the streak rather than reward the reader.
+ * it read as filler next to shadowing. It now earns XP on the same ladder AND
+ * clears its own quest on the daily board — but still never the shadowing quest
+ * or the streak, which are defined in passed sentences. Letting a page of
+ * reading satisfy "practise 5 sentences today" would hollow out the streak
+ * rather than reward the reader.
  *
- * XP is paid once per lesson (`repeat`), so re-opening the check to read the
- * explanations is free and never feels like farming.
+ * Lesson XP is paid once per lesson (`repeat`), so re-opening the check to read
+ * the explanations is free and never feels like farming. Quest credit is looser
+ * — once per lesson per *day* — so a learner who has already read everything
+ * can still clear today's board by revisiting a passage.
  */
 export function applyReadingComplete(
   state: AppState,
@@ -319,6 +340,9 @@ export function applyReadingComplete(
     (item) => item.user_id === profile.id && item.lesson_id === input.lessonId,
   );
   const repeat = existing?.status === "completed";
+  const today = todayKey();
+  // Already read *today*? Then the quest was paid for this lesson already.
+  const creditedToday = existing?.updated_at.slice(0, 10) === today;
 
   const progressRow: LessonProgress = {
     id: existing?.id ?? uid(),
@@ -334,7 +358,7 @@ export function applyReadingComplete(
     ? state.progress.map((item) => (item.id === existing.id ? progressRow : item))
     : [...state.progress, progressRow];
 
-  const xpGained = repeat ? 0 : xpForReading(input.correct);
+  let xpGained = repeat ? 0 : xpForReading(input.correct);
   const xpEvents = [...state.xpEvents];
   if (xpGained > 0) {
     xpEvents.push({
@@ -348,6 +372,27 @@ export function applyReadingComplete(
     });
   }
 
+  // ---- daily quest board --------------------------------------------- //
+  const missions = [...state.missions];
+  const missionIndex = findMission(missions, profile.id, today);
+  const missionBefore = missionIndex >= 0 ? missions[missionIndex] : undefined;
+  const base =
+    missionBefore ?? { ...emptyMission(profile.id, nowIso, today), id: uid() };
+  const settlement = settleQuests({
+    before: missionBefore,
+    after: {
+      ...base,
+      reading_count: (base.reading_count ?? 0) + (creditedToday ? 0 : 1),
+    },
+    lessonId: input.lessonId,
+    nowIso,
+    newId: uid,
+  });
+  if (missionIndex >= 0) missions[missionIndex] = settlement.mission;
+  else missions.push(settlement.mission);
+  xpGained += settlement.xp;
+  xpEvents.push(...settlement.events);
+
   const newTotalXp = profile.total_xp + xpGained;
   const oldLevel = profile.current_level;
   const newLevel = levelFromXp(newTotalXp);
@@ -357,6 +402,7 @@ export function applyReadingComplete(
       ...state,
       profile: { ...profile, total_xp: newTotalXp, current_level: newLevel },
       progress,
+      missions,
       xpEvents,
     },
     outcome: {
@@ -365,8 +411,82 @@ export function applyReadingComplete(
       total: input.total,
       xpGained,
       repeat,
+      countedToday: !creditedToday,
+      questsCompletedNow: settlement.newlyCompleted,
+      perfectDayNow: settlement.perfectDayNow,
       leveledUp: newLevel > oldLevel,
       newLevel,
+    },
+  };
+}
+
+export interface VocabOutcome {
+  /** Words credited to the vocabulary quest by this action. */
+  learned: number;
+  xpGained: number;
+  questsCompletedNow: QuestId[];
+  perfectDayNow: boolean;
+  leveledUp: boolean;
+  newLevel: number;
+  /** The board after this action, for immediate UI feedback. */
+  vocabCount: number;
+  vocabTarget: number;
+}
+
+/**
+ * Credit words learned toward today's vocabulary quest.
+ *
+ * The caller passes how many words *newly* became mastered — never how many
+ * were answered — so re-drilling a word already known earns nothing and the
+ * quest cannot be farmed by spamming a deck the user has already finished.
+ *
+ * Learning words pays no XP of its own (the quest is the reward); the drill is
+ * already its own spaced-repetition loop.
+ */
+export function applyVocabProgress(
+  state: AppState,
+  learned: number,
+  nowIso: string,
+): { state: AppState; outcome: VocabOutcome | null } {
+  const profile = state.profile;
+  if (!profile || learned <= 0) return { state, outcome: null };
+
+  const today = todayKey();
+  const missions = [...state.missions];
+  const missionIndex = findMission(missions, profile.id, today);
+  const missionBefore = missionIndex >= 0 ? missions[missionIndex] : undefined;
+  const base =
+    missionBefore ?? { ...emptyMission(profile.id, nowIso, today), id: uid() };
+  const settlement = settleQuests({
+    before: missionBefore,
+    after: { ...base, vocab_count: (base.vocab_count ?? 0) + learned },
+    lessonId: null,
+    nowIso,
+    newId: uid,
+  });
+  if (missionIndex >= 0) missions[missionIndex] = settlement.mission;
+  else missions.push(settlement.mission);
+
+  const newTotalXp = profile.total_xp + settlement.xp;
+  const oldLevel = profile.current_level;
+  const newLevel = levelFromXp(newTotalXp);
+
+  return {
+    state: {
+      ...state,
+      profile: { ...profile, total_xp: newTotalXp, current_level: newLevel },
+      missions,
+      xpEvents: [...state.xpEvents, ...settlement.events],
+    },
+    outcome: {
+      learned,
+      xpGained: settlement.xp,
+      questsCompletedNow: settlement.newlyCompleted,
+      perfectDayNow: settlement.perfectDayNow,
+      leveledUp: newLevel > oldLevel,
+      newLevel,
+      vocabCount: settlement.mission.vocab_count ?? 0,
+      vocabTarget: settlement.mission.vocab_target ?? QUEST_TARGETS.vocab,
     },
   };
 }

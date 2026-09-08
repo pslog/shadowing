@@ -69,7 +69,7 @@ export function LessonCard({
         style={{
           background: `linear-gradient(135deg, color-mix(in srgb, ${
             completed ? "var(--success)" : hue
-          } 18%, transparent), transparent 72%)`,
+          } 26%, transparent), transparent 76%)`,
         }}
       >
         <div className="flex items-start justify-between gap-3">
@@ -132,7 +132,7 @@ export function LessonCard({
               </span>
             )}
           </div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--muted)_20%,transparent)]">
+          <div className="h-2 w-full overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--primary)_13%,var(--surface))]">
             <div
               className="h-full rounded-full transition-all"
               style={{ width: `${pct}%`, background: completed ? "var(--success)" : hue }}

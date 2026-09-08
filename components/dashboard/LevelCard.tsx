@@ -24,7 +24,7 @@ export function LevelCard({ totalXp }: { totalXp: number }) {
         </p>
       </div>
       <div className="mt-3">
-        <div className="h-2.5 w-full overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--muted)_22%,transparent)]">
+        <div className="h-2.5 w-full overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--primary)_13%,var(--surface))]">
           <div
             className="h-full rounded-full transition-all"
             style={{

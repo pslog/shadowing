@@ -192,13 +192,28 @@ export interface LessonProgress {
   updated_at: string;
 }
 
+/**
+ * One day's quest board for one user. The shadowing columns are the original
+ * mission; `reading_*` / `vocab_*` were added when the board grew to three
+ * quests, so rows written before that arrive without them — read them through
+ * `lib/gamification/quests.ts`, which defaults the missing fields.
+ */
 export interface DailyMission {
   id: string;
   user_id: string;
   mission_date: string; // YYYY-MM-DD
   target_sentence_count: number;
   passed_sentence_count: number;
+  /** The shadowing quest is cleared (drives the streak). */
   is_completed: boolean;
+  reading_target?: number;
+  /** 読解 lessons finished today. */
+  reading_count?: number;
+  vocab_target?: number;
+  /** Vocabulary words learned/mastered today. */
+  vocab_count?: number;
+  /** The all-three-quests bonus has been paid for this day. */
+  bonus_awarded?: boolean;
   created_at: string;
 }
 
@@ -209,7 +224,13 @@ export type XpEventType =
   | "mission_complete"
   | "streak_milestone"
   /** A 読解 lesson read to the end and its comprehension check submitted. */
-  | "reading_complete";
+  | "reading_complete"
+  /** The daily 読解 quest cleared. */
+  | "quest_reading"
+  /** The daily vocabulary quest cleared. */
+  | "quest_vocab"
+  /** All three daily quests cleared — the perfect-day bonus. */
+  | "daily_bonus";
 
 export interface XpEvent {
   id: string;

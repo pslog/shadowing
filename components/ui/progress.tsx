@@ -13,7 +13,7 @@ export function ProgressBar({
   return (
     <div
       className={cn(
-        "h-2.5 w-full overflow-hidden rounded-full bg-border/60",
+        "bar-track h-2.5 w-full",
         className,
       )}
       role="progressbar"
@@ -22,7 +22,7 @@ export function ProgressBar({
       aria-valuemax={100}
     >
       <div
-        className={cn("h-full rounded-full brand-gradient transition-all", barClassName)}
+        className={cn("bar-fill", barClassName)}
         style={{ width: `${pct}%` }}
       />
     </div>

@@ -20,7 +20,15 @@ function encourage(
   return t.encourageResume(currentStreak);
 }
 
-/** Lịch tuần (7 ngày gần nhất) nhấn mạnh streak để tạo động lực mỗi ngày. */
+/**
+ * Practice calendar over the whole window it is given, laid out by weekday.
+ *
+ * It used to render `stats.slice(-7)` even though the caller passes 30 days,
+ * which made it a second drawing of the same seven days the dashboard's week
+ * chart already showed. Now it uses the full window, so the two pages answer
+ * different questions: the dashboard shows this week's rhythm, this shows the
+ * month.
+ */
 export function CalendarHeatmap({
   stats,
   currentStreak,
@@ -32,8 +40,10 @@ export function CalendarHeatmap({
 }) {
   const { localeTag, dictionary } = useI18n();
   const t = dictionary.heatmap;
-  const week = stats.slice(-7);
   const activeToday = (stats[stats.length - 1]?.count ?? 0) > 0;
+  const todayDate = stats[stats.length - 1]?.date;
+  // Blank cells so the first day lands under its own weekday column.
+  const lead = stats.length > 0 ? dayOfWeek(stats[0].date) : 0;
   const total = stats.reduce((s, d) => s + d.count, 0);
   const hasStreak = currentStreak > 0;
 
@@ -59,35 +69,36 @@ export function CalendarHeatmap({
         {encourage(t, currentStreak, longestStreak, activeToday)}
       </p>
 
-      <div className="mt-4 grid grid-cols-7 gap-1.5">
-        {week.map((d, i) => {
+      <div className="mt-4 grid grid-cols-7 gap-1.5" aria-hidden>
+        {dictionary.weekdays.map((dow) => (
+          <span key={dow} className="text-center text-[11px] font-bold text-muted">
+            {dow}
+          </span>
+        ))}
+      </div>
+
+      <div className="mt-1.5 grid grid-cols-7 gap-1.5">
+        {Array.from({ length: lead }).map((_, i) => (
+          <span key={`lead-${i}`} aria-hidden />
+        ))}
+        {stats.map((d) => {
           const active = d.count > 0;
-          const isToday = i === week.length - 1;
-          const dow = dictionary.weekdays[dayOfWeek(d.date)];
+          const isToday = d.date === todayDate;
           const dayNum = Number(d.date.slice(8, 10));
           return (
-            <div key={d.date} className="flex flex-col items-center gap-1.5">
-              <span
-                className={cn(
-                  "text-[11px] font-bold",
-                  isToday ? "text-[var(--warning)]" : "text-muted",
-                )}
-              >
-                {dow}
-              </span>
-              <div
-                title={t.dayTooltip(d.date, d.count)}
-                className={cn(
-                  "grid h-9 w-full place-items-center rounded-lg text-xs font-extrabold tabular-nums transition-colors",
-                  active
-                    ? "bg-[var(--c-amber)] text-white shadow-[var(--shadow-sm)]"
-                    : "border border-border bg-surface text-muted/60",
-                  isToday &&
-                    "outline outline-2 -outline-offset-2 outline-[var(--warning)]",
-                )}
-              >
-                {active ? <Icon name="flame" size={15} filled /> : dayNum}
-              </div>
+            <div
+              key={d.date}
+              title={t.dayTooltip(d.date, d.count)}
+              className={cn(
+                "grid h-8 w-full place-items-center rounded-lg text-[11px] font-extrabold tabular-nums transition-colors",
+                active
+                  ? "bg-[var(--c-amber)] text-white shadow-[var(--shadow-sm)]"
+                  : "border border-border bg-surface text-muted/60",
+                isToday &&
+                  "outline outline-2 -outline-offset-2 outline-[var(--warning)]",
+              )}
+            >
+              {active ? <Icon name="flame" size={13} filled /> : dayNum}
             </div>
           );
         })}

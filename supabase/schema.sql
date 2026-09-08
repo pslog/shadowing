@@ -420,6 +420,9 @@ from public.site_visits;
 -- ---------------------------------------------------------------------------
 --  daily_missions
 -- ---------------------------------------------------------------------------
+-- One row per user per day: the quest board. `is_completed` is the shadowing
+-- quest specifically (it drives the streak); `bonus_awarded` is the once-a-day
+-- payout for clearing all three quests.
 create table if not exists public.daily_missions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles(id) on delete cascade,
@@ -427,9 +430,22 @@ create table if not exists public.daily_missions (
   target_sentence_count int not null default 5,
   passed_sentence_count int not null default 0,
   is_completed boolean not null default false,
+  reading_target int not null default 1,
+  reading_count int not null default 0,
+  vocab_target int not null default 10,
+  vocab_count int not null default 0,
+  bonus_awarded boolean not null default false,
   created_at timestamptz not null default now(),
   unique (user_id, mission_date)
 );
+
+-- Added after the first release; see supabase/daily-quests-migration.sql.
+alter table public.daily_missions
+  add column if not exists reading_target int not null default 1,
+  add column if not exists reading_count  int not null default 0,
+  add column if not exists vocab_target   int not null default 10,
+  add column if not exists vocab_count    int not null default 0,
+  add column if not exists bonus_awarded  boolean not null default false;
 
 -- ---------------------------------------------------------------------------
 --  xp_events

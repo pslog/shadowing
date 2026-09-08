@@ -60,6 +60,7 @@ export function MascotCompanion() {
 
   const path = stripLocale(pathname || "/");
   const hidden = isHidden(path);
+  const compactHome = path === "/";
 
   const lessonKey = lessonKeyFromPath(path);
   const action = useMemo(() => {
@@ -100,6 +101,17 @@ export function MascotCompanion() {
       // Private mode / storage disabled: fall through and just show it.
     }
     if (seen === stamp) return;
+
+    // On phones the suggestion card competes with the lesson and bottom nav.
+    // Keep the mascot available, but let the learner open it intentionally.
+    if (window.matchMedia("(max-width: 639px)").matches) {
+      try {
+        window.localStorage.setItem(SEEN_KEY, stamp);
+      } catch {
+        // Storage is optional; compact mode still remains unobtrusive.
+      }
+      return;
+    }
 
     setBubble((current) =>
       // Never talk over a celebration with a routine suggestion.
@@ -211,6 +223,8 @@ export function MascotCompanion() {
         "fixed right-3 z-30 flex items-end gap-2 sm:right-5",
         // Clear the mobile bottom nav (h-16) plus the iOS home indicator.
         "bottom-[calc(4.75rem+env(safe-area-inset-bottom))] md:bottom-5",
+        // Home already contains the mascot journey; keep its mobile content clear.
+        compactHome && "max-md:hidden",
       )}
     >
       {bubble && (
@@ -218,7 +232,7 @@ export function MascotCompanion() {
           key={bubble.kind === "reaction" ? bubble.nonce : "suggestion"}
           role="status"
           className={cn(
-            "animate-pop max-w-[15rem] rounded-2xl rounded-br-sm border bg-card p-3 shadow-[var(--shadow-md)] sm:max-w-[17rem]",
+            "animate-pop max-w-[15rem] rounded-xl rounded-br-sm border bg-card p-3 shadow-[var(--shadow-md)] sm:max-w-[17rem]",
             reaction?.mood === "cheer"
               ? "border-primary/40 ring-1 ring-primary/15"
               : "border-border",
@@ -262,10 +276,7 @@ export function MascotCompanion() {
         aria-expanded={bubble != null}
         aria-label={bubble ? t.collapse : `${t.label}: ${t.expand}`}
         title={t.label}
-        className="focus-ring relative grid h-14 w-14 shrink-0 place-items-center rounded-full border border-border bg-card shadow-[var(--shadow-md)] transition-transform hover:-translate-y-0.5 active:scale-95 sm:h-16 sm:w-16"
-        style={{
-          background: `radial-gradient(circle at 50% 28%, color-mix(in srgb, ${mascot.accent} 26%, var(--card)), var(--card))`,
-        }}
+        className="focus-ring relative grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-border bg-card shadow-[var(--shadow-md)] transition-transform active:scale-95 sm:h-14 sm:w-14"
       >
         {reaction?.mood === "cheer" && (
           <span
@@ -276,21 +287,19 @@ export function MascotCompanion() {
         <Mascot
           key={reaction ? `${reaction.key}-${bubble?.kind === "reaction" ? bubble.nonce : 0}` : "idle"}
           slug={mascot.slug}
-          size={44}
+          size={38}
           className={
             reaction?.mood === "cheer"
               ? "animate-cheer"
               : reaction
                 ? "animate-nod"
-                : bubble
-                  ? undefined
-                  : "animate-float"
+                : undefined
           }
         />
         {!bubble && (
           <span
             aria-hidden
-            className="absolute -right-0.5 -top-0.5 h-3.5 w-3.5 rounded-full border-2 border-card bg-primary"
+            className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-card bg-accent"
           />
         )}
       </button>

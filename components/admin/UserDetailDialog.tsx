@@ -262,6 +262,13 @@ export function UserDetailDialog({
                     { label: t.xpMission, value: activity.xpByType.mission_complete ?? 0 },
                     { label: t.xpStreak, value: activity.xpByType.streak_milestone ?? 0 },
                     { label: t.xpReading, value: activity.xpByType.reading_complete ?? 0 },
+                    {
+                      label: t.xpQuest,
+                      value:
+                        (activity.xpByType.quest_reading ?? 0) +
+                        (activity.xpByType.quest_vocab ?? 0),
+                    },
+                    { label: t.xpBonus, value: activity.xpByType.daily_bonus ?? 0 },
                   ]}
                 />
               </Section>

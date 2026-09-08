@@ -19,12 +19,15 @@ import type {
   ScoreBreakdown,
   VocabEntry,
 } from "@/lib/types";
+import { todayKey } from "@/lib/date";
 import { createClient as createSupabaseClient, hasSupabaseEnv } from "@/lib/supabase/client";
 import {
   applyAttempt,
   applyReadingComplete,
+  applyVocabProgress,
   type AttemptOutcome,
   type ReadingOutcome,
+  type VocabOutcome,
 } from "./engine";
 import { isSuperAdminEmail, vocabKey } from "./selectors";
 import {
@@ -125,6 +128,12 @@ interface DataContextValue {
     result: { correct: number; total: number },
   ) => ReadingOutcome | null;
   recordAttempt: (input: RecordAttemptInput) => AttemptOutcome;
+  /**
+   * Credit newly-mastered vocabulary words to today's quest. Callers pass how
+   * many words crossed into "learned" on this action, never how many were
+   * answered. Returns null for guests and for a no-op (0 new words).
+   */
+  recordVocabLearned: (learned: number) => VocabOutcome | null;
   reset: () => void;
 }
 
@@ -628,7 +637,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           ? supabase.from("lesson_progress").upsert(progress)
           : Promise.resolve({ error: null }),
         mission
-          ? supabase.from("daily_missions").upsert(mission)
+          ? supabase
+              .from("daily_missions")
+              .upsert(mission, { onConflict: "user_id,mission_date" })
           : Promise.resolve({ error: null }),
         newXpEvents.length > 0
           ? supabase.from("xp_events").insert(newXpEvents)
@@ -652,11 +663,59 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         (item) =>
           item.user_id === next.profile?.id && item.lesson_id === outcome.lessonId,
       );
+      const mission = next.missions.find(
+        (item) =>
+          item.user_id === next.profile?.id && item.mission_date === todayKey(),
+      );
       const newXpEvents = next.xpEvents.filter((item) => item.created_at === nowIso);
 
       const writes = [
         progress
           ? supabase.from("lesson_progress").upsert(progress)
+          : Promise.resolve({ error: null }),
+        mission
+          ? supabase
+              .from("daily_missions")
+              .upsert(mission, { onConflict: "user_id,mission_date" })
+          : Promise.resolve({ error: null }),
+        outcome.xpGained > 0
+          ? supabase
+              .from("profiles")
+              .update({
+                total_xp: next.profile.total_xp,
+                current_level: next.profile.current_level,
+              })
+              .eq("id", next.profile.id)
+          : Promise.resolve({ error: null }),
+        newXpEvents.length > 0
+          ? supabase.from("xp_events").insert(newXpEvents)
+          : Promise.resolve({ error: null }),
+      ];
+
+      const results = await Promise.all(writes);
+      const failed = results.find((result) => result.error);
+      if (failed?.error) throw failed.error;
+    },
+    [],
+  );
+
+  /** Mirrors vocabulary quest progress: the mission row, plus any quest payout. */
+  const persistSupabaseVocab = useCallback(
+    async (next: AppState, outcome: VocabOutcome, nowIso: string) => {
+      const supabase = await createSupabaseClient();
+      if (!supabase || !next.profile) return;
+
+      const mission = next.missions.find(
+        (item) =>
+          item.user_id === next.profile?.id && item.mission_date === todayKey(),
+      );
+      const newXpEvents = next.xpEvents.filter((item) => item.created_at === nowIso);
+
+      const writes = [
+        mission
+          ? supabase
+              .from("daily_missions")
+              .upsert(mission, { onConflict: "user_id,mission_date" })
           : Promise.resolve({ error: null }),
         outcome.xpGained > 0
           ? supabase
@@ -1192,6 +1251,22 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     [commit, persistSupabaseReading],
   );
 
+  const recordVocabLearned = useCallback(
+    (learned: number): VocabOutcome | null => {
+      const prev = stateRef.current;
+      if (!prev.profile || learned <= 0) return null;
+
+      const now = new Date().toISOString();
+      const { state: next, outcome } = applyVocabProgress(prev, learned, now);
+      if (!outcome) return null;
+      commit(next);
+
+      if (USING_SUPABASE) persistSupabaseVocab(next, outcome, now).catch(console.error);
+      return outcome;
+    },
+    [commit, persistSupabaseVocab],
+  );
+
   const reset = useCallback(() => {
     const next = emptyState(new Date().toISOString());
     commit(next);
@@ -1219,6 +1294,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       ensureLessonSentences,
       markReadingLessonRead,
       recordAttempt,
+      recordVocabLearned,
       reset,
     }),
     [
@@ -1239,6 +1315,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       ensureLessonSentences,
       markReadingLessonRead,
       recordAttempt,
+      recordVocabLearned,
       reset,
     ],
   );

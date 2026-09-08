@@ -185,7 +185,7 @@ export default function CoursePage() {
                     </span>
                   )}
                 </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--muted)_20%,transparent)]">
+                <div className="h-2 w-full overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--primary)_13%,var(--surface))]">
                   <div
                     className="h-full rounded-full transition-all"
                     style={{ width: `${pct}%`, background: allDone ? "var(--success)" : hue }}

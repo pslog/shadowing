@@ -40,15 +40,12 @@ export function DialogueScript({
   t: Dictionary["player"];
 }) {
   return (
-    <section className="overflow-hidden rounded-[1.75rem] border border-border bg-card shadow-[var(--shadow-md)]">
-      <div className="brand-gradient relative overflow-hidden px-6 py-5 text-white">
-        <div className="pointer-events-none absolute -right-12 -top-16 h-40 w-40 rounded-full border border-white/20" />
+    <section className="overflow-hidden rounded-[0.875rem] border border-border bg-card shadow-[var(--shadow-sm)]">
+      <div className="relative overflow-hidden border-b border-border bg-surface px-5 py-5">
+        <div className="absolute inset-y-0 left-0 w-[3px] bg-accent" />
         <div className="relative">
-          <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/75">
-            Step 1
-          </p>
-          <h2 className="mt-1 text-2xl font-extrabold">{t.step1Title}</h2>
-          <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/82">
+          <h2 className="text-xl font-extrabold tracking-[-0.02em]">{t.step1Title}</h2>
+          <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted">
             {t.step1Body}
           </p>
         </div>
@@ -113,9 +110,9 @@ export function DialogueScript({
                 type="button"
                 onClick={() => onPractice?.(i)}
                 className={[
-                  "focus-ring grid h-9 w-9 shrink-0 place-items-center rounded-full text-xs font-extrabold tabular-nums transition-all",
+                  "focus-ring grid h-10 w-10 shrink-0 place-items-center rounded-lg text-xs font-extrabold tabular-nums transition-colors",
                   active
-                    ? "bg-primary text-white shadow-[var(--shadow-glow)]"
+                    ? "bg-primary text-white"
                     : passed
                       ? "bg-[var(--success)] text-white"
                       : "border border-border bg-surface text-muted group-hover:border-primary/40 group-hover:text-primary",
@@ -128,9 +125,9 @@ export function DialogueScript({
 
               <div
                 className={[
-                  "min-w-0 flex-1 rounded-xl border px-3 py-2.5 transition-colors",
+                  "min-w-0 flex-1 rounded-xl border px-3.5 py-3 transition-colors",
                   active
-                    ? "border-primary/30 bg-primary/7"
+                    ? "border-accent/35 bg-accent/[0.045] shadow-[inset_3px_0_0_var(--accent)]"
                     : "border-border bg-surface/70 group-hover:bg-card",
                 ].join(" ")}
               >
@@ -139,7 +136,7 @@ export function DialogueScript({
                     {t.utterance(i + 1)}
                   </span>
                   {active && (
-                      <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[11px] font-bold text-primary">
+                      <span className="rounded-md bg-accent/10 px-1.5 py-0.5 text-[11px] font-bold text-accent">
                       {t.practicing}
                     </span>
                   )}
@@ -150,7 +147,7 @@ export function DialogueScript({
                   )}
                 </div>
 
-                <p lang="ja" className="text-[0.93rem] font-semibold leading-[2] text-fg [&_rt]:text-[0.55em] [&_rt]:font-medium [&_rt]:text-muted">
+                <p lang="ja" className="text-[0.95rem] font-semibold leading-[2] text-fg [&_rt]:text-[0.55em] [&_rt]:font-medium [&_rt]:text-muted">
                   <Furigana sentence={sentence} />
                 </p>
               </div>

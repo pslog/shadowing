@@ -20,11 +20,13 @@ export function CourseCard({
   stats,
   engagement,
   href,
+  priority = false,
 }: {
   course: Course;
   stats: CourseStats;
   engagement?: CourseEngagementStats;
   href: string;
+  priority?: boolean;
 }) {
   const { dictionary: m, href: localizedHref } = useI18n();
   const hue = course.accent ?? topicHue(course.topic);
@@ -45,13 +47,13 @@ export function CourseCard({
       href={localizedHref(href)}
       prefetch={false}
       className={[
-        "card card-interactive group grid min-h-36 grid-cols-[5.5rem_minmax(0,1fr)] gap-3 overflow-hidden p-3 sm:grid-cols-[7rem_minmax(0,1fr)] sm:gap-4",
+        "card card-interactive tint-hue group relative grid h-full grid-cols-[7.25rem_minmax(0,1fr)] overflow-hidden p-3 sm:grid-cols-[9.5rem_minmax(0,1fr)]",
         done ? "ring-2 ring-[var(--success)]/35" : "",
       ].join(" ")}
       style={{ ["--tile-c" as string]: done ? "var(--success)" : hue }}
     >
       <div
-        className="relative h-full min-h-32 overflow-hidden rounded-2xl border border-border bg-surface"
+        className="relative min-h-52 w-full overflow-hidden rounded-[0.7rem] border border-border bg-surface sm:min-h-48"
         style={
           imageSrc
             ? undefined
@@ -68,9 +70,10 @@ export function CourseCard({
               src={imageSrc}
               alt=""
               fill
-              sizes="(max-width: 640px) 5.5rem, 7rem"
-              className="object-cover object-top"
+              sizes="(max-width: 640px) calc(100vw - 3rem), 10rem"
+              className="media-vivid object-cover"
               quality={70}
+              priority={priority}
             />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/10" />
           </>
@@ -86,7 +89,7 @@ export function CourseCard({
         )}
       </div>
 
-      <div className="flex min-w-0 flex-col py-1">
+      <div className="flex min-w-0 flex-1 flex-col px-3 py-2 sm:px-4">
         <div className="flex items-start justify-between gap-2">
           <div className="flex min-w-0 flex-wrap items-center gap-1.5">
             {course.level && <Badge>{course.level}</Badge>}
@@ -104,7 +107,7 @@ export function CourseCard({
             )}
           </div>
           <span
-            className="inline-flex h-7 shrink-0 items-center gap-2 rounded-full border border-border/70 bg-card/85 px-2.5 text-[11px] font-extrabold text-muted shadow-sm backdrop-blur"
+            className="inline-flex h-7 shrink-0 items-center gap-2 rounded-lg border border-border bg-surface px-2.5 text-[11px] font-bold text-muted"
             aria-label={`${totalViews} ${m.common.views}, ${shadowingUsers} ${m.common.shadowingUsers}`}
           >
             <span className="inline-flex items-center gap-1 tabular-nums" title={m.common.views}>
@@ -122,11 +125,11 @@ export function CourseCard({
           </span>
         </div>
 
-        <h3 lang="ja" className="mt-2 line-clamp-2 text-base font-extrabold leading-snug sm:text-lg">
+        <h3 lang="ja" className="mt-3 line-clamp-2 text-lg font-bold leading-snug">
           {course.title}
         </h3>
         {course.description && (
-          <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted sm:text-sm">
+          <p className="mt-2 line-clamp-3 text-xs leading-5 text-muted sm:text-sm sm:leading-6">
             {course.description}
           </p>
         )}
@@ -140,13 +143,13 @@ export function CourseCard({
               {Math.round(pct)}%
             </span>
           </div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--muted)_18%,transparent)]">
+          <div className="h-2 w-full overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--primary)_13%,var(--surface))]">
             <div
               className="h-full rounded-full transition-all"
               style={{ width: `${pct}%`, background: done ? "var(--success)" : hue }}
             />
           </div>
-          <span className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-primary">
+          <span className="mt-3 inline-flex min-h-11 items-center gap-1 border-t border-border pt-3 text-sm font-bold text-accent">
             {m.common.open}
             <Icon
               name="arrow-right"
