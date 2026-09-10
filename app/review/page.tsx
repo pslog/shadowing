@@ -16,6 +16,11 @@ import { useI18n } from "@/components/i18n/useI18n";
 import { emitCompanionEvent } from "@/lib/gamification/companion-events";
 import type { Dictionary } from "@/lib/i18n";
 import { VocabularyBookLibrary } from "@/components/review/VocabularyBookLibrary";
+import {
+  QuestToast,
+  hasCelebration,
+  type QuestCelebration,
+} from "@/components/gamification/QuestToast";
 
 type Filter = "all" | "unlearned" | "learned";
 
@@ -25,7 +30,7 @@ interface VocabStat {
 }
 
 export default function ReviewPage() {
-  const { state, ready, setVocabLearned, removeSavedVocab } = useData();
+  const { state, ready, setVocabLearned, removeSavedVocab, recordVocabLearned } = useData();
   const { dictionary, href, locale } = useI18n();
   const pathname = usePathname();
   const router = useRouter();
@@ -33,6 +38,7 @@ export default function ReviewPage() {
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const [deck, setDeck] = useState<SavedVocab[] | null>(null);
+  const [celebration, setCelebration] = useState<QuestCelebration | null>(null);
   const isNotebookPage = pathname?.endsWith("/review/my-book") ?? false;
 
   const all = savedVocabList(state);
@@ -42,8 +48,21 @@ export default function ReviewPage() {
   // one — both worth a word from the companion. Unlearning is silent: undoing
   // something should not be congratulated.
   function markLearned(id: string, learned: boolean) {
+    const wasLearned = all.find((v) => v.id === id)?.learned ?? false;
     setVocabLearned(id, learned);
     if (!learned) return;
+    // Cuốn sổ riêng cũng là học từ, nên nó phải chạy nhiệm vụ 語彙 hôm nay như
+    // các sổ do admin soạn. Chỉ tính lúc từ chưa thuộc -> thuộc, để bật tắt lại
+    // một từ cũ không farm được XP.
+    if (!wasLearned) {
+      const outcome = recordVocabLearned(1);
+      if (outcome && hasCelebration(outcome)) {
+        setCelebration({
+          quests: outcome.questsCompletedNow,
+          perfect: outcome.perfectDayNow,
+        });
+      }
+    }
     emitCompanionEvent({ kind: "vocab", left: Math.max(0, all.length - learnedCount - 1) });
   }
 
@@ -99,6 +118,7 @@ export default function ReviewPage() {
   if (deck) {
     return (
       <AppShell>
+        <QuestToast celebration={celebration} onDone={() => setCelebration(null)} />
         <Flashcards
           deck={deck}
           onExit={() => setDeck(null)}
@@ -140,6 +160,7 @@ export default function ReviewPage() {
 
   return (
     <AppShell>
+      <QuestToast celebration={celebration} onDone={() => setCelebration(null)} />
       <div className="space-y-5">
         <button
           type="button"
