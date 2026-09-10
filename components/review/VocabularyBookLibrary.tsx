@@ -286,10 +286,12 @@ export function VocabularyBookLibrary({
               title={book.title}
               description={book.description || ""}
               count={copy.cards(book.entry_count)}
-              action={copy.learn}
+              action={signedIn ? copy.learn : copy.loginToOpen}
               mark={book.level || "語"}
               accent={book.accent || "#b3567a"}
-              onClick={() => router.push(href(`/review/books/${book.slug}`))}
+              onClick={
+                signedIn ? () => router.push(href(`/review/books/${book.slug}`)) : onLogin
+              }
             />
           ))
         )}

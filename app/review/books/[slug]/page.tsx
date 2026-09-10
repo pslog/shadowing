@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { AppShell } from "@/components/layout/AppShell";
 import { FullScreenLoading } from "@/components/ui/loading";
+import { buttonClasses } from "@/components/ui/button";
 import {
   VocabularyBookStudy,
   vocabularyBookCopy,
@@ -16,7 +18,7 @@ import type { VocabularyBook } from "@/lib/types";
 export default function VocabularyBookPage() {
   const params = useParams<{ slug: string }>();
   const router = useRouter();
-  const { locale, href } = useI18n();
+  const { dictionary, locale, href } = useI18n();
   const { state, ready } = useData();
   const [book, setBook] = useState<VocabularyBook | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -46,11 +48,30 @@ export default function VocabularyBookPage() {
     };
   }, [params.slug]);
 
+  const signedIn = Boolean(state.profile);
+
   useEffect(() => {
-    if (loaded && !book) router.replace(href("/review"));
-  }, [book, href, loaded, router]);
+    if (loaded && signedIn && !book) router.replace(href("/review"));
+  }, [book, href, loaded, router, signedIn]);
 
   if (!ready || !loaded) return <FullScreenLoading />;
+
+  // Sổ từ vựng do admin soạn chỉ mở cho tài khoản đã đăng nhập (RLS cũng chặn
+  // phía database), khách chỉ thấy lời mời đăng nhập.
+  if (!signedIn) {
+    return (
+      <AppShell>
+        <div className="card mx-auto max-w-md p-8 text-center">
+          <h1 className="text-xl font-extrabold">{book?.title ?? dictionary.review.title}</h1>
+          <p className="mt-2 text-sm text-muted">{dictionary.review.guestBody}</p>
+          <Link href={href("/login")} className={`${buttonClasses("primary")} mt-5`}>
+            {dictionary.common.login}
+          </Link>
+        </div>
+      </AppShell>
+    );
+  }
+
   if (!book) return <FullScreenLoading />;
 
   return (
