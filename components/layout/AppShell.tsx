@@ -2,6 +2,7 @@
 
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useData } from "@/lib/store/DataProvider";
@@ -14,10 +15,14 @@ import { buttonClasses } from "@/components/ui/button";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { Avatar } from "@/components/ui/avatar";
 import { MascotBadge } from "@/components/ui/mascot";
-import { MascotCompanion } from "@/components/companion/MascotCompanion";
 import { stripLocale, type Locale } from "@/lib/i18n";
 import { useI18n } from "@/components/i18n/useI18n";
 import { getAnonymousSessionId } from "@/lib/anonymous-session";
+
+const MascotCompanion = dynamic(
+  () => import("@/components/companion/MascotCompanion").then((mod) => mod.MascotCompanion),
+  { ssr: false },
+);
 
 type NavItem = {
   href: string;
@@ -81,7 +86,7 @@ function LanguageSwitch({
           href={switchHref(item)}
           aria-current={locale === item ? "true" : undefined}
           className={cn(
-            "rounded-[0.55rem] px-2 py-1 transition-colors sm:px-2.5",
+            "flex min-h-11 min-w-11 items-center justify-center rounded-[0.55rem] px-2 transition-colors sm:px-2.5",
             locale === item
               ? "bg-primary text-white"
               : "text-muted hover:text-fg",
@@ -103,7 +108,7 @@ function LanguageSwitch({
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { state, logout } = useData();
+  const { state, ready, logout } = useData();
   const pathname = usePathname();
   const router = useRouter();
   const { locale, dictionary: m, href, switchHref } = useI18n();
@@ -181,6 +186,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [cancelClose, menuOpen]);
 
   useEffect(() => {
+    if (!ready) return;
     let cancelled = false;
 
     fetch("/api/site-visits", { cache: "no-store" })
@@ -203,19 +209,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [ready]);
 
   useEffect(() => {
+    if (!ready) return;
     const now = Date.now();
     const lastRecordedAt = recentSiteVisitRecords.get(pathname) ?? 0;
     if (now - lastRecordedAt < SITE_VISIT_DEDUPE_MS) return;
-    recentSiteVisitRecords.set(pathname, now);
 
     const anonymousSessionId = getAnonymousSessionId();
 
     let cancelled = false;
 
     const timeout = window.setTimeout(() => {
+      recentSiteVisitRecords.set(pathname, Date.now());
       fetch("/api/site-visits", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -241,10 +248,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       cancelled = true;
       window.clearTimeout(timeout);
     };
-  }, [pathname]);
+  }, [pathname, ready]);
 
   return (
-    <div className="flex min-h-dvh flex-col pb-16 lg:pb-0">
+    <div className="flex min-h-dvh flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-0">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-3 focus:z-[100] focus:rounded-xl focus:bg-card focus:px-4 focus:py-3 focus:font-bold">
+        {locale === "vi" ? "Đến nội dung chính" : "本文へ移動"}
+      </a>
       <header className="glass sticky top-0 z-30 border-b border-white/80 pt-[env(safe-area-inset-top)] shadow-[0_6px_24px_-24px_rgba(41,75,112,0.45)]">
         <div className="mx-auto flex h-[4.25rem] max-w-6xl items-center gap-3 px-4 sm:gap-5">
           <Link href={href("/")} className="group flex items-center gap-3 font-bold">
@@ -266,6 +276,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <Link
                   key={item.href}
                   href={href(item.href)}
+                  aria-current={active ? "page" : undefined}
                   className={cn(
                     "relative flex min-h-11 items-center gap-1.5 whitespace-nowrap px-3.5 py-2 text-sm font-semibold transition-colors after:absolute after:inset-x-3 after:-bottom-[0.7rem] after:h-0.5 after:origin-left after:scale-x-0 after:bg-accent after:transition-transform",
                     active
@@ -378,7 +389,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:py-8">{children}</main>
+      <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:py-8">{children}</main>
 
       <footer className="mt-12 border-t border-border bg-white/80">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-2 px-4 py-5 text-center sm:flex-row sm:justify-between sm:text-left">
@@ -432,7 +443,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </footer>
 
-      <MascotCompanion />
+      {ready && <MascotCompanion />}
 
       <nav className="glass fixed inset-x-0 bottom-0 z-40 border-t border-border pb-[env(safe-area-inset-bottom)] lg:hidden">
         <div className="mx-auto flex max-w-md items-stretch">
@@ -442,6 +453,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.href}
                 href={href(item.href)}
+                aria-current={active ? "page" : undefined}
                 className={cn(
                   "flex min-h-16 flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-semibold transition-colors",
                   active ? "bg-accent/[0.07] text-accent" : "text-muted",

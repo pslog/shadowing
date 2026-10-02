@@ -107,6 +107,22 @@ button:disabled {
   cursor: not-allowed;
 }
 
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 3px;
+}
+
+/* Keep focused controls clear of the sticky header and mobile navigation. */
+:where(a, button, input, select, textarea, [tabindex]) {
+  scroll-margin-block: 6rem;
+}
+
+@media (max-width: 639px) {
+  input:not([type="checkbox"]):not([type="radio"]), select, textarea {
+    font-size: 16px;
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /*  Quiet product backdrop                                            */
 /* ------------------------------------------------------------------ */
@@ -124,11 +140,11 @@ button:disabled {
   inset: 0;
   border-top: 3px solid var(--accent);
   background:
-    radial-gradient(circle at 6% 0%, rgba(140, 104, 255, 0.32), transparent 34rem),
-    radial-gradient(circle at 50% 0%, rgba(96, 196, 255, 0.24), transparent 28rem),
-    radial-gradient(circle at 96% 3%, rgba(255, 120, 190, 0.28), transparent 32rem),
-    radial-gradient(circle at 88% 96%, rgba(255, 186, 120, 0.22), transparent 30rem),
-    radial-gradient(circle at 4% 88%, rgba(120, 224, 200, 0.18), transparent 28rem),
+    radial-gradient(circle at 6% 0%, rgba(140, 104, 255, 0.12), transparent 34rem),
+    radial-gradient(circle at 50% 0%, rgba(96, 196, 255, 0.08), transparent 28rem),
+    radial-gradient(circle at 96% 3%, rgba(255, 120, 190, 0.10), transparent 32rem),
+    radial-gradient(circle at 88% 96%, rgba(255, 186, 120, 0.06), transparent 30rem),
+    radial-gradient(circle at 4% 88%, rgba(120, 224, 200, 0.06), transparent 28rem),
     linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, transparent 30rem);
 }
 .blob {
@@ -396,7 +412,7 @@ button:disabled {
 .animate-nod { animation: nod-soft 1.3s ease-in-out 2; }
 .animate-ring { animation: pulse-ring 1.2s ease-out 2; }
 .animate-pop { animation: pop-in 0.34s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
-.stagger > * { animation: fade-in-up 0.34s ease-out both; animation-delay: calc(var(--i, 0) * 65ms); }
+.stagger > * { animation: fade-in-up 0.34s ease-out both; animation-delay: min(calc(var(--i, 0) * 40ms), 160ms); }
 
 .skeleton { position: relative; overflow: hidden; background: color-mix(in srgb, var(--muted) 15%, transparent); }
 .skeleton::after {
@@ -414,13 +430,6 @@ button:disabled {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
-  }
-  /* Flashcard flip is user-initiated, single-shot, and core to the UI — keep it. */
-  .flashcard-flip {
-    transition-duration: 0.5s !important;
-  }
-  .card-enter {
-    animation-duration: 0.5s !important;
   }
 }
 

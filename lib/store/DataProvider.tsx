@@ -20,6 +20,7 @@ import type {
   VocabEntry,
 } from "@/lib/types";
 import { todayKey } from "@/lib/date";
+import { useI18n } from "@/components/i18n/useI18n";
 import { createClient as createSupabaseClient, hasSupabaseEnv } from "@/lib/supabase/client";
 import {
   applyAttempt,
@@ -139,7 +140,7 @@ interface DataContextValue {
 
 const DataContext = createContext<DataContextValue | null>(null);
 const USING_SUPABASE = hasSupabaseEnv();
-const SUPABASE_SHELL_CACHE_KEY = "shadowing-jp-supabase-shell-v8";
+const SUPABASE_SHELL_CACHE_KEY = "shadowing-jp-supabase-shell-v10";
 const SUPABASE_SHELL_CACHE_TTL_MS = 5 * 60 * 1000;
 
 interface SupabaseShellCache {
@@ -211,8 +212,10 @@ function loadSupabaseShellCache(): AppState | null {
 }
 
 /** rows from lesson_sentence_counts -> { [lessonId]: count } */
+type SentenceCountRow = { lesson_id: string; sentence_count: number | null };
+
 function sentenceCountsFrom(
-  rows: { lesson_id: string; sentence_count: number | null }[] | null | undefined,
+  rows: SentenceCountRow[] | null | undefined,
 ): Record<string, number> {
   const out: Record<string, number> = {};
   for (const row of rows ?? []) {
@@ -227,10 +230,7 @@ function writeSupabaseShellCache(state: AppState): void {
       profile: state.profile,
       courses: state.courses,
       lessons: state.lessons,
-      sentences: state.sentences.filter((sentence) => {
-        const lesson = state.lessons.find((item) => item.id === sentence.lesson_id);
-        return lesson?.topic === "読解";
-      }),
+      sentences: [],
       sentenceCounts: state.sentenceCounts,
       attempts: [],
       progress: state.progress,
@@ -285,12 +285,14 @@ function profileFromUser(
 }
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
+  const { locale } = useI18n();
   const [state, setState] = useState<AppState>(() =>
     emptyState(new Date(0).toISOString()),
   );
   const [ready, setReady] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
   const hydrated = useRef(false);
-  const loadingSentenceLessons = useRef(new Set<string>());
+  const loadingSentenceLessons = useRef(new Map<string, Promise<void>>());
   const stateRef = useRef<AppState>(state);
 
   const commit = useCallback((next: AppState) => {
@@ -321,45 +323,26 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       return out;
     };
 
-    const [authResult, coursesResult, lessonsAll] = await Promise.all([
+    const [authResult, coursesResult, lessonsAll, countsResult] = await Promise.all([
       supabase.auth.getUser(),
       supabase
         .from("courses")
         .select("*")
         .order("order_index", { ascending: true })
         .then((r) => r, () => ({ data: [], error: null })),
-      fetchAll("lessons", [["title", true]]),
-      supabase
-        .from("lesson_sentence_counts")
-        .select("lesson_id,sentence_count")
-        .then((r) => r, () => ({ data: [], error: null })),
+      fetchAll("lessons", [["title", true], ["id", true]]),
+      fetchAll("lesson_sentence_counts", [["lesson_id", true]]),
     ]);
     const user = authResult.data.user;
     const lessons = lessonsAll as Lesson[];
-    const readingLessonIds = lessons
-      .filter((lesson) => lesson.topic === "読解")
-      .map((lesson) => lesson.id);
-    const readingSentencesResult =
-      readingLessonIds.length > 0
-        ? await supabase
-            .from("lesson_sentences")
-            .select("*")
-            .in("lesson_id", readingLessonIds)
-            .order("lesson_id", { ascending: true })
-            .order("order_index", { ascending: true })
-        : { data: [], error: null };
-    const countsResult = await supabase
-      .from("lesson_sentence_counts")
-      .select("lesson_id,sentence_count")
-      .then((r) => r, () => ({ data: [], error: null }));
-    if (readingSentencesResult.error) throw readingSentencesResult.error;
 
     return {
       profile: user ? profileFromUser(user) : null,
       courses: (coursesResult.data ?? []) as Course[],
       lessons,
-      sentences: (readingSentencesResult.data ?? []) as LessonSentence[],
-      sentenceCounts: sentenceCountsFrom(countsResult.data),
+      // Reading and listening sentences are fetched by the player on demand.
+      sentences: stateRef.current.sentences,
+      sentenceCounts: sentenceCountsFrom(countsResult as SentenceCountRow[]),
       attempts: [],
       progress: [],
       missions: [],
@@ -457,11 +440,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
             .eq("user_id", user.id)
             .order("created_at", { ascending: false })
         : Promise.resolve({ data: [], error: null }),
-      fetchAll("lessons", [["title", true]]),
-      supabase
-        .from("lesson_sentence_counts")
-        .select("lesson_id,sentence_count")
-        .then((r) => r, () => ({ data: [], error: null })),
+      fetchAll("lessons", [["title", true], ["id", true]]),
+      fetchAll("lesson_sentence_counts", [["lesson_id", true]]),
     ]);
 
     return {
@@ -469,7 +449,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       courses: (coursesResult.data ?? []) as Course[],
       lessons: lessonsAll as Lesson[],
       sentences: stateRef.current.sentences,
-      sentenceCounts: sentenceCountsFrom(countsAllResult.data),
+      sentenceCounts: sentenceCountsFrom(countsAllResult as SentenceCountRow[]),
       attempts: (attemptsResult.data ?? []) as AppState["attempts"],
       progress: (progressResult.data ?? []) as AppState["progress"],
       missions: (missionsResult.data ?? []) as AppState["missions"],
@@ -561,42 +541,59 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       const ids = [...new Set(Array.isArray(lessonIds) ? lessonIds : [lessonIds])].filter(
         Boolean,
       );
+      const pending = ids.flatMap((id) => {
+        const request = loadingSentenceLessons.current.get(id);
+        return request ? [request] : [];
+      });
       const missingIds = ids.filter(
         (id) =>
           !stateRef.current.sentences.some((sentence) => sentence.lesson_id === id) &&
           !loadingSentenceLessons.current.has(id),
       );
-      if (missingIds.length === 0) return;
-
-      for (const id of missingIds) loadingSentenceLessons.current.add(id);
-
-      try {
-        const supabase = await createSupabaseClient();
-        if (!supabase) return;
-
-        const { data, error } = await supabase
-          .from("lesson_sentences")
-          .select("*")
-          .in("lesson_id", missingIds)
-          .order("lesson_id", { ascending: true })
-          .order("order_index", { ascending: true });
-        if (error) throw error;
-
-        const incoming = (data ?? []) as LessonSentence[];
-        const incomingLessonIds = new Set(missingIds);
-        const prev = stateRef.current;
-        commit({
-          ...prev,
-          sentences: [
-            ...prev.sentences.filter(
-              (sentence) => !incomingLessonIds.has(sentence.lesson_id),
-            ),
-            ...incoming,
-          ],
-        });
-      } finally {
-        for (const id of missingIds) loadingSentenceLessons.current.delete(id);
+      if (missingIds.length === 0) {
+        await Promise.all(pending);
+        return;
       }
+
+      const request = (async () => {
+        try {
+          const supabase = await createSupabaseClient();
+          if (!supabase) return;
+
+          // A batch of lessons can exceed the API's 1,000-row response cap.
+          // Publish only after every page succeeds, never a partial lesson.
+          const incoming: LessonSentence[] = [];
+          const pageSize = 1000;
+          for (let from = 0; ; from += pageSize) {
+            const { data, error } = await supabase
+              .from("lesson_sentences")
+              .select("*")
+              .in("lesson_id", missingIds)
+              .order("lesson_id", { ascending: true })
+              .order("order_index", { ascending: true })
+              .order("id", { ascending: true })
+              .range(from, from + pageSize - 1);
+            if (error) throw error;
+            incoming.push(...((data ?? []) as LessonSentence[]));
+            if (!data || data.length < pageSize) break;
+          }
+          const incomingLessonIds = new Set(missingIds);
+          const prev = stateRef.current;
+          commit({
+            ...prev,
+            sentences: [
+              ...prev.sentences.filter(
+                (sentence) => !incomingLessonIds.has(sentence.lesson_id),
+              ),
+              ...incoming,
+            ],
+          });
+        } finally {
+          for (const id of missingIds) loadingSentenceLessons.current.delete(id);
+        }
+      })();
+      for (const id of missingIds) loadingSentenceLessons.current.set(id, request);
+      await Promise.all([...pending, request]);
     },
     [commit],
   );
@@ -785,7 +782,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       try {
         next = USING_SUPABASE ? await loadSupabaseCourseShellState() : loadLocalState();
       } catch {
+        if (cancelled) return;
         if (cachedShell) return;
+        // A production outage must never substitute local demo content.
+        if (USING_SUPABASE) {
+          setLoadFailed(true);
+          return;
+        }
         next = loadLocalState();
       }
 
@@ -1348,7 +1351,21 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     ],
   );
 
-  return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
+  return (
+    <DataContext.Provider value={value}>
+      {loadFailed ? (
+        <main className="mx-auto max-w-lg px-4 py-16">
+          <h1 className="text-2xl font-bold">{locale === "vi" ? "Chưa tải được dữ liệu" : "データを読み込めませんでした"}</h1>
+          <p role="alert" className="mt-3 text-muted">
+            {locale === "vi" ? "Vui lòng kiểm tra kết nối và thử lại. Dữ liệu bài học của bạn không bị thay đổi." : "接続を確認して、もう一度お試しください。学習データは変更されていません。"}
+          </p>
+          <button className="mt-5 min-h-11 rounded-xl bg-primary px-5 font-bold text-white" onClick={() => window.location.reload()}>
+            {locale === "vi" ? "Thử lại" : "再試行"}
+          </button>
+        </main>
+      ) : children}
+    </DataContext.Provider>
+  );
 }
 
 export function useData(): DataContextValue {

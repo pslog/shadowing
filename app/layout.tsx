@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { Noto_Sans_JP, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { DataProvider } from "@/lib/store/DataProvider";
@@ -105,8 +106,8 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <script
-          async
+        <Script
+          strategy="lazyOnload"
           src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
         />
         <script

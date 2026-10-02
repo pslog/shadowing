@@ -1123,6 +1123,8 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
   const { locale, dictionary: m, href } = useI18n();
   const t = m.player;
   const [index, setIndex] = useState(0);
+  const [sentenceLoad, setSentenceLoad] = useState<{ id: string; status: "done" | "error" } | null>(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [fresh, setFresh] = useState<FreshResult | null>(null);
   const [missionAlert, setMissionAlert] = useState<AttemptOutcome | null>(null);
   /** The perfect-day bonus, which the mission dialog knows nothing about. */
@@ -1149,8 +1151,13 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
 
   useEffect(() => {
     if (!lesson || sentences.length > 0 || !usingSupabase) return;
-    void ensureLessonSentences(lesson.id);
-  }, [ensureLessonSentences, lesson, sentences.length, usingSupabase]);
+    let cancelled = false;
+    setSentenceLoad(null);
+    ensureLessonSentences(lesson.id)
+      .then(() => { if (!cancelled) setSentenceLoad({ id: lesson.id, status: "done" }); })
+      .catch(() => { if (!cancelled) setSentenceLoad({ id: lesson.id, status: "error" }); });
+    return () => { cancelled = true; };
+  }, [ensureLessonSentences, lesson, sentences.length, usingSupabase, loadAttempt]);
 
   const lessonIdForView = lesson?.id;
 
@@ -1223,10 +1230,21 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
     };
   }, [lesson, usingSupabase]);
 
-  if (lesson && sentences.length === 0 && usingSupabase) {
+  if (lesson && sentences.length === 0 && sentenceLoad?.id === lesson.id && sentenceLoad.status === "error") {
     return (
-      <div className="card p-6 text-center text-muted">
-        <span className="mx-auto mb-3 block h-7 w-7 animate-spin rounded-full border-2 border-border border-t-primary" />
+      <div className="card p-6 text-center">
+        <p role="alert" className="text-muted">{locale === "vi" ? "Chưa tải được nội dung bài học. Vui lòng thử lại." : "レッスンを読み込めませんでした。もう一度お試しください。"}</p>
+        <Button className="mt-4" onClick={() => setLoadAttempt((attempt) => attempt + 1)}>
+          {locale === "vi" ? "Thử lại" : "再試行"}
+        </Button>
+      </div>
+    );
+  }
+
+  if (lesson && sentences.length === 0 && usingSupabase && sentenceLoad?.id !== lesson.id) {
+    return (
+      <div role="status" className="card p-6 text-center text-muted">
+        <span aria-hidden="true" className="mx-auto mb-3 block h-7 w-7 animate-spin rounded-full border-2 border-border border-t-primary" />
         <p className="text-sm font-semibold">{t.loading}</p>
       </div>
     );

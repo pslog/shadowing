@@ -70,7 +70,7 @@ export function CourseCard({
               src={imageSrc}
               alt=""
               fill
-              sizes="(max-width: 640px) calc(100vw - 3rem), 10rem"
+              sizes="(max-width: 639px) 116px, 152px"
               className="media-vivid object-cover"
               quality={70}
               priority={priority}

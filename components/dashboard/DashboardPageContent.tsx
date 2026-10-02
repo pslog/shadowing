@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { DailyQuestBoard } from "@/components/dashboard/DailyQuestBoard";
@@ -27,7 +26,7 @@ import {
   nextReadingLesson,
   passedCountForLesson,
   recentAttemptedLessons,
-  sentencesForLesson,
+  lessonSentenceTotal,
   suggestedCourses,
   todayMission,
   todayQuestBoard,
@@ -37,7 +36,7 @@ import {
 import { useData } from "@/lib/store/DataProvider";
 
 export default function DashboardPage() {
-  const { state, ready, ensureLessonSentences, usingSupabase } = useData();
+  const { state, ready } = useData();
   const { locale, localeTag, dictionary: m, href } = useI18n();
   const copy = m.dashboard;
   const profile = state.profile;
@@ -68,18 +67,6 @@ export default function DashboardPage() {
   };
   const totalXp = profile?.total_xp ?? 0;
   const currentLevel = levelProgress(totalXp).level;
-  const sentenceLessonIds = [
-    inProgress?.id,
-    startTarget?.id,
-    ...recentLessons.map((lesson) => lesson.id),
-  ].filter((id): id is string => Boolean(id));
-  const sentenceLessonKey = [...new Set(sentenceLessonIds)].join("|");
-
-  useEffect(() => {
-    if (!usingSupabase) return;
-    const ids = sentenceLessonKey.split("|").filter(Boolean);
-    if (ids.length > 0) void ensureLessonSentences(ids);
-  }, [ensureLessonSentences, sentenceLessonKey, usingSupabase]);
 
   if (!ready) return <FullScreenLoading />;
 
@@ -131,7 +118,7 @@ export default function DashboardPage() {
               </h1>
               <p className="mt-3 max-w-lg text-sm leading-6 text-white/85 sm:text-[0.95rem]">
                 {inProgress
-                  ? `${copy.learning}: ${passedCountForLesson(state, inProgress.id)}/${sentencesForLesson(state, inProgress.id).length}${m.common.sentences}`
+                  ? `${copy.learning}: ${passedCountForLesson(state, inProgress.id)}/${lessonSentenceTotal(state, inProgress.id)}${m.common.sentences}`
                   : heroBody}
               </p>
 
@@ -266,7 +253,7 @@ export default function DashboardPage() {
             {recentLessons.length > 0 && (
               <div className="grid gap-3">
                 {recentLessons.map((lesson) => {
-                  const total = sentencesForLesson(state, lesson.id).length;
+                  const total = lessonSentenceTotal(state, lesson.id);
                   const passed = passedCountForLesson(state, lesson.id);
                   const pct = total > 0 ? Math.round((passed / total) * 100) : 0;
                   const last = lastAttemptAtForLesson(state, lesson.id);

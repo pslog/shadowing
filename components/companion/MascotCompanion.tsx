@@ -83,6 +83,15 @@ export function MascotCompanion() {
   const lastIdleNudge = useRef(0);
   const lastSpoke = useRef(0);
 
+  useEffect(() => {
+    const compact = window.matchMedia("(max-width: 639px)");
+    const closeSuggestion = () => {
+      if (compact.matches) setBubble((current) => current?.kind === "suggestion" ? null : current);
+    };
+    compact.addEventListener("change", closeSuggestion);
+    return () => compact.removeEventListener("change", closeSuggestion);
+  }, []);
+
   // Speak up when the advice actually changes (new day, or the state moved on),
   // and stay quiet on later page views that would repeat the same sentence.
   useEffect(() => {
@@ -165,6 +174,7 @@ export function MascotCompanion() {
     const arm = () => {
       window.clearTimeout(timer);
       timer = window.setTimeout(() => {
+        if (window.matchMedia("(max-width: 639px)").matches) return;
         const now = Date.now();
         if (now - lastIdleNudge.current < IDLE_COOLDOWN_MS) return arm();
         if (now - lastSpoke.current < IDLE_MS) return arm();
@@ -222,7 +232,7 @@ export function MascotCompanion() {
       className={cn(
         "fixed right-3 z-30 flex items-end gap-2 sm:right-5",
         // Clear the mobile bottom nav (h-16) plus the iOS home indicator.
-        "bottom-[calc(4.75rem+env(safe-area-inset-bottom))] md:bottom-5",
+        "bottom-[calc(4.75rem+env(safe-area-inset-bottom))] lg:bottom-5",
         // Home already contains the mascot journey; keep its mobile content clear.
         compactHome && "max-md:hidden",
       )}
