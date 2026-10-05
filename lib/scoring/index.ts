@@ -1,7 +1,7 @@
 // Scoring orchestrator. Pure + isomorphic so it can run in the /api/score
 // route today and be swapped for a real AI pronunciation API tomorrow.
 
-import { scorePronunciationDetailed } from "./pronunciation";
+import { normalizeJa, scorePronunciationDetailed } from "./pronunciation";
 import { scoreSpeed } from "./speed";
 import { scoreIntonation } from "./intonation";
 import { scoreTotal } from "./total";
@@ -22,6 +22,11 @@ export interface ScoreRequest {
   passScore?: number;
   /** Locale the coaching feedback string is generated in. */
   locale?: Locale;
+  audioEvidence?: { duration: number; activeSeconds: number; clippedFraction: number; voicedSeconds: number };
+}
+
+export class UnscorableError extends Error {
+  constructor(public code: string) { super(code); }
 }
 
 const MIN_PRONUNCIATION_TO_PASS = 91;
@@ -29,10 +34,18 @@ const MIN_COVERAGE_TO_PASS = 80;
 
 export function scoreAttempt(req: ScoreRequest): ScoreBreakdown {
   const passScore = req.passScore ?? 80;
+  if (!Number.isFinite(passScore) || passScore < 1 || passScore > 100) throw new UnscorableError("invalid_threshold");
 
   const hasTranscript = Boolean(req.spokenText?.trim());
-  // Seed is only used by speed when reference/user timing is missing.
-  const seedB = seedFrom(req.targetText, 2);
+  if (!hasTranscript) throw new UnscorableError("no_transcript");
+  const audio = req.audioEvidence;
+  if (!audio || !Number.isFinite(audio.duration) || !Number.isFinite(audio.activeSeconds) || !Number.isFinite(audio.clippedFraction) || !Number.isFinite(audio.voicedSeconds) || audio.voicedSeconds < 0.12 || audio.voicedSeconds > audio.duration || audio.duration <= 0 || audio.activeSeconds < 0.2 || audio.activeSeconds > audio.duration || audio.clippedFraction < 0 || audio.clippedFraction > 0.1) {
+    throw new UnscorableError("unreliable_audio");
+  }
+  if (!req.targetReading || !req.spokenReading) throw new UnscorableError("reading_unavailable");
+  if (![req.targetReading, req.spokenReading].every((reading) => /^[ァ-ヺー]+$/u.test(normalizeJa(reading)))) {
+    throw new UnscorableError("ambiguous_reading");
+  }
 
   const { pronunciation, coverage, alignment } = scorePronunciationDetailed({
     targetText: req.targetText,
@@ -43,7 +56,7 @@ export function scoreAttempt(req: ScoreRequest): ScoreBreakdown {
   const speed = scoreSpeed({
     originalDurationSeconds: req.originalDurationSeconds,
     userDurationSeconds: req.userDurationSeconds,
-    seed: seedB,
+
   });
   const intonation = scoreIntonation({ similarity: req.intonationSimilarity });
   const rawTotal = scoreTotal(pronunciation, coverage, speed, intonation);
@@ -57,7 +70,16 @@ export function scoreAttempt(req: ScoreRequest): ScoreBreakdown {
     pronunciation >= MIN_PRONUNCIATION_TO_PASS &&
     coverage >= MIN_COVERAGE_TO_PASS;
 
+  const locale = isLocale(req.locale) ? req.locale : "vi";
+  const counts = { missing: 0, extra: 0, substitution: 0 };
+  for (const item of alignment) if (item.status !== "match") counts[item.status]++;
+  const detail = locale === "vi"
+    ? ` So sánh transcript: ${counts.missing} đơn vị thiếu, ${counts.extra} thêm, ${counts.substitution} khác. Đây là đối chiếu nhận dạng, không xác nhận phát âm chuẩn.`
+    : ` 認識結果の比較：欠落${counts.missing}、追加${counts.extra}、相違${counts.substitution}単位。発音の正確さを保証する評価ではありません。`;
   return {
+    scoringVersion: "transcript-v2",
+    confidence: "limited",
+    limitations: ["speech_recognition_proxy", ...(speed == null ? ["no_reference_timing"] : []), ...(intonation == null ? ["no_pitch_comparison"] : [])],
     pronunciation,
     speed,
     coverage,
@@ -72,22 +94,12 @@ export function scoreAttempt(req: ScoreRequest): ScoreBreakdown {
       intonation,
       total,
       hasTranscript,
+      passed,
       // The request crosses the API boundary as JSON, so validate rather than
       // trusting the field's declared type.
       locale: isLocale(req.locale) ? req.locale : undefined,
-    }),
+    }) + detail,
   };
-}
-
-// Deterministic 0..1 seed derived from text + salt (stable per sentence, so
-// mock scores don't jump wildly between renders but still vary per sentence).
-function seedFrom(text: string, salt: number): number {
-  let h = 2166136261 ^ salt;
-  for (let i = 0; i < text.length; i++) {
-    h ^= text.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return (h >>> 0) / 4294967295;
 }
 
 export * from "./pronunciation";

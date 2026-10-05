@@ -79,6 +79,7 @@ export function pitchContour(
 ): number[] {
   const frameLen = Math.floor((frameMs / 1000) * sampleRate);
   const hopLen = Math.floor((hopMs / 1000) * sampleRate);
+  if (!Number.isFinite(sampleRate) || frameLen < 1 || hopLen < 1) return [];
   if (samples.length < frameLen) return [];
   const out: number[] = [];
   for (let start = 0; start + frameLen <= samples.length; start += hopLen) {
@@ -89,11 +90,13 @@ export function pitchContour(
 
 /** Voiced Hz values -> mean-normalized semitones (drops unvoiced frames). */
 function toNormalizedSemitones(contour: number[]): number[] {
-  const voiced = contour.filter((hz) => hz > 0);
+  const voiced = contour.filter((hz) => Number.isFinite(hz) && hz > 0);
   if (voiced.length < 3) return [];
   const semis = voiced.map((hz) => 12 * Math.log2(hz));
   const mean = semis.reduce((a, b) => a + b, 0) / semis.length;
-  return semis.map((s) => s - mean);
+  const centered = semis.map((s) => s - mean);
+  // Bound DTW memory/CPU for long sentences (at most 300 x 300 cells).
+  return centered.length <= 300 ? centered : Array.from({ length: 300 }, (_, i) => centered[Math.round(i * (centered.length - 1) / 299)]);
 }
 
 // Reference melodies flatter than this (semitone std-dev) carry too little
@@ -251,6 +254,7 @@ export async function extractContourFromUrl(
   const ctx = new AudioCtx();
   try {
     const res = await fetch(url);
+    if (!res.ok) return [];
     const buf = await res.arrayBuffer();
     const audio = await ctx.decodeAudioData(buf);
     const sr = audio.sampleRate;
@@ -259,7 +263,8 @@ export async function extractContourFromUrl(
     if (range) {
       const from = Math.max(0, Math.floor(range.start * sr));
       const to = Math.min(ch.length, Math.floor(range.end * sr));
-      if (to > from) samples = ch.subarray(from, to);
+      if (!Number.isFinite(from) || !Number.isFinite(to) || to <= from) return [];
+      samples = ch.subarray(from, to);
     }
     return pitchContour(samples, sr);
   } catch {

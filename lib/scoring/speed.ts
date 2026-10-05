@@ -4,23 +4,20 @@
 export interface SpeedInput {
   originalDurationSeconds?: number | null;
   userDurationSeconds?: number | null;
-  seed?: number;
 }
 
 /** Returns a 0..100 speed score. */
 export function scoreSpeed({
   originalDurationSeconds,
   userDurationSeconds,
-  seed,
-}: SpeedInput): number {
+}: SpeedInput): number | null {
   if (
     !originalDurationSeconds ||
     originalDurationSeconds <= 0 ||
     !userDurationSeconds ||
-    userDurationSeconds <= 0
+    userDurationSeconds <= 0 || !Number.isFinite(originalDurationSeconds) || !Number.isFinite(userDurationSeconds)
   ) {
-    // No reference timing available -> realistic mock.
-    return Math.round(70 + (seed ?? 0.5) * 25);
+    return null;
   }
 
   const ratio = userDurationSeconds / originalDurationSeconds;
@@ -47,7 +44,7 @@ export function speedDelta(
   originalDurationSeconds?: number | null,
   userDurationSeconds?: number | null,
 ): number | null {
-  if (!originalDurationSeconds || !userDurationSeconds) return null;
+  if (!originalDurationSeconds || !userDurationSeconds || originalDurationSeconds <= 0 || userDurationSeconds <= 0 || !Number.isFinite(originalDurationSeconds) || !Number.isFinite(userDurationSeconds)) return null;
   const ratio = userDurationSeconds / originalDurationSeconds;
-  return Math.round((1 / ratio - 1) * 100) * -1; // positive => spoke faster
+  return Math.round((1 / ratio - 1) * 100); // positive => spoke faster
 }

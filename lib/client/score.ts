@@ -1,32 +1,27 @@
 "use client";
 
-import { scoreAttempt, type ScoreRequest } from "@/lib/scoring";
+import type { ScoreRequest } from "@/lib/scoring";
 import type { ScoreBreakdown } from "@/lib/types";
 
-/**
- * Call the /api/score endpoint. Falls back to running the same scoring engine
- * locally if the request fails (offline / dev), so the flow never breaks.
- */
+/** Score on the server; failures remain explicit and never use a different algorithm. */
 export async function scoreSentence(req: ScoreRequest): Promise<ScoreBreakdown> {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 30_000);
   try {
     const res = await fetch("/api/score", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(req),
+      signal: controller.signal,
     });
-    if (!res.ok) throw new Error(`score ${res.status}`);
-    return (await res.json()) as ScoreBreakdown;
-  } catch {
-    return scoreAttempt(req);
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error ?? "score_unavailable");
+    if (result.scoringVersion !== "transcript-v2" || !Number.isFinite(result.total) || typeof result.passed !== "boolean") throw new Error("invalid_score_response");
+    return result as ScoreBreakdown;
+  } catch (error) {
+    // Never silently change algorithms or award XP on transport failures.
+    throw error instanceof Error ? error : new Error("score_unavailable");
+  } finally {
+    window.clearTimeout(timeout);
   }
-}
-
-/**
- * Rough spoken-duration estimate for a Japanese sentence when no reference
- * audio timing exists. ~0.16s per character with a floor, so the speed score
- * has a sensible baseline to compare against.
- */
-export function estimateDurationSeconds(text: string): number {
-  const chars = text.replace(/[\s　。、！？!?.,]/g, "").length;
-  return Math.max(1.2, Math.round(chars * 0.16 * 10) / 10);
 }

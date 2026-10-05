@@ -43,7 +43,7 @@ export default function LessonPlayerPage() {
           {m.lesson.backToList}
         </Link>
       </div>
-      <LessonPlayer lessonId={lesson?.id ?? params.id} />
+      <LessonPlayer key={lesson?.id ?? params.id} lessonId={lesson?.id ?? params.id} />
     </AppShell>
   );
 }

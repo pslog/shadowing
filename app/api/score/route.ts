@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { scoreAttempt, type ScoreRequest } from "@/lib/scoring";
+import { scoreAttempt, UnscorableError, type ScoreRequest } from "@/lib/scoring";
 import { toReadingTokens, type ReadingToken } from "@/lib/scoring/kana";
 import type { ScoreAlignmentToken } from "@/lib/types";
 
@@ -19,11 +19,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  if (!body?.targetText || typeof body.targetText !== "string") {
+  if (!body?.targetText || typeof body.targetText !== "string" || body.targetText.length > 1000 || (body.spokenText != null && (typeof body.spokenText !== "string" || body.spokenText.length > 1000))) {
     return NextResponse.json(
       { error: "targetText is required" },
       { status: 400 },
     );
+  }
+  for (const key of ["originalDurationSeconds", "userDurationSeconds", "intonationSimilarity", "passScore"] as const) {
+    const value = body[key];
+    if (value != null && (typeof value !== "number" || !Number.isFinite(value) || value < 0 ||
+      (key === "passScore" && (value < 1 || value > 100)) ||
+      (key === "intonationSimilarity" && value > 1))) {
+      return NextResponse.json({ error: "invalid_input" }, { status: 400 });
+    }
   }
 
   // Convert both sides to katakana readings so pronunciation is scored
@@ -37,7 +45,13 @@ export async function POST(request: Request) {
   const targetReading = targetTokens?.map((tok) => tok.reading).join("") ?? null;
   const spokenReading = spokenTokens?.map((tok) => tok.reading).join("") ?? null;
 
-  const result = scoreAttempt({ ...body, targetReading, spokenReading });
+  let result;
+  try {
+    result = scoreAttempt({ ...body, targetReading, spokenReading });
+  } catch (error) {
+    if (error instanceof UnscorableError) return NextResponse.json({ error: error.code }, { status: 422 });
+    throw error;
+  }
   return NextResponse.json({
     ...result,
     textAlignment:
@@ -51,6 +65,11 @@ function alignReadingTokens(
   target: ReadingToken[],
   spoken: ReadingToken[],
 ): ScoreAlignmentToken[] {
+  // Token boundaries can differ despite identical normalized readings. Do not
+  // show a red word-level mismatch when the mora-level comparison is exact.
+  if (target.map((t) => t.reading).join("") === spoken.map((t) => t.reading).join("")) {
+    return [{ target: target.map((t) => t.surface).join(""), spoken: spoken.map((t) => t.surface).join(""), status: "match" }];
+  }
   const m = target.length;
   const n = spoken.length;
   const dp = Array.from({ length: m + 1 }, () => new Array<number>(n + 1).fill(0));

@@ -4,7 +4,7 @@ import { DEFAULT_LOCALE, type Locale, messages } from "@/lib/i18n";
 
 export interface FeedbackScores {
   pronunciation: number;
-  speed: number;
+  speed: number | null;
   coverage: number;
   /** null when intonation could not be measured — excluded from the advice. */
   intonation: number | null;
@@ -12,6 +12,7 @@ export interface FeedbackScores {
   hasTranscript?: boolean;
   /** Locale of the learner at the time of the attempt. */
   locale?: Locale;
+  passed?: boolean;
 }
 
 const MIN_PRONUNCIATION_FOR_PASS = 91;
@@ -24,20 +25,22 @@ export function generateFeedback({
   total,
   hasTranscript = true,
   locale = DEFAULT_LOCALE,
+  passed = false,
 }: FeedbackScores): string {
   const t = (messages[locale] ?? messages[DEFAULT_LOCALE]).score;
 
   if (!hasTranscript) return t.feedbackNoTranscript;
   if (coverage < 80) return t.feedbackCoverage;
   if (pronunciation < MIN_PRONUNCIATION_FOR_PASS) return t.feedbackPronunciation;
-  if (total >= 90) return t.feedbackGreat;
-  if (total >= 80) return t.feedbackPassed;
+  if (passed && total >= 90) return t.feedbackGreat;
+  if (passed) return t.feedbackPassed;
 
   // Only coach on dimensions we actually measured.
   const dims: Array<{ key: "pron" | "speed" | "inton"; value: number }> = [
     { key: "pron", value: pronunciation },
-    { key: "speed", value: speed },
+
   ];
+  if (speed != null) dims.push({ key: "speed", value: speed });
   if (intonation != null) dims.push({ key: "inton", value: intonation });
   const lowest = dims.reduce((a, b) => (b.value < a.value ? b : a));
 
@@ -60,5 +63,5 @@ export function almostFeedback(
   ) {
     return t.almostRetry;
   }
-  return t.almostGap(passScore - total);
+  return t.almostGap(Math.max(0, passScore - total));
 }

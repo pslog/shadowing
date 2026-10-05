@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/ui/icon";
 import { buttonClasses } from "@/components/ui/button";
 import { useRecorder, type RecordResult } from "@/lib/speech/useRecorder";
@@ -14,29 +14,44 @@ export function AudioRecorder({
   inline = false,
   className,
   hideNotes = false,
+  onRecordingChange,
 }: {
   disabled?: boolean;
-  onResult: (r: RecordResult) => void;
+  onResult: (r: RecordResult) => void | Promise<void>;
   compact?: boolean;
   inline?: boolean;
   className?: string;
   /** Inline mode: suppress the "browser unsupported" note so the parent can place it. */
   hideNotes?: boolean;
+  onRecordingChange?: (active: boolean) => void;
 }) {
   const { dictionary } = useI18n();
   const t = dictionary.recorder;
   const { status, interim, error, sttSupported, start, stop } = useRecorder();
   const [busy, setBusy] = useState(false);
+  const stopping = useRef(false);
+  useEffect(() => {
+    if (status === "error") onRecordingChange?.(false);
+  }, [status, onRecordingChange]);
   const recording = status === "recording";
   const processing = status === "processing" || busy;
 
   async function handleStop() {
+    if (stopping.current) return;
+    stopping.current = true;
     setBusy(true);
     try {
-      onResult(await stop());
+      await onResult(await stop());
     } finally {
       setBusy(false);
+      stopping.current = false;
+      onRecordingChange?.(false);
     }
+  }
+
+  async function handleStart() {
+    onRecordingChange?.(true);
+    await start();
   }
 
   // Inline mode: a normal-sized button that sits in the same row as the
@@ -47,7 +62,7 @@ export function AudioRecorder({
       <>
         <button
           type="button"
-          onClick={recording ? handleStop : start}
+          onClick={recording ? handleStop : handleStart}
           disabled={disabled || processing}
           aria-label={recording ? t.stopRecording : t.startRecording}
           className={buttonClasses(recording ? "danger" : "primary", "md", className)}
@@ -102,7 +117,7 @@ export function AudioRecorder({
 
         <button
           type="button"
-          onClick={recording ? handleStop : start}
+          onClick={recording ? handleStop : handleStart}
           disabled={disabled || processing}
           aria-label={recording ? t.stopRecording : t.startRecording}
           className={cn(

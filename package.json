@@ -6,6 +6,8 @@
     "dev": "next dev -p 3335",
     "build": "next build",
     "start": "next start -p 3335",
+    "test:scoring": "node --test tests/scoring.test.cjs",
+    "test:scoring-persistence": "node tests/scoring-persistence.test.cjs",
     "extract:resources": "node scripts/extract-resources.mjs",
     "align:audio": "node scripts/align-lesson-audio.mjs",
     "build:resource-seed": "node scripts/build-resource-seed-sql.mjs",

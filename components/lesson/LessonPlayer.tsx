@@ -20,7 +20,8 @@ import {
   UNCATEGORIZED_COURSE_ID,
 } from "@/lib/store/selectors";
 import type { AttemptOutcome, ReadingOutcome } from "@/lib/store/engine";
-import { scoreSentence, estimateDurationSeconds } from "@/lib/client/score";
+import { scoreSentence } from "@/lib/client/score";
+import { analyzeRecording } from "@/lib/speech/quality";
 import { extractContourFromUrl, contourMetrics } from "@/lib/speech/pitch";
 import { speakJa, cancelSpeech } from "@/lib/speech/tts";
 import { isSpeechRecognitionSupported, type RecordResult } from "@/lib/speech/useRecorder";
@@ -1077,7 +1078,7 @@ function InlineScore({
 }) {
   return (
     <div className="mt-3 rounded-xl border border-border bg-surface px-3 py-2.5">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <span
             className={[
@@ -1098,7 +1099,7 @@ function InlineScore({
             )}
           </div>
         </div>
-        <div className="flex gap-1.5 text-[11px] font-bold tabular-nums text-muted">
+        <div className="flex flex-wrap gap-1.5 text-[11px] font-bold tabular-nums text-muted">
           <span>
             {t.dimPronunciation} {score.pronunciation}
           </span>
@@ -1106,13 +1107,14 @@ function InlineScore({
             {t.dimCoverage} {score.coverage ?? "-"}
           </span>
           <span>
-            {t.dimSpeed} {score.speed}
+            {t.dimSpeed} {score.speed ?? "—"}
           </span>
           <span>
             {t.dimIntonation} {score.intonation ?? "-"}
           </span>
         </div>
       </div>
+      <p className="mt-3 text-xs leading-5 text-muted">{score.feedback}</p>
     </div>
   );
 }
@@ -1132,6 +1134,16 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
   /** Held back while the mission dialog covers the screen. */
   const queuedCelebration = useRef<QuestCelebration | null>(null);
   const [scoring, setScoring] = useState(false);
+  const [recordingActive, setRecordingActive] = useState(false);
+  const [scoreError, setScoreError] = useState<string | null>(null);
+  const scoringLock = useRef(false);
+  const playerMounted = useRef(true);
+  useEffect(() => {
+    playerMounted.current = true;
+    return () => { playerMounted.current = false; };
+  }, []);
+  const retryRecording = useRef<RecordResult | null>(null);
+  const scoredRecording = useRef<{ id: string; score: ScoreBreakdown } | null>(null);
   const [recorderKey, setRecorderKey] = useState(0);
   const [lessonViewStats, setLessonViewStats] = useState<LessonViewStats | null>(null);
   const lessonAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -1318,6 +1330,9 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
       : null;
 
   function goTo(i: number, scrollToPractice = false) {
+    if (scoringLock.current || recordingActive) return;
+    setScoreError(null);
+    retryRecording.current = null;
     cancelSpeech();
     setIndex(i);
     setFresh(null);
@@ -1397,14 +1412,23 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
   }
 
   async function handleResult(r: RecordResult) {
-    if (!canRecord) return;
+    if (!canRecord || scoringLock.current) return;
+    scoringLock.current = true;
+    retryRecording.current = r;
+    setScoreError(null);
 
     setScoring(true);
     try {
-      const originalDuration =
-        current.audio_start != null && current.audio_end != null
-          ? current.audio_end - current.audio_start
-          : estimateDurationSeconds(current.ja_text);
+      const referenceEvidence = current.audio_url
+        ? await analyzeRecording(current.audio_url)
+        : mediaUrl && current.audio_start != null && current.audio_end != null
+          ? await analyzeRecording(mediaUrl, { start: current.audio_start, end: current.audio_end })
+          : null;
+      const originalDuration = referenceEvidence?.speechSpanSeconds ?? null;
+      if (!r.recognitionComplete) throw new Error("recognition_incomplete");
+      if (!r.transcript.trim()) throw new Error("no_transcript");
+      const audioEvidence = await analyzeRecording(r.audioUrl);
+      if (!audioEvidence) throw new Error("unreliable_audio");
 
       // Intonation: compare the pitch-contour shape of the recording against the
       // reference audio. Only possible when a reference exists (per-sentence
@@ -1412,17 +1436,21 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
       // reference, so intonation stays unmeasured (null) rather than faked.
       const intonationSimilarity = await measureIntonation(r.audioUrl);
 
-      const score = await scoreSentence({
+      const score = scoredRecording.current?.id === r.attemptId ? scoredRecording.current.score : await scoreSentence({
         targetText: current.ja_text,
         spokenText: r.transcript || null,
         originalDurationSeconds: originalDuration,
-        userDurationSeconds: r.durationSeconds,
+        userDurationSeconds: audioEvidence.speechSpanSeconds,
         intonationSimilarity,
         passScore: current.pass_score,
         locale,
+        audioEvidence,
       });
+      scoredRecording.current = { id: r.attemptId, score };
+      if (!playerMounted.current) return;
 
-      const outcome = recordAttempt({
+      const outcome = await recordAttempt({
+        attemptId: r.attemptId,
         sentenceId: current.id,
         score,
         recordingUrl: r.audioUrl,
@@ -1430,6 +1458,7 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
         userDurationSeconds: r.durationSeconds,
       });
 
+      if (!playerMounted.current) return;
       setFresh({ score, outcome, audioUrl: r.audioUrl, transcript: r.transcript });
       // Tell the companion what just happened so it can cheer or reassure. It
       // decides what is worth saying; the player only reports the facts.
@@ -1465,7 +1494,28 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
           block: "nearest",
         });
       });
+    } catch (error) {
+      const code = error instanceof Error ? error.message : "score_unavailable";
+      const messages = locale === "vi" ? {
+        no_transcript: "Chưa nhận được lời nói. Không chấm điểm lần này; hãy ghi âm lại ở nơi yên tĩnh.",
+        recognition_incomplete: "Nhận dạng giọng nói đã ngắt hoặc chưa hoàn tất. Hãy ghi âm lại; lần này không tính điểm.",
+        unreliable_audio: "Âm thanh quá nhỏ, quá ngắn, bị vỡ hoặc không đọc được. Hãy kiểm tra micro và ghi âm lại.",
+        reading_unavailable: "Chưa xử lý được cách đọc tiếng Nhật. Bạn có thể thử chấm lại bản ghi này.",
+        ambiguous_reading: "Có từ hoặc số chưa xác định được cách đọc. Chưa đủ cơ sở chấm điểm; hãy đối chiếu transcript với câu mẫu.",
+        save_setup_required: "Chưa lưu kết quả: máy chủ chưa được cấu hình cách lưu mới. Điểm và XP chưa được cập nhật.",
+        save_failed: "Chưa xác nhận lưu được kết quả. Thử lại sẽ dùng cùng mã lượt ghi âm; nếu phiên khác vừa cập nhật, hãy tải lại trang.",
+      } : {
+        no_transcript: "音声認識結果がありません。今回は採点せず、静かな場所で録音し直してください。",
+        recognition_incomplete: "音声認識が中断されました。今回は採点せず、録音し直してください。",
+        unreliable_audio: "音声が小さい・短い・歪んでいるか、読み込めません。マイクを確認してください。",
+        reading_unavailable: "読みを処理できませんでした。この録音で再試行できます。",
+        ambiguous_reading: "語句や数字の読みを確定できません。認識結果と例文を確認してください。",
+        save_setup_required: "新しい保存方式のサーバー設定が未完了です。結果とXPは更新されていません。",
+        save_failed: "保存を確認できません。同じ録音IDで再試行します。他の画面で更新した場合は再読み込みしてください。",
+      };
+      setScoreError(messages[code as keyof typeof messages] ?? (locale === "vi" ? "Chưa chấm hoặc lưu được kết quả. Bạn có thể thử lại bản ghi; chưa xác nhận XP mới." : "採点または保存を確認できません。この録音で再試行できます。"));
     } finally {
+      scoringLock.current = false;
       setScoring(false);
     }
   }
@@ -1661,6 +1711,7 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
                         hideNotes
                         disabled={scoring}
                         onResult={handleResult}
+                        onRecordingChange={setRecordingActive}
                         key={recorderKey}
                         className="min-w-[8.5rem]"
                       />
@@ -1693,10 +1744,17 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
                   </div>
                 </div>
 
-                {(scoring || fresh?.audioUrl || displayScore) && (
+                {(scoreError || scoring || fresh?.audioUrl || displayScore) && (
                   <div className="border-t border-border bg-card/55 px-4 py-3 text-left">
+                    {scoreError && <div role="alert" className="rounded-xl bg-warning-soft p-3 text-sm">
+                      <p>{scoreError}</p>
+                      <Button variant="outline" className="mt-3" disabled={scoring} onClick={() => { if (retryRecording.current) void handleResult(retryRecording.current); }}>
+                        {locale === "vi" ? "Thử lại bản ghi" : "この録音で再試行"}
+                      </Button>
+                      {retryRecording.current?.audioUrl && <audio className="mt-3 w-full" controls src={retryRecording.current.audioUrl} />}
+                    </div>}
                     {scoring && (
-                      <p className="text-center text-xs text-muted">{t.scoring}</p>
+                      <p role="status" className="text-center text-xs text-muted">{t.scoring}</p>
                     )}
                     {fresh?.audioUrl && (
                       <div className="mx-auto mt-2.5 max-w-md">

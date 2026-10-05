@@ -2,7 +2,7 @@
 // needs to happen when a scored attempt comes in. Kept pure so it is trivially
 // testable and reusable by a future server/Supabase implementation.
 
-import { todayKey } from "@/lib/date";
+import { todayKey, toDateKey } from "@/lib/date";
 import { advanceStreak, streakActiveToday } from "@/lib/gamification/streak";
 import { levelFromXp } from "@/lib/gamification/level";
 import {
@@ -41,6 +41,7 @@ function findMission(
 }
 
 export interface AttemptInput {
+  attemptId?: string;
   sentenceId: string;
   score: ScoreBreakdown;
   recordingUrl: string | null;
@@ -68,7 +69,7 @@ export interface AttemptOutcome {
 }
 
 function isToday(iso: string): boolean {
-  return iso.slice(0, 10) === todayKey();
+  return toDateKey(new Date(iso)) === todayKey();
 }
 
 /**
@@ -87,6 +88,20 @@ export function applyAttempt(
   if (!sentence) throw new Error("applyAttempt: sentence not found");
   const lessonId = sentence.lesson_id;
   const { score } = input;
+  const duplicate = input.attemptId && state.attempts.find((a) => a.id === input.attemptId && a.user_id === profile.id);
+  if (duplicate) {
+    if (duplicate.sentence_id !== input.sentenceId || duplicate.transcript_text !== input.transcript) throw new Error("attempt_id_conflict");
+    return { state, outcome: {
+      attempt: duplicate, previousBestTotal: duplicate.total_score, countedToday: false,
+      xpGained: 0, lessonCompletedNow: false, missionCompletedNow: false,
+      questsCompletedNow: [], perfectDayNow: false, streakIncreased: false,
+      leveledUp: false, newLevel: profile.current_level, currentStreak: profile.current_streak,
+    } };
+  }
+  if (!Number.isFinite(score.total) || score.total < 0 || score.total > 100 ||
+      (score.passed && (!input.transcript?.trim() || score.pronunciation < 91 || (score.coverage ?? 0) < 80 || score.total < sentence.pass_score))) {
+    throw new Error("invalid_attempt");
+  }
 
   const myAttemptsForSentence = state.attempts.filter(
     (a) => a.user_id === profile.id && a.sentence_id === input.sentenceId,
@@ -100,7 +115,7 @@ export function applyAttempt(
   );
 
   const attempt: SentenceAttempt = {
-    id: uid(),
+    id: input.attemptId ?? uid(),
     user_id: profile.id,
     lesson_id: lessonId,
     sentence_id: input.sentenceId,

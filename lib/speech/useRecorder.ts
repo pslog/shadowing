@@ -10,6 +10,8 @@ export type RecorderStatus =
   | "error";
 
 export interface RecordResult {
+  attemptId: string;
+  recognitionComplete: boolean;
   /** Object URL of the recorded audio (for local playback). */
   audioUrl: string | null;
   /** Recording length in seconds. */
@@ -40,6 +42,13 @@ export function useRecorder() {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const startTimeRef = useRef(0);
   const finalTranscriptRef = useRef("");
+  const attemptIdRef = useRef("");
+  const recognitionCompleteRef = useRef(true);
+  const stoppingRef = useRef(false);
+  const startingRef = useRef(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mountedRef = useRef(true);
+  const urlsRef = useRef(new Set<string>());
 
   // Coordination for stop(): resolve only when audio + STT are both done.
   const pendingRef = useRef<{
@@ -58,10 +67,20 @@ export function useRecorder() {
     const p = pendingRef.current;
     if (!p || !p.audioReady || !p.sttReady) return;
     pendingRef.current = null;
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
+    if (recognitionRef.current) {
+      recognitionRef.current.onresult = null;
+      recognitionRef.current.onend = null;
+      recognitionRef.current.onerror = null;
+      recognitionRef.current.abort();
+      recognitionRef.current = null;
+    }
     setStatus("done");
     p.resolve({
+      attemptId: attemptIdRef.current,
+      recognitionComplete: recognitionCompleteRef.current,
       audioUrl: p.audioUrl,
       durationSeconds: p.duration,
       transcript: finalTranscriptRef.current.trim(),
@@ -69,6 +88,11 @@ export function useRecorder() {
   }, []);
 
   const start = useCallback(async () => {
+    if (startingRef.current || recorderRef.current?.state === "recording" || pendingRef.current) return;
+    startingRef.current = true;
+    stoppingRef.current = false;
+    attemptIdRef.current = crypto.randomUUID();
+    recognitionCompleteRef.current = true;
     setError(null);
     setInterim("");
     finalTranscriptRef.current = "";
@@ -78,11 +102,17 @@ export function useRecorder() {
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch {
+      startingRef.current = false;
       setError("マイクにアクセスできません。このページにマイク権限を許可してください。");
       setStatus("error");
       return;
     }
     streamRef.current = stream;
+    if (!mountedRef.current) {
+      stream.getTracks().forEach((track) => track.stop());
+      startingRef.current = false;
+      return;
+    }
 
     // --- MediaRecorder (playback) ---
     try {
@@ -96,15 +126,20 @@ export function useRecorder() {
           type: rec.mimeType || "audio/webm",
         });
         const url = URL.createObjectURL(blob);
+        urlsRef.current.add(url);
         const p = pendingRef.current;
         if (p) {
           p.audioUrl = url;
           p.audioReady = true;
           tryResolve();
+        } else {
+          URL.revokeObjectURL(url);
+          urlsRef.current.delete(url);
         }
       };
       rec.start();
     } catch {
+      startingRef.current = false;
       setError("このブラウザは録音（MediaRecorder）に対応していません。");
       setStatus("error");
       stream.getTracks().forEach((t) => t.stop());
@@ -123,15 +158,18 @@ export function useRecorder() {
       recog.maxAlternatives = 1;
       recog.onresult = (ev) => {
         let live = "";
-        for (let i = ev.resultIndex; i < ev.results.length; i++) {
+        let final = "";
+        for (let i = 0; i < ev.results.length; i++) {
           const res = ev.results[i];
           const text = res[0]?.transcript ?? "";
-          if (res.isFinal) finalTranscriptRef.current += text;
+          if (res.isFinal) final += text;
           else live += text;
         }
+        finalTranscriptRef.current = final;
         setInterim(`${finalTranscriptRef.current}${live}`.trim());
       };
       recog.onerror = () => {
+        recognitionCompleteRef.current = false;
         // Non-fatal: fall back to no-transcript scoring.
         const p = pendingRef.current;
         if (p) {
@@ -140,6 +178,7 @@ export function useRecorder() {
         }
       };
       recog.onend = () => {
+        if (!stoppingRef.current) recognitionCompleteRef.current = false;
         const p = pendingRef.current;
         if (p) {
           p.sttReady = true;
@@ -149,9 +188,11 @@ export function useRecorder() {
       try {
         recog.start();
       } catch {
+        recognitionCompleteRef.current = false;
         recognitionRef.current = null;
       }
     }
+    startingRef.current = false;
 
     startTimeRef.current =
       typeof performance !== "undefined" ? performance.now() : 0;
@@ -159,6 +200,7 @@ export function useRecorder() {
   }, [tryResolve]);
 
   const stop = useCallback((): Promise<RecordResult> => {
+    stoppingRef.current = true;
     return new Promise<RecordResult>((resolve) => {
       const now =
         typeof performance !== "undefined" ? performance.now() : 0;
@@ -191,9 +233,10 @@ export function useRecorder() {
 
       // Safety net: recognition sometimes never fires onend.
       if (hasStt) {
-        setTimeout(() => {
+        timeoutRef.current = setTimeout(() => {
           const p = pendingRef.current;
           if (p && !p.sttReady) {
+            recognitionCompleteRef.current = false;
             p.sttReady = true;
             tryResolve();
           }
@@ -211,7 +254,10 @@ export function useRecorder() {
 
   // Cleanup on unmount.
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
+      mountedRef.current = false;
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
       try {
         recorderRef.current?.state === "recording" &&
           recorderRef.current.stop();
@@ -224,6 +270,8 @@ export function useRecorder() {
         /* ignore */
       }
       streamRef.current?.getTracks().forEach((t) => t.stop());
+      for (const url of urlsRef.current) URL.revokeObjectURL(url);
+      urlsRef.current.clear();
     };
   }, []);
 

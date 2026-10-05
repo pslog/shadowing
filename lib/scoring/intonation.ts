@@ -14,7 +14,7 @@ export interface IntonationInput {
 export function scoreIntonation({
   similarity,
 }: IntonationInput = {}): number | null {
-  if (similarity == null || Number.isNaN(similarity)) return null;
+  if (similarity == null || !Number.isFinite(similarity) || similarity < 0 || similarity > 1) return null;
   const s = Math.max(0, Math.min(1, similarity));
   // Lenient curve (exponent < 1 lifts the mid-range): being roughly on the
   // right melody earns a comfortable score. Intonation is the least reliable

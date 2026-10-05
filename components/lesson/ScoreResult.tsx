@@ -98,7 +98,7 @@ export function ScoreResult({
   const passed = score.passed;
   return (
     <div className="card p-6">
-      <div className="flex items-center gap-5">
+      <div className="flex flex-col items-start gap-5 sm:flex-row sm:items-center">
         <ScoreRing value={score.total} passed={passed} />
         <div className="min-w-0">
           {passed ? (
@@ -121,7 +121,7 @@ export function ScoreResult({
         </div>
       </div>
 
-      <div className="mt-5 grid grid-cols-3 gap-4">
+      <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Dim
           label={m.player.dimPronunciation}
           value={score.pronunciation}

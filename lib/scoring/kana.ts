@@ -12,9 +12,10 @@
 // degrades gracefully and never crashes.
 
 import path from "node:path";
+import { normalizeJa } from "./pronunciation";
 
 interface Tokenizer {
-  tokenize(text: string): Array<{ surface_form: string; reading?: string }>;
+  tokenize(text: string): Array<{ surface_form: string; reading?: string; pronunciation?: string; pos?: string }>;
 }
 
 export interface ReadingToken {
@@ -50,6 +51,7 @@ function getTokenizer(): Promise<Tokenizer | null> {
 
 function prepareForReading(text: string): string {
   return text
+    .normalize("NFKC")
     // Kuromoji can misread a kanji immediately followed by katakana as one
     // compound token (e.g. 今アパート -> コンアパート). A soft script boundary
     // keeps common mixed-script phrases phonetically correct.
@@ -58,10 +60,7 @@ function prepareForReading(text: string): string {
 }
 
 function comparableReading(text: string): string {
-  return text
-    .replace(/[\s　]/g, "")
-    .replace(/[。、！？!?.,・「」『』（）()~〜－「」]/g, "")
-    .trim();
+  return normalizeJa(text);
 }
 
 /**
@@ -85,8 +84,11 @@ export async function toReadingTokens(text: string): Promise<ReadingToken[] | nu
     return tokenizer
       .tokenize(prepared)
       .map((tok) => {
-        const reading =
-          tok.reading && tok.reading !== "*" ? tok.reading : tok.surface_form;
+        // Use lexical pronunciation for particles (は→ワ, へ→エ), without
+        // globally changing those kana inside ordinary words.
+        const reading = tok.pos === "助詞" && tok.pronunciation && tok.pronunciation !== "*"
+          ? tok.pronunciation
+          : tok.reading && tok.reading !== "*" ? tok.reading : tok.surface_form;
         return {
           surface: tok.surface_form,
           reading: comparableReading(reading),

@@ -170,7 +170,7 @@ export interface SentenceAttempt {
   sentence_id: string;
   recording_url: string | null;
   pronunciation_score: number;
-  speed_score: number;
+  speed_score: number | null;
   coverage_score: number | null;
   intonation_score: number | null;
   total_score: number;
@@ -257,8 +257,11 @@ export interface ScoreAlignmentToken {
 
 /** Scores returned by the scoring engine / /api/score. */
 export interface ScoreBreakdown {
+  scoringVersion?: "transcript-v2";
+  confidence?: "limited";
+  limitations?: string[];
   pronunciation: number;
-  speed: number;
+  speed: number | null;
   /** How much of the target reading was covered; null for older saved attempts. */
   coverage: number | null;
   /** Mora-level comparison for the latest recognized utterance. */

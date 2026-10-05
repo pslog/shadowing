@@ -17,8 +17,9 @@ import type { ScoreAlignmentToken } from "@/lib/types";
  */
 export function normalizeJa(text: string): string {
   return text
+    .normalize("NFKC")
     .replace(/[\s　]/g, "")
-    .replace(/[。、！？!?.,・「」『』（）()~〜－「」]/g, "")
+    .replace(/[\p{P}\p{S}]/gu, "")
     // full-width ASCII digits/letters -> half-width
     .replace(/[！-～]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0))
     // hiragana -> katakana (unify kana scripts)

@@ -84,6 +84,7 @@ export interface UpdateCourseInput extends CreateCourseInput {
 }
 
 export interface RecordAttemptInput {
+  attemptId: string;
   sentenceId: string;
   score: ScoreBreakdown;
   recordingUrl: string | null;
@@ -128,7 +129,7 @@ interface DataContextValue {
     lessonId: string,
     result: { correct: number; total: number },
   ) => ReadingOutcome | null;
-  recordAttempt: (input: RecordAttemptInput) => AttemptOutcome;
+  recordAttempt: (input: RecordAttemptInput) => Promise<AttemptOutcome>;
   /**
    * Credit newly-mastered vocabulary words to today's quest. Callers pass how
    * many words crossed into "learned" on this action, never how many were
@@ -244,6 +245,26 @@ function writeSupabaseShellCache(state: AppState): void {
     );
   } catch {
     /* sessionStorage may be unavailable or full; cache is optional. */
+  }
+}
+
+async function loadUserRows(table: string, userId: string) {
+  const client = await createSupabaseClient();
+  if (!client) throw new Error("save_unavailable");
+  const rows: unknown[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await client.from(table).select("*")
+      .eq("user_id", userId).order("id", { ascending: true }).range(from, from + 999);
+    if (error) throw error;
+    rows.push(...(data ?? []));
+    if (!data || data.length < 1000) {
+      rows.sort((a, b) => {
+        const left = a as { created_at?: string; id: string };
+        const right = b as { created_at?: string; id: string };
+        return (left.created_at ?? "").localeCompare(right.created_at ?? "") || left.id.localeCompare(right.id);
+      });
+      return { data: rows, error: null };
+    }
   }
 }
 
@@ -414,31 +435,19 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         .order("order_index", { ascending: true })
         .then((r) => r, () => ({ data: [], error: null })),
       user
-        ? supabase
-            .from("sentence_attempts")
-            .select("*")
-            .eq("user_id", user.id)
-            .order("created_at", { ascending: true })
+        ? loadUserRows("sentence_attempts", user.id)
         : Promise.resolve({ data: [], error: null }),
       user
-        ? supabase.from("lesson_progress").select("*").eq("user_id", user.id)
+        ? loadUserRows("lesson_progress", user.id)
         : Promise.resolve({ data: [], error: null }),
       user
-        ? supabase.from("daily_missions").select("*").eq("user_id", user.id)
+        ? loadUserRows("daily_missions", user.id)
         : Promise.resolve({ data: [], error: null }),
       user
-        ? supabase
-            .from("xp_events")
-            .select("*")
-            .eq("user_id", user.id)
-            .order("created_at", { ascending: true })
+        ? loadUserRows("xp_events", user.id)
         : Promise.resolve({ data: [], error: null }),
       user
-        ? supabase
-            .from("saved_vocab")
-            .select("*")
-            .eq("user_id", user.id)
-            .order("created_at", { ascending: false })
+        ? loadUserRows("saved_vocab", user.id)
         : Promise.resolve({ data: [], error: null }),
       fetchAll("lessons", [["title", true], ["id", true]]),
       fetchAll("lesson_sentence_counts", [["lesson_id", true]]),
@@ -493,31 +502,19 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       savedVocabResult,
     ] = await Promise.all([
       userId
-        ? supabase
-            .from("sentence_attempts")
-            .select("*")
-            .eq("user_id", userId)
-            .order("created_at", { ascending: true })
+        ? loadUserRows("sentence_attempts", userId)
         : Promise.resolve({ data: [], error: null }),
       userId
-        ? supabase.from("lesson_progress").select("*").eq("user_id", userId)
+        ? loadUserRows("lesson_progress", userId)
         : Promise.resolve({ data: [], error: null }),
       userId
-        ? supabase.from("daily_missions").select("*").eq("user_id", userId)
+        ? loadUserRows("daily_missions", userId)
         : Promise.resolve({ data: [], error: null }),
       userId
-        ? supabase
-            .from("xp_events")
-            .select("*")
-            .eq("user_id", userId)
-            .order("created_at", { ascending: true })
+        ? loadUserRows("xp_events", userId)
         : Promise.resolve({ data: [], error: null }),
       userId
-        ? supabase
-            .from("saved_vocab")
-            .select("*")
-            .eq("user_id", userId)
-            .order("created_at", { ascending: false })
+        ? loadUserRows("saved_vocab", userId)
         : Promise.resolve({ data: [], error: null }),
     ]);
 
@@ -627,56 +624,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
-  const persistSupabaseOutcome = useCallback(
-    async (next: AppState, outcome: AttemptOutcome) => {
-      const supabase = await createSupabaseClient();
-      if (!supabase || !next.profile) return;
-
-      const progress = next.progress.find(
-        (item) =>
-          item.user_id === next.profile?.id &&
-          item.lesson_id === outcome.attempt.lesson_id,
-      );
-      const mission = next.missions.find(
-        (item) =>
-          item.user_id === next.profile?.id &&
-          item.mission_date === outcome.attempt.created_at.slice(0, 10),
-      );
-      const newXpEvents = next.xpEvents.filter(
-        (item) => item.created_at === outcome.attempt.created_at,
-      );
-
-      const writes = [
-        supabase.from("sentence_attempts").insert(outcome.attempt),
-        supabase
-          .from("profiles")
-          .update({
-            total_xp: next.profile.total_xp,
-            current_level: next.profile.current_level,
-            current_streak: next.profile.current_streak,
-            longest_streak: next.profile.longest_streak,
-            last_completed_date: next.profile.last_completed_date,
-          })
-          .eq("id", next.profile.id),
-        progress
-          ? supabase.from("lesson_progress").upsert(progress)
-          : Promise.resolve({ error: null }),
-        mission
-          ? supabase
-              .from("daily_missions")
-              .upsert(mission, { onConflict: "user_id,mission_date" })
-          : Promise.resolve({ error: null }),
-        newXpEvents.length > 0
-          ? supabase.from("xp_events").insert(newXpEvents)
-          : Promise.resolve({ error: null }),
-      ];
-
-      const results = await Promise.all(writes);
-      const failed = results.find((result) => result.error);
-      if (failed?.error) throw failed.error;
-    },
-    [],
-  );
+  const pendingAttempts = useRef(new Map<string, ReturnType<typeof applyAttempt> & { previous: AppState }>());
+  const attemptSaveBusy = useRef(false);
 
   /** Mirrors a finished reading lesson: progress row, XP events, profile total. */
   const persistSupabaseReading = useCallback(
@@ -1249,15 +1198,44 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   );
 
   const recordAttempt = useCallback(
-    (input: RecordAttemptInput): AttemptOutcome => {
-      const prev = stateRef.current;
-      const now = new Date().toISOString();
-      const { state: next, outcome } = applyAttempt(prev, input, now);
-      commit(next);
-      if (USING_SUPABASE) persistSupabaseOutcome(next, outcome).catch(console.error);
-      return outcome;
+    async (input: RecordAttemptInput): Promise<AttemptOutcome> => {
+      if (attemptSaveBusy.current) throw new Error("save_in_progress");
+      attemptSaveBusy.current = true;
+      try {
+        let plan = pendingAttempts.current.get(input.attemptId);
+        if (!plan) {
+          const previous = USING_SUPABASE ? await loadSupabaseState() : stateRef.current;
+          if (previous.profile?.id !== stateRef.current.profile?.id) throw new Error("session_changed");
+          plan = { ...applyAttempt(previous, input, new Date().toISOString()), previous };
+          pendingAttempts.current.set(input.attemptId, plan);
+        }
+        const { state: next, outcome, previous } = plan;
+        if (next.profile?.id !== stateRef.current.profile?.id) throw new Error("session_changed");
+        if (USING_SUPABASE) {
+          const supabase = await createSupabaseClient();
+          if (!supabase) throw new Error("save_unavailable");
+          const { error } = await supabase.rpc("save_shadowing_attempt_v2", {
+            payload: {
+              attempt: { ...outcome.attempt, recording_url: null },
+              profile: next.profile,
+              progress: next.progress.find((p) => p.user_id === next.profile?.id && p.lesson_id === outcome.attempt.lesson_id),
+              mission: next.missions.find((m) => m.user_id === next.profile?.id && m.mission_date === todayKey()),
+              xp_events: next.xpEvents.filter((event) => !previous.xpEvents.some((old) => old.id === event.id)),
+              expected_xp: previous.profile?.total_xp,
+              expected_attempt_count: previous.attempts.filter((a) => a.user_id === previous.profile?.id).length,
+            },
+          });
+          if (error) throw new Error(error.code === "PGRST202" ? "save_setup_required" : "save_failed");
+        }
+        if (next.profile?.id !== stateRef.current.profile?.id) throw new Error("session_changed");
+        commit(next);
+        pendingAttempts.current.delete(input.attemptId);
+        return outcome;
+      } finally {
+        attemptSaveBusy.current = false;
+      }
     },
-    [commit, persistSupabaseOutcome],
+    [commit, loadSupabaseState],
   );
 
   const markReadingLessonRead = useCallback(

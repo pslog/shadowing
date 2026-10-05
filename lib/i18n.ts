@@ -196,7 +196,7 @@ const vi = {
       {
         title: "Nói được, không chỉ nghe hiểu",
         body:
-          "Kaiwa tốt bắt đầu từ shadowing: nghe câu thật rồi nói lại từng câu để luyện phản xạ hội thoại, phát âm được chấm ngay để bạn biết đường sửa.",
+          "Kaiwa tốt bắt đầu từ shadowing: nghe câu thật rồi nói lại từng câu để luyện phản xạ hội thoại; nội dung nhận dạng được đối chiếu ngay để bạn biết chỗ cần xem lại.",
       },
       {
         title: "Mỗi ngày một ít, thành thói quen",
@@ -282,15 +282,15 @@ const vi = {
         `Lên Lv.${level} rồi! ${mascot} vừa nhập hội với bạn đó 🎉`,
       lessonCleared: [
         "Xong cả bài rồi! Bạn làm tốt thật đấy 🎉",
-        "Hết bài luôn! Nghe chắc hơn hẳn lúc mới bắt đầu.",
+        "Hết bài rồi! Hãy nghe lại các bản ghi để tự so sánh với câu mẫu.",
         "Trọn bài! Nghỉ một chút rồi mình qua bài mới nhé.",
       ],
       missionCleared: (streak: number) =>
         `Xong nhiệm vụ hôm nay! Streak ${streak} ngày rồi đó 🔥`,
       firstPass: [
-        "Pass rồi! Câu này bạn đọc tự nhiên lắm.",
+        "Đạt ngưỡng khớp nội dung rồi! Hãy nghe lại bản ghi để tự kiểm tra phát âm.",
         "Đẹp! Bỏ túi thêm một câu.",
-        "Chuẩn luôn. Sang câu tiếp thôi!",
+        "Tốt rồi, đã hoàn thành một câu. Sang câu tiếp nhé!",
       ],
       newBest: (delta: number) =>
         `Hơn lần trước ${delta} điểm! Đang lên tay rồi đó.`,
@@ -302,7 +302,7 @@ const vi = {
         "Thử tách câu ra đọc từng vế, rồi ghép lại nhé.",
       ],
       keepGoing: [
-        "Chưa tới, nhưng nghe rõ hơn lần trước rồi đấy.",
+        "Chưa đạt ngưỡng lần này. Xem transcript và nghe lại bản ghi nhé.",
         "Hít một hơi, thu lại lần nữa nhé. Mình vẫn ở đây.",
         "Cứ từ từ thôi, không ai đúng ngay từ lần đầu cả.",
       ],
@@ -477,7 +477,7 @@ const vi = {
     listenSentence: "Nghe câu này",
     listenTts: "Nghe bằng TTS",
     loginToRecord: "Đăng nhập để ghi âm",
-    scoreTargetHint: (target: number) => `Ghi âm để chấm · Mục tiêu ${target} điểm`,
+    scoreTargetHint: (target: number) => `Ghi âm để đối chiếu nội dung · Mục tiêu ${target} điểm`,
     sttUnsupported:
       "Trình duyệt này không hỗ trợ nhận dạng giọng nói. Nên dùng Chrome hoặc Edge.",
     scoring: "Đang chấm...",
@@ -491,9 +491,9 @@ const vi = {
     pass: "Pass",
     almost: "Gần đạt",
     improvement: (points: number) => `+${points} điểm so với lần trước`,
-    dimPronunciation: "Phát âm",
+    dimPronunciation: "Khớp lời nhận dạng",
     dimCoverage: "Đầy đủ",
-    dimSpeed: "Tốc độ",
+    dimSpeed: "Thời lượng",
     dimIntonation: "Ngữ điệu",
     finishBackToList: "Hoàn tất · Về danh sách",
     missionDialogTitle: "Xong nhiệm vụ shadowing!",
@@ -507,22 +507,22 @@ const vi = {
   },
   score: {
     unmeasured: "Chưa đo",
-    almostRetry: "Hãy thử lại để phát âm đạt từ 91 điểm trở lên.",
+    almostRetry: "Ngưỡng khớp lời nhận dạng là 91 điểm. Điểm này không xác nhận phát âm chuẩn.",
     almostGap: (gap: number) => `Còn ${gap} điểm nữa là pass. Thử lại nhé.`,
     feedbackNoTranscript:
       "Không nhận dạng được giọng nói. Hãy thử ghi âm lại ở nơi yên tĩnh.",
     feedbackCoverage:
-      "Bạn đang bỏ sót một phần câu. Hãy ngắt câu ngắn lại và nói hết đến cuối.",
+      "Transcript thiếu một phần câu mẫu. Nghe lại để xác định bạn nói thiếu hay nhận dạng bị sót.",
     feedbackPronunciation:
-      "Phát âm chưa đạt chuẩn pass. Nghe lại rồi nhại đúng thứ tự âm, rõ hơn một chút.",
-    feedbackGreat: "Rất tốt. Câu này nghe rất tự nhiên.",
-    feedbackPassed: "Đã pass. Luyện thêm chút nữa sẽ càng tự nhiên hơn.",
+      "Lời nhận dạng chưa khớp ngưỡng đạt. Đối chiếu phần khác biệt; nhận dạng giọng nói cũng có thể nhầm.",
+    feedbackGreat: "Lời nhận dạng khớp tốt với câu mẫu. Đây chưa phải đánh giá độ chuẩn phát âm.",
+    feedbackPassed: "Đạt ngưỡng khớp nội dung. Hãy nghe lại bản ghi để tự kiểm tra phát âm.",
     feedbackLowPronunciation:
-      "Điểm yếu nhất là phát âm. Nghe lại câu gốc và phát âm rõ ràng hơn.",
+      "Lời nhận dạng khác câu mẫu. Kiểm tra transcript trước khi luyện lại phần khác biệt.",
     feedbackLowSpeed:
       "Điểm yếu nhất là tốc độ. Có thể bạn đang nói nhanh hoặc chậm hơn câu gốc.",
     feedbackLowIntonation:
-      "Điểm yếu nhất là ngữ điệu. Chú ý chỗ ngắt câu và lên xuống giọng.",
+      "Đường cao độ khác audio mẫu. Đây là so sánh thử nghiệm, chưa xác nhận đúng/sai trọng âm tiếng Nhật.",
   },
   recorder: {
     startRecording: "Bắt đầu ghi âm",
@@ -1162,15 +1162,15 @@ const ja: Dictionary = {
         `Lv.${level}にアップ！${mascot}が仲間になりました 🎉`,
       lessonCleared: [
         "レッスン完走！よくがんばりました 🎉",
-        "全文クリア！最初より発音がしっかりしています。",
+        "全文クリア！録音を聞いて、お手本と比べてみましょう。",
         "これで一冊おしまい。ひと息ついて次に行きましょう。",
       ],
       missionCleared: (streak: number) =>
         `今日のミッション達成！${streak}日連続です 🔥`,
       firstPass: [
-        "合格！今の文、とても自然でした。",
+        "内容一致の基準を満たしました。録音も聞いて確認しましょう。",
         "いいですね！一文クリアです。",
-        "ばっちり。次の文に進みましょう！",
+        "できました。次の文に進みましょう！",
       ],
       newBest: (delta: number) => `前回より${delta}点アップ！伸びています。`,
       nearPass: (gap: number) => `あと${gap}点。もう一回録ってみましょう！`,
@@ -1353,7 +1353,7 @@ const ja: Dictionary = {
     listenSentence: "この文を聞く",
     listenTts: "TTSで聞く",
     loginToRecord: "ログインして録音",
-    scoreTargetHint: (target: number) => `録音して採点 · 目標 ${target}点`,
+    scoreTargetHint: (target: number) => `録音して内容を照合 · 目標 ${target}点`,
     sttUnsupported:
       "このブラウザは音声認識に非対応です。ChromeまたはEdgeを推奨します。",
     scoring: "採点中...",
@@ -1367,9 +1367,9 @@ const ja: Dictionary = {
     pass: "Pass",
     almost: "もう少し",
     improvement: (points: number) => `前回より+${points}点`,
-    dimPronunciation: "発音",
+    dimPronunciation: "認識内容の一致",
     dimCoverage: "網羅",
-    dimSpeed: "速度",
+    dimSpeed: "所要時間",
     dimIntonation: "イントネーション",
     finishBackToList: "完了 · 一覧へ戻る",
     missionDialogTitle: "シャドーイングのミッション達成！",
@@ -1383,22 +1383,22 @@ const ja: Dictionary = {
   },
   score: {
     unmeasured: "未計測",
-    almostRetry: "発音が91点以上になるまで、もう一度試してみましょう。",
+    almostRetry: "認識内容の一致が91点以上であることが条件です。発音の正確さを保証する点数ではありません。",
     almostGap: (gap: number) => `Passまであと${gap}点です。もう一度試してみましょう。`,
     feedbackNoTranscript:
       "音声を認識できませんでした。静かな場所でもう一度録音してみましょう。",
     feedbackCoverage:
-      "文の一部が抜けています。短く区切って、最後まで声に出してみましょう。",
+      "認識結果に例文の一部がありません。言い忘れか認識ミスか、録音を聞いて確認してください。",
     feedbackPronunciation:
-      "発音がPass基準に届いていません。音を聞いてから、同じ順番でよりはっきりまねてください。",
-    feedbackGreat: "とても良いです。この文は自然に聞こえます。",
-    feedbackPassed: "Passです。もう少し練習すると、さらに自然に話せます。",
+      "認識内容が一致基準に届いていません。音声認識の誤りも考慮し、相違点を確認してください。",
+    feedbackGreat: "認識内容が例文によく一致しています。発音の正確さを保証する評価ではありません。",
+    feedbackPassed: "内容一致の基準を満たしました。録音を聞いて発音も確認しましょう。",
     feedbackLowPronunciation:
-      "一番の課題は発音です。原文をもう一度聞いて、音をはっきり出してみましょう。",
+      "認識内容と例文に違いがあります。表示された違いを確認してください。",
     feedbackLowSpeed:
       "一番の課題は速度です。原文と比べて速すぎる、または遅すぎる可能性があります。",
     feedbackLowIntonation:
-      "一番の課題はイントネーションです。文の区切りと上がり下がりに注意しましょう。",
+      "音高の動きが参考音声と異なります。これは実験的な比較で、アクセントの正誤判定ではありません。",
   },
   recorder: {
     startRecording: "録音を開始",

@@ -1,7 +1,7 @@
 // Pure derived reads over AppState. Kept separate from the provider so pages
 // import only what they need and the logic stays testable.
 
-import { lastNDays, todayKey } from "@/lib/date";
+import { lastNDays, todayKey, toDateKey } from "@/lib/date";
 import {
   DAILY_MAX_QUEST_XP,
   emptyMission,
@@ -51,7 +51,7 @@ export function isAdmin(state: AppState): boolean {
 }
 
 function isToday(iso: string): boolean {
-  return iso.slice(0, 10) === todayKey();
+  return toDateKey(new Date(iso)) === todayKey();
 }
 
 function lessonNumber(title: string): number | null {
@@ -551,7 +551,7 @@ export function dailyPassStats(state: AppState, n: number): DayStat[] {
   for (const d of days) byDay.set(d, new Set());
   for (const a of state.attempts) {
     if (a.user_id !== uid || !a.is_passed) continue;
-    const key = a.created_at.slice(0, 10);
+    const key = toDateKey(new Date(a.created_at));
     byDay.get(key)?.add(a.sentence_id);
   }
   return days.map((d) => ({ date: d, count: byDay.get(d)?.size ?? 0 }));
