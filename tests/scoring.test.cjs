@@ -51,6 +51,8 @@ test('alignment exposes missing, extra and substituted units', () => {
 test('real tokenizer handles kanji/kana and particle readings', async () => {
   assert.equal(await toReading('私は学生です'),await toReading('わたしはがくせいです'));
   assert.equal(await toReading('学校へ行く'),await toReading('がっこうへいく'));
+  assert.equal(await toReading('創立100周年'),await toReading('創立百周年'));
+  assert.equal(await toReading('２０２６年'),await toReading('二千二十六年'));
 });
 test('synthetic signal checks: silence, quiet, clipping, pauses; no accuracy claim', () => {
   assert.equal(analyzeSignal(new Float32Array(16000),16000).activeSeconds,0);
