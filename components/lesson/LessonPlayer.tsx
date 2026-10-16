@@ -45,6 +45,7 @@ import { LessonGuestWall } from "./LessonGuestWall";
 import { UpNextLessons } from "./UpNextLessons";
 import { ReadingArticle } from "./ReadingArticle";
 import { DialogueScript } from "./DialogueScript";
+import { SpeakerBadge } from "./SpeakerBadge";
 import {
   buildReadingParagraphs,
   readingMemo,
@@ -1678,6 +1679,9 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
                     <Icon name={currentPassed ? "check" : "mic"} size={14} />
                     {currentPassed ? t.passedTag : t.speakThis}
                   </span>
+                  {current.speaker && (
+                    <SpeakerBadge speaker={current.speaker} label={t.speaker} className="ml-2 align-middle" />
+                  )}
                   <p lang="ja" className="mx-auto mt-6 max-w-2xl text-xl font-bold leading-[2.1] tracking-[-0.015em] sm:text-3xl sm:leading-[2] [&_rt]:text-[0.46em] [&_rt]:font-medium [&_rt]:text-muted">
                     <Furigana sentence={current} />
                   </p>

@@ -155,6 +155,8 @@ export interface LessonSentence {
   ja_text: string;
   /** Ruby furigana as JSON: array of [surface] or [surface, hiraganaReading]. */
   furigana: string | null;
+  /** Dialogue speaker label (e.g. "A"); null for narration / unknown. */
+  speaker?: string | null;
   vi_translation: string | null;
   audio_url: string | null;
   audio_start: number | null;

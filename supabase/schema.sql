@@ -104,6 +104,9 @@ alter table public.lesson_sentences
 -- Furigana (ruby): JSON array of [surface] / [surface, hiraganaReading].
 alter table public.lesson_sentences
   add column if not exists furigana text;
+-- Speaker label for dialogue lines (e.g. 'A' / 'B' / 'C'); null = narration.
+alter table public.lesson_sentences
+  add column if not exists speaker text;
 create index if not exists lesson_sentences_lesson_idx
   on public.lesson_sentences(lesson_id, order_index);
 

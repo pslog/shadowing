@@ -2,6 +2,7 @@
 
 import { Icon } from "@/components/ui/icon";
 import { Furigana } from "./Furigana";
+import { SpeakerBadge } from "./SpeakerBadge";
 import type { LessonSentence } from "@/lib/types";
 import type { Dictionary } from "@/lib/i18n";
 
@@ -135,6 +136,7 @@ export function DialogueScript({
                   <span className="text-[11px] font-bold text-muted">
                     {t.utterance(i + 1)}
                   </span>
+                  <SpeakerBadge speaker={sentence.speaker} label={t.speaker} />
                   {active && (
                       <span className="rounded-md bg-accent/10 px-1.5 py-0.5 text-[11px] font-bold text-accent">
                       {t.practicing}
