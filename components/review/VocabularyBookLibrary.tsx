@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -17,10 +17,27 @@ import { useData } from "@/lib/store/DataProvider";
 import type {
   VocabularyBook,
   VocabularyBookEntry,
+  VocabularyBookPlan,
   VocabularyBookProgress,
 } from "@/lib/types";
+import { todayKey } from "@/lib/date";
+import {
+  buildSchedule,
+  entryWordKeys,
+  isDue,
+  isPassed,
+  planProgress,
+  quizWordKey,
+  reviewedWeeksAfterRepace,
+  reviewWord,
+  startDateFor,
+  type PlanItem,
+  type WordReview,
+} from "@/lib/vocab/plan";
+import { VocabularyPlanBoard, VocabularyPlanSetup } from "./VocabularyStudyPlan";
 
 type Copy = {
+  locale: "vi" | "ja";
   library: string;
   libraryBody: string;
   bookDescription: string;
@@ -86,6 +103,7 @@ type Copy = {
 
 export const vocabularyBookCopy = {
   vi: {
+    locale: "vi",
     library: "Sổ từ vựng",
     libraryBody: "Chọn một sổ để học theo nhịp của bạn.",
     bookDescription: "Học Kanji qua cấu tạo, cách nhớ, cách đọc và từ ví dụ.",
@@ -149,6 +167,7 @@ export const vocabularyBookCopy = {
     score: (correct: number, total: number) => `Đúng ${correct}/${total} câu`,
   },
   ja: {
+    locale: "ja",
     library: "単語帳",
     libraryBody: "学びたい一冊を選んで、あなたのペースで進めましょう。",
     bookDescription: "漢字の構造・覚え方・読み方・例語を、一つずつ身につけましょう。",
@@ -211,7 +230,7 @@ export const vocabularyBookCopy = {
     retake: "もう一度",
     score: (correct: number, total: number) => `${total}問中 ${correct}問正解`,
   },
-} satisfies Record<"vi" | "ja", Copy>;
+} as const satisfies Record<"vi" | "ja", Copy>;
 
 export function VocabularyBookLibrary({
   locale,
@@ -364,10 +383,6 @@ function buildChoices(answer: string, pool: string[], seed: number) {
   return choices.sort((left, right) => left.localeCompare(right, "ja"));
 }
 
-function quizWordKey(word: string, reading: string) {
-  return `${word}|${reading}`;
-}
-
 function QuizResultDialog({
   correct,
   total,
@@ -429,8 +444,16 @@ function QuizResultDialog({
 }
 
 type QuickPracticeItem = QuizItem;
-type TestScope = { label: string; entryIds: string[] };
-type QuizWordProgress = { mastered: boolean; correct_streak: number; next_review_at: string | null };
+type TestScope = {
+  label: string;
+  entryIds: string[];
+  /** Questions per attempt (default 10). */
+  limit?: number;
+  /** Heading override; defaults to "<item label> <label>". */
+  heading?: string;
+  /** Set when the test is a study-plan day; review days are recorded on submit. */
+  planItem?: PlanItem;
+};
 
 function QuickVocabularyPractice({
   entries,
@@ -458,7 +481,7 @@ function QuickVocabularyPractice({
     const dueWords = words.filter((word) => dueReviewWordKeys.has(quizWordKey(word.word, word.reading)));
     const unmasteredWords = words.filter((word) => !masteredWordKeys.has(quizWordKey(word.word, word.reading)));
     const source = dueWords.length > 0 ? dueWords : unmasteredWords;
-    const selected = (source.length >= 4 ? source : words).slice(0, Math.min(10, words.length));
+    const selected = (source.length >= 4 ? source : words).slice(0, Math.min(dueWords.length > 0 ? 20 : 10, words.length));
     const readings = words.map((word) => word.reading);
     const notations = words.map((word) => word.word);
     return selected.map((word, index) => {
@@ -665,7 +688,7 @@ function CushionPhraseQuiz({
     const selected = source
       .map((entry, index) => ({ entry, order: (index * 13 + attempt * 7) % source.length }))
       .sort((left, right) => left.order - right.order)
-      .slice(0, Math.min(10, source.length))
+      .slice(0, Math.min(scope.limit ?? 10, source.length))
       .map(({ entry }) => entry);
     const phrasePool = scopedEntries.map((entry) => entry.kanji);
     return selected.map((entry, index) => ({
@@ -699,7 +722,7 @@ function CushionPhraseQuiz({
       </div>
       <div className="border-b border-border pb-4">
         <p className="text-xs font-extrabold text-primary">BUSINESS JAPANESE</p>
-        <h1 className="mt-1 text-2xl font-extrabold">{scope.label}</h1>
+        <h1 className="mt-1 text-2xl font-extrabold">{scope.heading ?? scope.label}</h1>
         <h2 className="mt-4 text-base font-extrabold text-fg">{copy.clozeTitle}</h2>
         <p className="mt-1 text-sm leading-6 text-muted">{copy.clozeBody}</p>
       </div>
@@ -795,7 +818,7 @@ function VocabularyQuiz({
     const selectedWords = sourceWords
       .map((word, index) => ({ word, order: (index * 13 + attempt * 7) % sourceWords.length }))
       .sort((left, right) => left.order - right.order)
-      .slice(0, Math.min(10, words.length))
+      .slice(0, Math.min(scope.limit ?? 10, words.length))
       .map(({ word }) => word);
     const count = Math.ceil(selectedWords.length / 2);
     const readingPool = words.map((word) => word.reading);
@@ -849,7 +872,7 @@ function VocabularyQuiz({
         {submitted && <span className="text-sm font-extrabold text-primary">{copy.score(correct, items.length)}</span>}
       </div>
       <div>
-        <h1 className="text-2xl font-extrabold">{itemLabel} {scope.label}</h1>
+        <h1 className="text-2xl font-extrabold">{scope.heading ?? `${itemLabel} ${scope.label}`}</h1>
         <p className="mt-1 text-sm text-muted">{copy.quizBody(items.length)}</p>
       </div>
       {(["reading", "notation"] as const).map((kind) => {
@@ -973,8 +996,13 @@ function VocabularyBookStudyView({
 }) {
   const [entries, setEntries] = useState<VocabularyBookEntry[]>([]);
   const [progress, setProgress] = useState<Map<string, boolean>>(new Map());
-  const [quizProgress, setQuizProgress] = useState<Map<string, QuizWordProgress>>(new Map());
+  const [quizProgress, setQuizProgress] = useState<Map<string, WordReview>>(new Map());
+  const [plan, setPlan] = useState<VocabularyBookPlan | null>(null);
+  /** False when the plans table is missing (migration not applied yet). */
+  const [plansAvailable, setPlansAvailable] = useState(false);
+  const [editingPlan, setEditingPlan] = useState(false);
   const [deck, setDeck] = useState<VocabularyBookEntry[] | null>(null);
+  const [deckItem, setDeckItem] = useState<PlanItem | null>(null);
   const [quickPracticeOpen, setQuickPracticeOpen] = useState(false);
   const [testListOpen, setTestListOpen] = useState(false);
   const [testScope, setTestScope] = useState<TestScope | null>(null);
@@ -988,9 +1016,9 @@ function VocabularyBookStudyView({
   const { recordVocabLearned } = useData();
 
   /** Credit words to today's vocabulary quest and surface anything it cleared. */
-  function creditVocabQuest(learned: number) {
-    if (learned <= 0) return;
-    const outcome = recordVocabLearned(learned);
+  function creditVocabQuest(learned: number, target?: number) {
+    if (learned <= 0 && !target) return;
+    const outcome = recordVocabLearned(learned, target);
     if (outcome && hasCelebration(outcome)) {
       onQuestCleared({
         quests: outcome.questsCompletedNow,
@@ -1003,15 +1031,15 @@ function VocabularyBookStudyView({
     let cancelled = false;
     createClient()
       .then(async (client) => {
-        if (!client) return { entries: [], progress: [] as VocabularyBookProgress[], quizProgress: [] as ({ word_key: string } & QuizWordProgress)[] };
+        if (!client) return { entries: [], progress: [] as VocabularyBookProgress[], quizProgress: [] as ({ word_key: string } & WordReview)[], plan: null, plansAvailable: false };
         const { data: entryData } = await client
           .from("vocabulary_book_entries")
           .select("*")
           .eq("book_id", book.id)
           .order("order_index", { ascending: true });
         const nextEntries = (entryData ?? []) as VocabularyBookEntry[];
-        if (!profileId || nextEntries.length === 0) return { entries: nextEntries, progress: [], quizProgress: [] };
-        const [{ data: progressData }, { data: quizProgressData }] = await Promise.all([
+        if (!profileId || nextEntries.length === 0) return { entries: nextEntries, progress: [], quizProgress: [], plan: null, plansAvailable: false };
+        const [{ data: progressData }, { data: quizProgressData }, { data: planData, error: planError }] = await Promise.all([
           client
             .from("vocabulary_book_progress")
             .select("*")
@@ -1019,14 +1047,26 @@ function VocabularyBookStudyView({
             .in("entry_id", nextEntries.map((entry) => entry.id)),
           client
             .from("vocabulary_book_quiz_progress")
-            .select("word_key, mastered, correct_streak, next_review_at")
+            .select("*")
             .eq("user_id", profileId)
             .eq("book_id", book.id),
+          client
+            .from("vocabulary_book_plans")
+            .select("*")
+            .eq("user_id", profileId)
+            .eq("book_id", book.id)
+            .maybeSingle(),
         ]);
         return {
           entries: nextEntries,
           progress: (progressData ?? []) as VocabularyBookProgress[],
-          quizProgress: (quizProgressData ?? []) as ({ word_key: string } & QuizWordProgress)[],
+          quizProgress: ((quizProgressData ?? []) as ({ word_key: string } & WordReview)[]).map((item) => ({
+            ...item,
+            // Rows from before the SRS ladder: treat a correct answer as rung 1.
+            interval_days: item.interval_days ?? (item.mastered || item.correct_streak > 0 ? 1 : 0),
+          })),
+          plan: (planData ?? null) as VocabularyBookPlan | null,
+          plansAvailable: !planError,
         };
       })
       .then((data) => {
@@ -1034,6 +1074,8 @@ function VocabularyBookStudyView({
         setEntries(data.entries);
         setProgress(new Map(data.progress.map((item) => [item.entry_id, item.learned])));
         setQuizProgress(new Map(data.quizProgress.map((item) => [item.word_key, item])));
+        setPlan(data.plan);
+        setPlansAvailable(data.plansAvailable);
       })
       .catch(() => undefined)
       .finally(() => {
@@ -1049,13 +1091,14 @@ function VocabularyBookStudyView({
     () => [...progress.values()].filter(Boolean).length,
     [progress],
   );
-  const masteredQuizWords = useMemo(
-    () => new Set([...quizProgress].filter(([, item]) => item.mastered).map(([wordKey]) => wordKey)),
+  /** Words answered correctly at least once: what tests skip and plan days count. */
+  const passedQuizWords = useMemo(
+    () => new Set([...quizProgress].filter(([, item]) => isPassed(item)).map(([wordKey]) => wordKey)),
     [quizProgress],
   );
   const dueReviewWordKeys = useMemo(() => {
     const now = Date.now();
-    return new Set([...quizProgress].filter(([, item]) => !item.mastered && (!item.next_review_at || Date.parse(item.next_review_at) <= now)).map(([wordKey]) => wordKey));
+    return new Set([...quizProgress].filter(([, item]) => isDue(item, now)).map(([wordKey]) => wordKey));
   }, [quizProgress]);
   const unlearnedEntries = useMemo(
     () => entries.filter((entry) => !(progress.get(entry.id) ?? false)),
@@ -1066,6 +1109,28 @@ function VocabularyBookStudyView({
     [entries, unlearnedEntries],
   );
   const isBusinessPhraseBook = book.slug === "business-cushion-words";
+  const planItems = useMemo(
+    () => (plan ? buildSchedule(entries, isBusinessPhraseBook, plan.words_per_day) : []),
+    [entries, isBusinessPhraseBook, plan],
+  );
+  const currentPlanProgress = useMemo(
+    () =>
+      plan
+        ? planProgress({ plan, items: planItems, entries, phraseBook: isBusinessPhraseBook, reviews: quizProgress, learnedEntries: progress })
+        : null,
+    [entries, isBusinessPhraseBook, plan, planItems, progress, quizProgress],
+  );
+  const todaysPlanItem =
+    currentPlanProgress && currentPlanProgress.currentIndex <= currentPlanProgress.scheduledIndex
+      ? planItems[currentPlanProgress.currentIndex]
+      : undefined;
+  const questTargetSynced = useRef(false);
+  useEffect(() => {
+    // Today's vocabulary quest asks for exactly today's plan words.
+    if (questTargetSynced.current || todaysPlanItem?.kind !== "learn") return;
+    questTargetSynced.current = true;
+    creditVocabQuest(0, Math.min(60, Math.max(5, todaysPlanItem.wordCount)));
+  });
   const studyUnit = isBusinessPhraseBook ? (copy.learned === "Đã thuộc" ? "cụm từ" : "フレーズ") : (copy.learned === "Đã thuộc" ? "Kanji" : "漢字");
   const filteredEntries = useMemo(
     () => entries.filter((entry) => {
@@ -1081,9 +1146,8 @@ function VocabularyBookStudyView({
 
   async function setLearned(learned: boolean) {
     if (!card) return;
-    // Only the false -> true transition is new learning; re-flipping a card the
-    // user already knew must not move the quest.
-    if (learned && !progress.get(card.id)) creditVocabQuest(1);
+    // Flashcards are self-graded, so they do not credit the quest; a word
+    // counts once the user answers it correctly in a test.
     setProgress((current) => new Map(current).set(card.id, learned));
     if (profileId) {
       const client = await createClient();
@@ -1099,29 +1163,19 @@ function VocabularyBookStudyView({
   async function saveQuizProgress(results: { wordKey: string; mastered: boolean }[]) {
     const now = new Date();
     const nextQuizProgress = new Map(quizProgress);
+    // Quest credit: a word learned for the first time, or a due word recalled.
+    let credited = 0;
     for (const result of results) {
-      const previous = nextQuizProgress.get(result.wordKey) ?? { mastered: false, correct_streak: 0, next_review_at: null };
-      const correctStreak = result.mastered ? previous.correct_streak + 1 : 0;
-      const mastered = correctStreak >= 2;
-      const nextReviewAt = new Date(now.getTime() + (mastered ? 3 : 1) * 24 * 60 * 60 * 1000).toISOString();
-      nextQuizProgress.set(result.wordKey, { mastered, correct_streak: correctStreak, next_review_at: nextReviewAt });
+      const previous = nextQuizProgress.get(result.wordKey);
+      if (result.mastered && (!isPassed(previous) || isDue(previous, now.getTime()))) credited += 1;
+      nextQuizProgress.set(result.wordKey, reviewWord(previous, result.mastered, now));
     }
     setQuizProgress(nextQuizProgress);
-    // A word counts for the quest the moment it crosses into mastered — never
-    // on every correct answer, or a single deck could clear the board twice.
-    creditVocabQuest(
-      results.filter(
-        (result) =>
-          (nextQuizProgress.get(result.wordKey)?.mastered ?? false) &&
-          !(quizProgress.get(result.wordKey)?.mastered ?? false),
-      ).length,
-    );
-    const nextMasteredWords = new Set([...nextQuizProgress].filter(([, item]) => item.mastered).map(([wordKey]) => wordKey));
+    creditVocabQuest(credited);
     const newlyLearnedEntries = entries.filter((entry) => {
-      const wordKeys = [...new Set(entry.vocabulary
-        .filter((word) => word.word && word.reading && word.meaning)
-        .map((word) => quizWordKey(word.word, word.reading)))];
-      return wordKeys.length > 0 && wordKeys.every((wordKey) => nextMasteredWords.has(wordKey));
+      if (progress.get(entry.id)) return false;
+      const wordKeys = entryWordKeys(entry, isBusinessPhraseBook);
+      return wordKeys.length > 0 && wordKeys.every((wordKey) => isPassed(nextQuizProgress.get(wordKey)));
     });
     if (newlyLearnedEntries.length > 0) {
       setProgress((current) => {
@@ -1140,6 +1194,7 @@ function VocabularyBookStudyView({
         mastered: nextQuizProgress.get(result.wordKey)?.mastered ?? false,
         correct_streak: nextQuizProgress.get(result.wordKey)?.correct_streak ?? 0,
         next_review_at: nextQuizProgress.get(result.wordKey)?.next_review_at ?? null,
+        interval_days: nextQuizProgress.get(result.wordKey)?.interval_days ?? 0,
         updated_at: new Date().toISOString(),
       })),
       { onConflict: "user_id,book_id,word_key" },
@@ -1177,28 +1232,115 @@ function VocabularyBookStudyView({
     setRequeued(true);
   }
 
-  function begin(nextDeck: VocabularyBookEntry[]) {
+  function begin(nextDeck: VocabularyBookEntry[], item: PlanItem | null = null) {
     if (nextDeck.length === 0) return;
     setIndex(0);
     setFlipped(false);
+    setDeckItem(item);
     setDeck(nextDeck);
+  }
+
+  function closeDeck() {
+    setDeck(null);
+    setDeckItem(null);
+    setIndex(0);
+  }
+
+  async function savePlan(next: Pick<VocabularyBookPlan, "start_date" | "words_per_day" | "reviews_done">) {
+    if (!profileId) return;
+    const nowIso = new Date().toISOString();
+    setPlan((current) => ({
+      id: current?.id ?? "",
+      user_id: profileId,
+      book_id: book.id,
+      created_at: current?.created_at ?? nowIso,
+      ...next,
+      updated_at: nowIso,
+    }));
+    const client = await createClient();
+    const { data } = (await client
+      ?.from("vocabulary_book_plans")
+      .upsert({ user_id: profileId, book_id: book.id, ...next, updated_at: nowIso }, { onConflict: "user_id,book_id" })
+      .select()
+      .single()) ?? { data: null };
+    if (data) setPlan(data as VocabularyBookPlan);
+  }
+
+  /** Create or re-pace the plan so the first unfinished day lands on today. */
+  function choosePace(wordsPerDay: number) {
+    const items = buildSchedule(entries, isBusinessPhraseBook, wordsPerDay);
+    const measure = (reviews_done: number[]) =>
+      planProgress({
+        plan: { start_date: todayKey(), reviews_done },
+        items,
+        entries,
+        phraseBook: isBusinessPhraseBook,
+        reviews: quizProgress,
+        learnedEntries: progress,
+      });
+    // Weeks already fully learned under the old pace skip their review day.
+    const reviewsDone = plan ? reviewedWeeksAfterRepace(items, measure([]).done) : [];
+    void savePlan({
+      start_date: startDateFor(measure(reviewsDone).currentIndex),
+      words_per_day: wordsPerDay,
+      reviews_done: reviewsDone,
+    });
+    setEditingPlan(false);
+  }
+
+  /** Missed days: move the calendar so today's item is the first unfinished one. */
+  function shiftPlan() {
+    if (!plan || !currentPlanProgress) return;
+    void savePlan({ ...plan, start_date: startDateFor(currentPlanProgress.currentIndex) });
+  }
+
+  function planItemTitle(item: PlanItem) {
+    if (item.kind === "learn") return copy.locale === "vi" ? `Ngày ${item.day}` : `${item.day}日目`;
+    return copy.locale === "vi" ? `Tổng ôn tuần ${item.week}` : `第${item.week}週 まとめ復習`;
+  }
+
+  function openPlanStudy(item: PlanItem) {
+    const ids = new Set(item.entryIds);
+    begin(entries.filter((entry) => ids.has(entry.id)), item);
+  }
+
+  function openPlanTest(item: PlanItem) {
+    setDeck(null);
+    setTestScope({
+      label: planItemTitle(item),
+      heading: planItemTitle(item),
+      entryIds: item.entryIds,
+      // A learning day tests every word; a review day samples the week.
+      limit: item.kind === "learn" ? item.wordCount : 20,
+      planItem: item,
+    });
+  }
+
+  function submitTest(results: { wordKey: string; mastered: boolean }[]) {
+    void saveQuizProgress(results);
+    const item = testScope?.planItem;
+    if (item?.kind === "review" && plan && !plan.reviews_done.includes(item.week)) {
+      void savePlan({ ...plan, reviews_done: [...plan.reviews_done, item.week] });
+    }
   }
 
   if (loading) return <p className="py-10 text-sm text-muted">{copy.loading}</p>;
 
   if (quickPracticeOpen) {
-    return <QuickVocabularyPractice entries={entries} masteredWordKeys={masteredQuizWords} dueReviewWordKeys={dueReviewWordKeys} copy={copy} onBack={() => setQuickPracticeOpen(false)} onProgress={saveQuizProgress} />;
+    return <QuickVocabularyPractice entries={entries} masteredWordKeys={passedQuizWords} dueReviewWordKeys={dueReviewWordKeys} copy={copy} onBack={() => setQuickPracticeOpen(false)} onProgress={saveQuizProgress} />;
   }
 
   if (testScope) {
+    // A review day re-tests the whole week, including words already passed.
+    const skipWords = testScope.planItem?.kind === "review" ? new Set<string>() : passedQuizWords;
     if (isBusinessPhraseBook) {
-      return <CushionPhraseQuiz entries={entries} masteredWordKeys={masteredQuizWords} scope={testScope} itemLabel={studyUnit} copy={copy} onBack={() => setTestScope(null)} onSubmitted={saveQuizProgress} />;
+      return <CushionPhraseQuiz entries={entries} masteredWordKeys={skipWords} scope={testScope} itemLabel={studyUnit} copy={copy} onBack={() => setTestScope(null)} onSubmitted={submitTest} />;
     }
-    return <VocabularyQuiz entries={entries} masteredWordKeys={masteredQuizWords} scope={testScope} itemLabel={studyUnit} copy={copy} onBack={() => setTestScope(null)} onSubmitted={saveQuizProgress} />;
+    return <VocabularyQuiz entries={entries} masteredWordKeys={skipWords} scope={testScope} itemLabel={studyUnit} copy={copy} onBack={() => setTestScope(null)} onSubmitted={submitTest} />;
   }
 
   if (testListOpen) {
-    return <VocabularyTestList entries={entries} masteredWordKeys={masteredQuizWords} itemLabel={studyUnit} randomizeTests={isBusinessPhraseBook} copy={copy} onBack={() => setTestListOpen(false)} onOpen={setTestScope} />;
+    return <VocabularyTestList entries={entries} masteredWordKeys={passedQuizWords} itemLabel={studyUnit} randomizeTests={isBusinessPhraseBook} copy={copy} onBack={() => setTestListOpen(false)} onOpen={setTestScope} />;
   }
 
   if (!deck) {
@@ -1237,6 +1379,38 @@ function VocabularyBookStudyView({
             </Button>
           </div>
         </section>
+
+        {plansAvailable && profileId && entries.length > 0 && (
+          plan && currentPlanProgress && !editingPlan ? (
+            <VocabularyPlanBoard
+              locale={copy.locale}
+              entries={entries}
+              phraseBook={isBusinessPhraseBook}
+              unit={studyUnit}
+              plan={plan}
+              items={planItems}
+              progress={currentPlanProgress}
+              passedKeys={passedQuizWords}
+              learnedEntries={progress}
+              dueCount={dueReviewWordKeys.size}
+              onShift={shiftPlan}
+              onEdit={() => setEditingPlan(true)}
+              onStudy={openPlanStudy}
+              onTest={openPlanTest}
+              onReviewDue={() => setQuickPracticeOpen(true)}
+            />
+          ) : (
+            <VocabularyPlanSetup
+              locale={copy.locale}
+              entries={entries}
+              phraseBook={isBusinessPhraseBook}
+              unit={studyUnit}
+              current={plan?.words_per_day}
+              onSave={choosePace}
+              onCancel={plan ? () => setEditingPlan(false) : undefined}
+            />
+          )
+        )}
 
         <section>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -1321,10 +1495,18 @@ function VocabularyBookStudyView({
         <p className="mt-2 text-sm text-muted">
           {learnedCount}/{entries.length} {copy.learned.toLowerCase()}
         </p>
-        <Button variant="secondary" onClick={() => { setDeck(null); setIndex(0); }} className="mt-5">
-          <Icon name="arrow-left" size={16} />
-          {copy.contents}
-        </Button>
+        <div className="mt-5 flex flex-wrap justify-center gap-2">
+          <Button variant="secondary" onClick={closeDeck}>
+            <Icon name="arrow-left" size={16} />
+            {copy.contents}
+          </Button>
+          {deckItem && (
+            <Button onClick={() => openPlanTest(deckItem)}>
+              <Icon name="trophy" size={16} />
+              {copy.quiz} · {planItemTitle(deckItem)}
+            </Button>
+          )}
+        </div>
       </div>
     );
   }
@@ -1335,7 +1517,7 @@ function VocabularyBookStudyView({
   return (
     <div className="mx-auto max-w-2xl">
       <div className="flex items-center justify-between gap-4">
-        <button type="button" onClick={() => { setDeck(null); setIndex(0); }} className="focus-ring inline-flex items-center gap-1 text-sm font-bold text-muted hover:text-fg">
+        <button type="button" onClick={closeDeck} className="focus-ring inline-flex items-center gap-1 text-sm font-bold text-muted hover:text-fg">
           <Icon name="arrow-left" size={16} /> {copy.contents}
         </button>
         <span className="text-sm font-bold tabular-nums text-muted">

@@ -134,8 +134,10 @@ interface DataContextValue {
    * Credit newly-mastered vocabulary words to today's quest. Callers pass how
    * many words crossed into "learned" on this action, never how many were
    * answered. Returns null for guests and for a no-op (0 new words).
+   * `target` replaces today's word goal (from a vocabulary study plan); pass
+   * learned = 0 to only sync the goal.
    */
-  recordVocabLearned: (learned: number) => VocabOutcome | null;
+  recordVocabLearned: (learned: number, target?: number) => VocabOutcome | null;
   reset: () => void;
 }
 
@@ -1261,12 +1263,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   );
 
   const recordVocabLearned = useCallback(
-    (learned: number): VocabOutcome | null => {
+    (learned: number, target?: number): VocabOutcome | null => {
       const prev = stateRef.current;
-      if (!prev.profile || learned <= 0) return null;
+      if (!prev.profile || (learned <= 0 && !target)) return null;
 
       const now = new Date().toISOString();
-      const { state: next, outcome } = applyVocabProgress(prev, learned, now);
+      const { state: next, outcome } = applyVocabProgress(prev, learned, now, target);
       if (!outcome) return null;
       commit(next);
 

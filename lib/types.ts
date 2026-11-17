@@ -117,6 +117,20 @@ export interface VocabularyBookEntry {
   created_at: string;
 }
 
+/** A learner's day-by-day schedule for one public book (see lib/vocab/plan.ts). */
+export interface VocabularyBookPlan {
+  id: string;
+  user_id: string;
+  book_id: string;
+  /** YYYY-MM-DD; schedule item i is planned for start_date + i days. */
+  start_date: string;
+  words_per_day: number;
+  /** Week numbers whose review day is done. */
+  reviews_done: number[];
+  created_at: string;
+  updated_at: string;
+}
+
 /** Per-user learned state for a public book entry. */
 export interface VocabularyBookProgress {
   id: string;

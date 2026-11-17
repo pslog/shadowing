@@ -14,7 +14,9 @@ import {
 } from "@/lib/gamification/xp";
 import {
   emptyMission,
+  isQuestDone,
   QUEST_TARGETS,
+  questTarget,
   settleQuests,
   type QuestId,
 } from "@/lib/gamification/quests";
@@ -489,19 +491,32 @@ export function applyVocabProgress(
   state: AppState,
   learned: number,
   nowIso: string,
+  /** Today's word goal from a vocabulary study plan; ignored once the quest is cleared. */
+  target?: number,
 ): { state: AppState; outcome: VocabOutcome | null } {
   const profile = state.profile;
-  if (!profile || learned <= 0) return { state, outcome: null };
+  if (!profile) return { state, outcome: null };
 
   const today = todayKey();
   const missions = [...state.missions];
   const missionIndex = findMission(missions, profile.id, today);
   const missionBefore = missionIndex >= 0 ? missions[missionIndex] : undefined;
+  const nextTarget =
+    target && target > 0 && !isQuestDone(missionBefore, "vocab")
+      ? Math.round(target)
+      : undefined;
+  const targetChanged =
+    nextTarget !== undefined && nextTarget !== questTarget(missionBefore, "vocab");
+  if (learned <= 0 && !targetChanged) return { state, outcome: null };
   const base =
     missionBefore ?? { ...emptyMission(profile.id, nowIso, today), id: uid() };
   const settlement = settleQuests({
     before: missionBefore,
-    after: { ...base, vocab_count: (base.vocab_count ?? 0) + learned },
+    after: {
+      ...base,
+      vocab_count: (base.vocab_count ?? 0) + Math.max(0, learned),
+      vocab_target: targetChanged ? nextTarget : base.vocab_target,
+    },
     lessonId: null,
     nowIso,
     newId: uid,
@@ -521,7 +536,7 @@ export function applyVocabProgress(
       xpEvents: [...state.xpEvents, ...settlement.events],
     },
     outcome: {
-      learned,
+      learned: Math.max(0, learned),
       xpGained: settlement.xp,
       questsCompletedNow: settlement.newlyCompleted,
       perfectDayNow: settlement.perfectDayNow,

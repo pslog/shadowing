@@ -1,0 +1,12 @@
+require('./register-test-ts.cjs');
+const assert = require('node:assert/strict');
+const { parseScript } = require('../lib/tts/parse.ts');
+const { wavFromAudio, zipFiles } = require('../lib/tts/export.ts');
+const input = '# title: 第16課\n# title_vi: Bài học\n# topic: 雑談\nspeaker\tja\tvi\nan\tこんにちは。\tXin chào\nkomaki\tありがとうございます。\tCảm ơn';
+const lines = parseScript(input);
+assert.deepEqual(lines.map(line => line.filename), ['title.wav', 's01.wav', 's02.wav']);
+assert.equal(lines[1].speaker, 'an'); assert.equal(lines[1].text, 'こんにちは。');
+const wav = wavFromAudio({numberOfChannels:1,length:2,sampleRate:24000,getChannelData:()=>new Float32Array([0, 0.5])});
+assert.equal(Buffer.from(wav.slice(0,4)).toString(),'RIFF'); assert.equal(Buffer.from(wav.slice(8,12)).toString(),'WAVE'); assert.equal(new DataView(wav.buffer).getUint32(40,true),4);
+const zip = zipFiles([{name:'title.wav',data:wav}]); assert.equal(new DataView(zip.buffer).getUint32(0,true),0x04034b50);
+console.log('TSV, WAV and ZIP checks passed');
