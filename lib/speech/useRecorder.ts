@@ -20,6 +20,8 @@ export interface RecordResult {
   transcript: string;
   /** Other n-best hypotheses of the whole utterance (may be empty). */
   alternatives: string[];
+  /** Final STT segments with seconds since recording start (when finalized). */
+  segments?: Array<{ text: string; at: number }>;
 }
 
 const MAX_HYPOTHESES = 8;
@@ -52,7 +54,7 @@ export function isSpeechRecognitionSupported(): boolean {
  * running Web Speech API recognition (ja-JP) for a real transcript. stop()
  * resolves once both the audio blob and the transcript are ready.
  */
-export function useRecorder() {
+export function useRecorder({ longForm = false }: { longForm?: boolean } = {}) {
   const [status, setStatus] = useState<RecorderStatus>("idle");
   const [interim, setInterim] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -64,6 +66,7 @@ export function useRecorder() {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const startTimeRef = useRef(0);
   const finalSegmentsRef = useRef<string[][]>([]);
+  const timedSegmentsRef = useRef<Array<{ text: string; at: number }>>([]);
   const finalTranscriptRef = useRef("");
   const attemptIdRef = useRef("");
   const recognitionCompleteRef = useRef(true);
@@ -107,7 +110,8 @@ export function useRecorder() {
       audioUrl: p.audioUrl,
       durationSeconds: p.duration,
       transcript: finalTranscriptRef.current.trim(),
-      alternatives: utteranceHypotheses(finalSegmentsRef.current).slice(1),
+      alternatives: longForm ? [] : utteranceHypotheses(finalSegmentsRef.current).slice(1),
+      segments: [...timedSegmentsRef.current],
     });
   }, []);
 
@@ -125,7 +129,9 @@ export function useRecorder() {
 
     let stream: MediaStream;
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      });
     } catch {
       startingRef.current = false;
       setError("マイクにアクセスできません。このページにマイク権限を許可してください。");
@@ -174,14 +180,20 @@ export function useRecorder() {
     // --- Web Speech API (transcript) ---
     const Ctor =
       window.SpeechRecognition || window.webkitSpeechRecognition || null;
-    if (Ctor) {
+    // Text/segments from earlier recognition sessions (long-form restarts).
+    let committedText = "";
+    let committedSegments: string[][] = [];
+    timedSegmentsRef.current = [];
+    const launch = () => {
+      if (!Ctor) return;
       const recog = new Ctor();
       recognitionRef.current = recog;
       recog.lang = "ja-JP";
       recog.continuous = true;
       recog.interimResults = true;
       // n-best: the server scores each hypothesis of this same recording.
-      recog.maxAlternatives = 5;
+      recog.maxAlternatives = longForm ? 1 : 5;
+      let seenFinal = 0;
       recog.onresult = (ev) => {
         let live = "";
         let final = "";
@@ -194,13 +206,21 @@ export function useRecorder() {
             const alts: string[] = [];
             for (let k = 0; k < res.length; k++) alts.push(res[k]?.transcript ?? "");
             segments.push(alts);
+            if (i >= seenFinal) {
+              const now = typeof performance !== "undefined" ? performance.now() : 0;
+              timedSegmentsRef.current.push({ text, at: (now - startTimeRef.current) / 1000 });
+              seenFinal = i + 1;
+            }
           } else live += text;
         }
-        finalTranscriptRef.current = final;
-        finalSegmentsRef.current = segments;
+        finalTranscriptRef.current = committedText + final;
+        finalSegmentsRef.current = [...committedSegments, ...segments];
         setInterim(`${finalTranscriptRef.current}${live}`.trim());
       };
-      recog.onerror = () => {
+      recog.onerror = (ev?: Event) => {
+        const code = (ev as unknown as { error?: string } | undefined)?.error;
+        // Long-form: silence/timeouts just end the session; onend restarts it.
+        if (longForm && (code === "no-speech" || code === "aborted")) return;
         recognitionCompleteRef.current = false;
         // Non-fatal: fall back to no-transcript scoring.
         const p = pendingRef.current;
@@ -210,6 +230,18 @@ export function useRecorder() {
         }
       };
       recog.onend = () => {
+        // Chrome ends continuous recognition after ~60 s or a long pause; a
+        // full-lesson run keeps listening across sessions.
+        if (longForm && !stoppingRef.current && mountedRef.current) {
+          committedText = finalTranscriptRef.current;
+          committedSegments = finalSegmentsRef.current;
+          try {
+            launch();
+            return;
+          } catch {
+            recognitionCompleteRef.current = false;
+          }
+        }
         if (!stoppingRef.current) recognitionCompleteRef.current = false;
         const p = pendingRef.current;
         if (p) {
@@ -217,8 +249,11 @@ export function useRecorder() {
           tryResolve();
         }
       };
+      recog.start();
+    };
+    if (Ctor) {
       try {
-        recog.start();
+        launch();
       } catch {
         recognitionCompleteRef.current = false;
         recognitionRef.current = null;
@@ -229,7 +264,7 @@ export function useRecorder() {
     startTimeRef.current =
       typeof performance !== "undefined" ? performance.now() : 0;
     setStatus("recording");
-  }, [tryResolve]);
+  }, [tryResolve, longForm]);
 
   const stop = useCallback((): Promise<RecordResult> => {
     stoppingRef.current = true;
@@ -249,7 +284,9 @@ export function useRecorder() {
       setStatus("processing");
 
       try {
-        recorderRef.current?.stop();
+        // start() failed (no mic / permission): nothing to stop, resolve now.
+        if (!recorderRef.current || recorderRef.current.state === "inactive") throw new Error("inactive");
+        recorderRef.current.stop();
       } catch {
         const p = pendingRef.current;
         if (p) {

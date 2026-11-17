@@ -62,3 +62,46 @@ export async function analyzeRecording(url: string | null, range?: { start: numb
     await ctx.close();
   }
 }
+
+/**
+ * Voice-activity envelope of a (possibly long) recording: one boolean per
+ * `frameSec`, true when the frame's RMS clears the same energy gate as
+ * analyzeSignal. Used to check whether a learner kept up with the audio.
+ */
+export async function activityEnvelope(url: string | null, frameSec = 0.05): Promise<boolean[] | null> {
+  if (!url) return null;
+  const AudioCtx =
+    window.AudioContext ||
+    (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!AudioCtx) return null;
+  const ctx = new AudioCtx();
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const audio = await ctx.decodeAudioData(await response.arrayBuffer());
+    const samples = audio.getChannelData(0);
+    const frame = Math.max(1, Math.floor(audio.sampleRate * frameSec));
+    const out: boolean[] = [];
+    for (let from = 0; from < samples.length; from += frame) {
+      const end = Math.min(samples.length, from + frame);
+      let energy = 0;
+      for (let i = from; i < end; i++) energy += samples[i] * samples[i];
+      out.push(Math.sqrt(energy / (end - from)) >= 0.01);
+    }
+    return out;
+  } catch {
+    return null;
+  } finally {
+    await ctx.close();
+  }
+}
+
+/** Share of active frames in [start, end] seconds of an envelope. */
+export function activeShare(envelope: boolean[], start: number, end: number, frameSec = 0.05): number {
+  const a = Math.max(0, Math.floor(start / frameSec));
+  const b = Math.min(envelope.length, Math.ceil(end / frameSec));
+  if (b <= a) return 0;
+  let n = 0;
+  for (let i = a; i < b; i++) if (envelope[i]) n++;
+  return n / (b - a);
+}

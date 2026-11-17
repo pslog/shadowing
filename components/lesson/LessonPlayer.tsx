@@ -69,6 +69,7 @@ import { MascotBadge } from "@/components/ui/mascot";
 import { getAnonymousSessionId } from "@/lib/anonymous-session";
 import type { Dictionary, Locale } from "@/lib/i18n";
 import { ShadowingCoach, StarRow } from "@/components/lesson/ShadowingCoach";
+import { ChainRunner, FullLessonRun, ModeSwitcher, type PracticeMode } from "@/components/lesson/LessonModes";
 import { starsFor, starsForAttempt } from "@/lib/scoring/stars";
 import { displayContour } from "@/lib/speech/pitch";
 
@@ -1153,6 +1154,11 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
   const [fresh, setFresh] = useState<FreshResult | null>(null);
   // Consecutive passes in this sitting — display only, no XP.
   const [combo, setCombo] = useState(0);
+  const [mode, setMode] = useState<PracticeMode>("sentence");
+  const [modeRunning, setModeRunning] = useState(false);
+  // Read inside async scoring (stale closures): no auto-scroll during a run.
+  const modeRunningRef = useRef(false);
+  modeRunningRef.current = modeRunning;
   const [missionAlert, setMissionAlert] = useState<AttemptOutcome | null>(null);
   /** The perfect-day bonus, which the mission dialog knows nothing about. */
   const [celebration, setCelebration] = useState<QuestCelebration | null>(null);
@@ -1168,6 +1174,7 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
     return () => { playerMounted.current = false; };
   }, []);
   const retryRecording = useRef<RecordResult | null>(null);
+  const retrySentence = useRef<LessonSentence | null>(null);
   const scoredRecording = useRef<{ id: string; score: ScoreBreakdown } | null>(null);
   const [recorderKey, setRecorderKey] = useState(0);
   const [lessonViewStats, setLessonViewStats] = useState<LessonViewStats | null>(null);
@@ -1340,6 +1347,7 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
   }
 
   const current = sentences[Math.min(index, sentences.length - 1)];
+  const currentSentence = current;
   const passed = passedCountForLesson(state, lessonId);
   const total = sentences.length;
   const lessonDone = passed >= total;
@@ -1358,7 +1366,7 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
       : null;
 
   function goTo(i: number, scrollToPractice = false) {
-    if (scoringLock.current || recordingActive) return;
+    if (scoringLock.current || recordingActive || modeRunning) return;
     setScoreError(null);
     retryRecording.current = null;
     cancelSpeech();
@@ -1410,34 +1418,39 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
     }
   }
 
-  /** Plays the model sentence, then the learner's last recording. */
-  async function playModelThenMe() {
-    const mine = fresh?.audioUrl;
-    if (!mine) return;
-    await new Promise<void>((resolve) => {
-      if (current.audio_url) {
+  /** Plays one sentence's model audio and resolves when it has finished. */
+  function playSentenceAndWait(sentence: LessonSentence, rate = 1): Promise<void> {
+    return new Promise<void>((resolve) => {
+      if (sentence.audio_url) {
         const audio = sentenceAudioRef.current ?? new Audio();
         sentenceAudioRef.current = audio;
         audio.pause();
-        audio.src = current.audio_url;
+        audio.src = sentence.audio_url;
         audio.currentTime = 0;
-        audio.playbackRate = 1;
+        audio.playbackRate = rate;
         audio.onended = () => { audio.onended = null; resolve(); };
         audio.play().catch(() => resolve());
         return;
       }
-      if (mediaUrl && lessonAudioRef.current && current.audio_start != null && current.audio_end != null) {
+      if (mediaUrl && lessonAudioRef.current && sentence.audio_start != null && sentence.audio_end != null) {
         const audio = lessonAudioRef.current;
         audio.pause();
-        audio.currentTime = current.audio_start;
-        stopAtRef.current = current.audio_end;
-        audio.playbackRate = 1;
+        audio.currentTime = sentence.audio_start;
+        stopAtRef.current = sentence.audio_end;
+        audio.playbackRate = rate;
         audio.play().catch(() => resolve());
-        window.setTimeout(resolve, (current.audio_end - current.audio_start) * 1000 + 150);
+        window.setTimeout(resolve, ((sentence.audio_end - sentence.audio_start) * 1000) / rate + 150);
         return;
       }
-      speakJa(current.ja_text, 1).then(resolve, () => resolve());
+      speakJa(sentence.ja_text, rate).then(resolve, () => resolve());
     });
+  }
+
+  /** Plays the model sentence, then the learner's last recording. */
+  async function playModelThenMe() {
+    const mine = fresh?.audioUrl;
+    if (!mine) return;
+    await playSentenceAndWait(current);
     await new Promise((r) => window.setTimeout(r, 350));
     await new Promise<void>((resolve) => {
       const me = new Audio(mine);
@@ -1449,6 +1462,7 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
 
   async function measureIntonation(
     userAudioUrl: string | null,
+    current: LessonSentence,
   ): Promise<{ similarity: number | null; pitch: FreshResult["pitch"] }> {
     const none = { similarity: null, pitch: null };
     if (!userAudioUrl) return none;
@@ -1480,10 +1494,11 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
     }
   }
 
-  async function handleResult(r: RecordResult) {
-    if (!canRecord || scoringLock.current) return;
+  async function handleResult(r: RecordResult, current: LessonSentence = currentSentence): Promise<ScoreBreakdown | null> {
+    if (!canRecord || scoringLock.current) return null;
     scoringLock.current = true;
     retryRecording.current = r;
+    retrySentence.current = current;
     setScoreError(null);
 
     setScoring(true);
@@ -1503,7 +1518,7 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
       // reference audio. Only possible when a reference exists (per-sentence
       // audio, or a timed slice of the lesson media) — TTS-only lessons have no
       // reference, so intonation stays unmeasured (null) rather than faked.
-      const { similarity: intonationSimilarity, pitch } = await measureIntonation(r.audioUrl);
+      const { similarity: intonationSimilarity, pitch } = await measureIntonation(r.audioUrl, current);
 
       const score = scoredRecording.current?.id === r.attemptId ? scoredRecording.current.score : await scoreSentence({
         targetText: current.ja_text,
@@ -1517,7 +1532,7 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
         audioEvidence,
       });
       scoredRecording.current = { id: r.attemptId, score };
-      if (!playerMounted.current) return;
+      if (!playerMounted.current) return null;
       // The server may have scored a different n-best hypothesis than the top
       // one; persist and show the transcript that was actually scored.
       const transcript = score.chosenTranscript?.trim() || r.transcript;
@@ -1531,7 +1546,7 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
         userDurationSeconds: r.durationSeconds,
       });
 
-      if (!playerMounted.current) return;
+      if (!playerMounted.current) return null;
       setFresh({ score, outcome, audioUrl: r.audioUrl, transcript, pitch });
       setCombo((c) => (score.passed ? c + 1 : 0));
       // Tell the companion what just happened so it can cheer or reassure. It
@@ -1562,12 +1577,13 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
         if (outcome.missionCompletedNow) queuedCelebration.current = news;
         else setCelebration(news);
       }
-      requestAnimationFrame(() => {
+      if (!modeRunningRef.current) requestAnimationFrame(() => {
         inlineScoreRef.current?.scrollIntoView({
           behavior: "smooth",
           block: "nearest",
         });
       });
+      return score;
     } catch (error) {
       const code = error instanceof Error ? error.message : "score_unavailable";
       const messages = locale === "vi" ? {
@@ -1588,6 +1604,7 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
         save_failed: "保存を確認できません。同じ録音IDで再試行します。他の画面で更新した場合は再読み込みしてください。",
       };
       setScoreError(messages[code as keyof typeof messages] ?? (locale === "vi" ? "Chưa chấm hoặc lưu được kết quả. Bạn có thể thử lại bản ghi; chưa xác nhận XP mới." : "採点または保存を確認できません。この録音で再試行できます。"));
+      return null;
     } finally {
       scoringLock.current = false;
       setScoring(false);
@@ -1597,6 +1614,8 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
   const celebrations = buildCelebrations(t, fresh?.outcome);
   const hasNext = index < total - 1;
   const progressPct = (passed / total) * 100;
+  const passedRatio = total ? passed / total : 0;
+  const effectiveMode: PracticeMode = mode;
 
   return (
     <div className="space-y-6">
@@ -1713,6 +1732,37 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
         />
 
         <section id="shadowing-panel" className="min-w-0 scroll-mt-24 space-y-4">
+          {canRecord && (
+            <ModeSwitcher
+              mode={effectiveMode}
+              onChange={(next) => {
+                if (scoringLock.current || recordingActive) return;
+                setMode(next);
+                setFresh(null);
+              }}
+              passedRatio={passedRatio}
+              passedCount={passed}
+              total={total}
+              locale={locale}
+              disabled={modeRunning}
+            />
+          )}
+
+          {effectiveMode === "full" && (
+            <FullLessonRun
+              lessonId={lessonId}
+              sentences={sentences}
+              mediaUrl={mediaUrl ?? null}
+              locale={locale}
+              onRunningChange={setModeRunning}
+              onPractice={(i) => {
+                setMode("sentence");
+                goTo(i, true);
+              }}
+            />
+          )}
+
+          {effectiveMode !== "full" && (
           <div className="overflow-hidden rounded-[0.875rem] border border-border bg-card shadow-[var(--shadow-md)]">
             <div className="practice-hero relative overflow-hidden border-b border-border px-5 py-5 text-fg sm:px-6">
               <div className="flex items-start justify-between gap-3">
@@ -1736,6 +1786,23 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
             </div>
 
             <div className="space-y-4 p-4 sm:p-5">
+              {effectiveMode === "chain" && (
+                <ChainRunner
+                  sentences={sentences}
+                  startIndex={index}
+                  locale={locale}
+                  playSentence={playSentenceAndWait}
+                  scoreRecording={(r, s) => handleResult(r, s)}
+                  onIndexChange={(i) => {
+                    setIndex(i);
+                    setFresh(null);
+                    setScoreError(null);
+                  }}
+                  onRunningChange={setModeRunning}
+                  onReview={(i) => goTo(i, true)}
+                />
+              )}
+
               <SentenceNumberNav
                 sentences={sentences}
                 activeIndex={index}
@@ -1796,8 +1863,8 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
                       <AudioRecorder
                         inline
                         hideNotes
-                        disabled={scoring}
-                        onResult={handleResult}
+                        disabled={scoring || modeRunning}
+                        onResult={async (r) => { await handleResult(r); }}
                         onRecordingChange={setRecordingActive}
                         key={recorderKey}
                         className="min-w-[8.5rem]"
@@ -1831,11 +1898,11 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
                   </div>
                 </div>
 
-                {(scoreError || scoring || fresh?.audioUrl || displayScore) && (
+                {!(effectiveMode === "chain" && modeRunning) && (scoreError || scoring || fresh?.audioUrl || displayScore) && (
                   <div className="border-t border-border bg-card/55 px-4 py-3 text-left">
                     {scoreError && <div role="alert" className="rounded-xl bg-warning-soft p-3 text-sm">
                       <p>{scoreError}</p>
-                      <Button variant="outline" className="mt-3" disabled={scoring} onClick={() => { if (retryRecording.current) void handleResult(retryRecording.current); }}>
+                      <Button variant="outline" className="mt-3" disabled={scoring} onClick={() => { if (retryRecording.current) void handleResult(retryRecording.current, retrySentence.current ?? current); }}>
                         {locale === "vi" ? "Thử lại bản ghi" : "この録音で再試行"}
                       </Button>
                       {retryRecording.current?.audioUrl && <audio className="mt-3 w-full" controls src={retryRecording.current.audioUrl} />}
@@ -1873,6 +1940,8 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
             </div>
           </div>
 
+          )}
+
           {celebrations.map((c, i) => (
             <div
               key={i}
@@ -1883,7 +1952,7 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
             </div>
           ))}
 
-          {displayScore && (
+          {displayScore && effectiveMode !== "full" && !(effectiveMode === "chain" && modeRunning) && (
             <div className="animate-in">
               <ScoreResult
                 score={displayScore}

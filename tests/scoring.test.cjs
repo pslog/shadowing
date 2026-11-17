@@ -149,3 +149,23 @@ test('Latin in business sentences: acronyms read by letter, product names are a 
   const skipped=await post('本日はSuperTransプロジェクトの会議です','本日はプロジェクトの会議です');
   assert.ok(skipped.pronunciation<100);
 });
+
+const { scoreLessonRun, lessonRunTotal } = require('../lib/scoring/lesson.ts');
+const { POST: POST_LESSON } = require('../app/api/score/lesson/route.ts');
+test('full-lesson run is split back per sentence', () => {
+  const r=scoreLessonRun(['ハジメマシテ','ワタシワミラーデス','ドウゾヨロシク'],'ハジメマシテワタシワミラーデス');
+  assert.deepEqual(r.sentences.map(s=>s.status),['good','good','missed']);
+  assert.equal(r.sentences[2].coverage,0);
+  assert.ok(r.accuracy<100 && r.accuracy>50);
+  const sloppy=scoreLessonRun(['ハジメマシテ','ワタシワミラーデス'],'ハジメマシテワタシワミラデス');
+  assert.equal(sloppy.sentences[1].status,'good'); // ー slip forgiven
+  assert.equal(lessonRunTotal(100,0.5),88); assert.equal(lessonRunTotal(80,null),80);
+});
+test('lesson API validates and scores a continuous transcript', async () => {
+  const call=(b)=>POST_LESSON(new Request('http://local/api/score/lesson',{method:'POST',body:JSON.stringify(b)}));
+  assert.equal((await call({sentences:[],transcript:'x'})).status,400);
+  assert.equal((await call({sentences:['はい'],transcript:''})).status,422);
+  const res=await call({sentences:['本日はSuperTransの会議です。','PMの斎藤です。','よろしくお願いします。'],transcript:'本日はスーパートランスの会議ですPMの斎藤ですよろしくお願いします'});
+  const body=await res.json();
+  assert.equal(res.status,200); assert.deepEqual(body.sentences.map(s=>s.status),['good','good','good']);
+});

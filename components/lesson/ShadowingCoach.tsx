@@ -19,7 +19,7 @@ const COPY = {
     nextMelody: "Lấy ★ Ngữ điệu: lên xuống giọng giống đường mẫu bên dưới.",
     nextMelodyNoRef: "Lấy ★ Ngữ điệu: đạt tổng điểm từ 95.",
     allStars: "Hoàn hảo ★★★ — thử ẩn chữ và shadow lại theo trí nhớ!",
-    passFirst: "Đậu câu này để mở khóa sao.",
+    passFirst: "Pass câu này để mở khóa sao.",
     tipsTitle: "Chỗ cần sửa",
     missing: (t: string) => `Thiếu 「${t}」`,
     extra: (t: string) => `Thừa 「${t}」`,
