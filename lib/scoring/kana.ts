@@ -12,7 +12,7 @@
 // degrades gracefully and never crashes.
 
 import path from "node:path";
-import { normalizeJa } from "./pronunciation";
+import { normalizeJa, LATIN_WILDCARD } from "./pronunciation";
 
 interface Tokenizer {
   tokenize(text: string): Array<{ surface_form: string; reading?: string; pronunciation?: string; pos?: string }>;
@@ -64,6 +64,27 @@ function prepareForReading(text: string): string {
 
 function comparableReading(text: string): string {
   return normalizeJa(text);
+}
+
+const LETTER_READINGS: Record<string, string> = {
+  A: "エー", B: "ビー", C: "シー", D: "ディー", E: "イー", F: "エフ", G: "ジー",
+  H: "エイチ", I: "アイ", J: "ジェー", K: "ケー", L: "エル", M: "エム", N: "エヌ",
+  O: "オー", P: "ピー", Q: "キュー", R: "アール", S: "エス", T: "ティー", U: "ユー",
+  V: "ブイ", W: "ダブリュー", X: "エックス", Y: "ワイ", Z: "ゼット",
+};
+
+/**
+ * Latin text in Japanese business sentences: acronyms (PM, API, DB) are read
+ * letter by letter, so they are scored like any other word. Other Latin words
+ * (product names such as "SuperTrans") have no reliable reading, so they
+ * become a wildcard that accepts whatever the learner said in that slot —
+ * otherwise the whole sentence could never be scored.
+ */
+function latinReading(surface: string): string | null {
+  const text = surface.normalize("NFKC");
+  if (/^[A-Z]{1,6}$/.test(text)) return [...text].map((c) => LETTER_READINGS[c]).join("");
+  if (/^[A-Za-z][A-Za-z0-9.+#&'-]*$/.test(text)) return LATIN_WILDCARD;
+  return null;
 }
 
 const DIGIT_READINGS = ["ゼロ", "イチ", "ニ", "サン", "ヨン", "ゴ", "ロク", "ナナ", "ハチ", "キュウ"];
@@ -132,6 +153,7 @@ export async function toReadingTokens(text: string): Promise<ReadingToken[] | nu
         // Use lexical pronunciation for particles (は→ワ, へ→エ), without
         // globally changing those kana inside ordinary words.
         const reading = arabicNumberReading(tok.surface_form)
+          ?? latinReading(tok.surface_form)
           ?? (tok.pos === "助詞" && tok.pronunciation && tok.pronunciation !== "*"
           ? tok.pronunciation
           : tok.reading && tok.reading !== "*" ? tok.reading : tok.surface_form);

@@ -68,6 +68,9 @@ import {
 import { MascotBadge } from "@/components/ui/mascot";
 import { getAnonymousSessionId } from "@/lib/anonymous-session";
 import type { Dictionary, Locale } from "@/lib/i18n";
+import { ShadowingCoach, StarRow } from "@/components/lesson/ShadowingCoach";
+import { starsFor, starsForAttempt } from "@/lib/scoring/stars";
+import { displayContour } from "@/lib/speech/pitch";
 
 function attemptToScore(a: SentenceAttempt): ScoreBreakdown {
   return {
@@ -78,6 +81,7 @@ function attemptToScore(a: SentenceAttempt): ScoreBreakdown {
     total: a.total_score,
     passed: a.is_passed,
     feedback: a.feedback ?? "",
+    stars: starsForAttempt(a),
   };
 }
 
@@ -86,6 +90,7 @@ interface FreshResult {
   outcome: AttemptOutcome;
   audioUrl: string | null;
   transcript: string;
+  pitch: { user: Array<number | null>; reference: Array<number | null> } | null;
 }
 
 interface LessonViewStats {
@@ -1019,6 +1024,7 @@ function SentenceNumberNav({
   activeIndex,
   bestScoreForSentence,
   passedForSentence,
+  starsForSentence,
   onSelect,
   t,
   pointsLabel,
@@ -1027,6 +1033,7 @@ function SentenceNumberNav({
   activeIndex: number;
   bestScoreForSentence: (id: string) => number | null;
   passedForSentence: (id: string) => boolean;
+  starsForSentence?: (id: string) => number;
   onSelect: (index: number) => void;
   t: Dictionary["player"];
   pointsLabel: string;
@@ -1039,6 +1046,7 @@ function SentenceNumberNav({
           const active = i === activeIndex;
           const passed = passedForSentence(sentence.id);
           const bestScore = bestScoreForSentence(sentence.id);
+          const stars = starsForSentence?.(sentence.id) ?? 0;
           return (
             <button
               key={sentence.id}
@@ -1050,7 +1058,7 @@ function SentenceNumberNav({
                   : `${i + 1}`
               }
               className={[
-                "focus-ring grid h-9 min-w-9 place-items-center rounded-lg px-2 text-xs font-extrabold tabular-nums transition-all active:scale-95",
+                "focus-ring relative grid h-9 min-w-9 place-items-center rounded-lg px-2 text-xs font-extrabold tabular-nums transition-all active:scale-95",
                 active
                   ? "bg-primary text-white shadow-sm"
                   : passed
@@ -1060,6 +1068,11 @@ function SentenceNumberNav({
               aria-label={t.sentenceNumber(i + 1)}
             >
               {i + 1}
+              {stars > 0 && (
+                <span aria-hidden className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap text-[8px] leading-none text-[var(--c-amber)] drop-shadow-sm">
+                  {"★".repeat(stars)}
+                </span>
+              )}
             </button>
           );
         })}
@@ -1072,10 +1085,12 @@ function InlineScore({
   score,
   improvement,
   t,
+  combo = 0,
 }: {
   score: ScoreBreakdown;
   improvement: number | null;
   t: Dictionary["player"];
+  combo?: number;
 }) {
   return (
     <div className="mt-3 rounded-xl border border-border bg-surface px-3 py-2.5">
@@ -1090,8 +1105,15 @@ function InlineScore({
             {score.total}
           </span>
           <div>
-            <p className="text-sm font-extrabold">
+            <p className="flex flex-wrap items-center gap-2 text-sm font-extrabold">
               {score.passed ? t.pass : t.almost}
+              <StarRow stars={score.stars ?? starsFor(score)} size={15} />
+              {combo >= 2 && (
+                <span className="animate-pop inline-flex items-center gap-0.5 rounded-full bg-accent/15 px-2 py-0.5 text-[11px] font-extrabold text-accent">
+                  <Icon name="flame" size={12} filled />
+                  Combo ×{combo}
+                </span>
+              )}
             </p>
             {typeof improvement === "number" && improvement > 0 && (
               <p className="text-xs font-semibold text-[var(--success)]">
@@ -1129,6 +1151,8 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
   const [sentenceLoad, setSentenceLoad] = useState<{ id: string; status: "done" | "error" } | null>(null);
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [fresh, setFresh] = useState<FreshResult | null>(null);
+  // Consecutive passes in this sitting — display only, no XP.
+  const [combo, setCombo] = useState(0);
   const [missionAlert, setMissionAlert] = useState<AttemptOutcome | null>(null);
   /** The perfect-day bonus, which the mission dialog knows nothing about. */
   const [celebration, setCelebration] = useState<QuestCelebration | null>(null);
@@ -1325,6 +1349,9 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
   const currentPassed = isSentencePassed(state, current.id);
 
   const displayScore = fresh?.score ?? (latest ? attemptToScore(latest) : null);
+  const bestStarsFor = (id: string) =>
+    myAttemptsForSentence(state, id).reduce((best, a) => Math.max(best, starsForAttempt(a)), 0);
+  const lessonStars = sentences.reduce((sum, s) => sum + bestStarsFor(s.id), 0);
   const improvement =
     fresh && fresh.outcome.previousBestTotal != null
       ? fresh.score.total - fresh.outcome.previousBestTotal
@@ -1383,13 +1410,51 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
     }
   }
 
+  /** Plays the model sentence, then the learner's last recording. */
+  async function playModelThenMe() {
+    const mine = fresh?.audioUrl;
+    if (!mine) return;
+    await new Promise<void>((resolve) => {
+      if (current.audio_url) {
+        const audio = sentenceAudioRef.current ?? new Audio();
+        sentenceAudioRef.current = audio;
+        audio.pause();
+        audio.src = current.audio_url;
+        audio.currentTime = 0;
+        audio.playbackRate = 1;
+        audio.onended = () => { audio.onended = null; resolve(); };
+        audio.play().catch(() => resolve());
+        return;
+      }
+      if (mediaUrl && lessonAudioRef.current && current.audio_start != null && current.audio_end != null) {
+        const audio = lessonAudioRef.current;
+        audio.pause();
+        audio.currentTime = current.audio_start;
+        stopAtRef.current = current.audio_end;
+        audio.playbackRate = 1;
+        audio.play().catch(() => resolve());
+        window.setTimeout(resolve, (current.audio_end - current.audio_start) * 1000 + 150);
+        return;
+      }
+      speakJa(current.ja_text, 1).then(resolve, () => resolve());
+    });
+    await new Promise((r) => window.setTimeout(r, 350));
+    await new Promise<void>((resolve) => {
+      const me = new Audio(mine);
+      me.onended = () => resolve();
+      me.onerror = () => resolve();
+      me.play().catch(() => resolve());
+    });
+  }
+
   async function measureIntonation(
     userAudioUrl: string | null,
-  ): Promise<number | null> {
-    if (!userAudioUrl) return null;
+  ): Promise<{ similarity: number | null; pitch: FreshResult["pitch"] }> {
+    const none = { similarity: null, pitch: null };
+    if (!userAudioUrl) return none;
     try {
       const userContour = await extractContourFromUrl(userAudioUrl);
-      if (userContour.length === 0) return null;
+      if (userContour.length === 0) return none;
 
       let refContour: number[] = [];
       if (current.audio_url) {
@@ -1404,11 +1469,14 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
           end: current.audio_end,
         });
       }
-      if (refContour.length === 0) return null;
+      if (refContour.length === 0) return none;
 
-      return contourMetrics(userContour, refContour)?.score ?? null;
+      return {
+        similarity: contourMetrics(userContour, refContour)?.score ?? null,
+        pitch: { user: displayContour(userContour), reference: displayContour(refContour) },
+      };
     } catch {
-      return null;
+      return none;
     }
   }
 
@@ -1435,11 +1503,12 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
       // reference audio. Only possible when a reference exists (per-sentence
       // audio, or a timed slice of the lesson media) — TTS-only lessons have no
       // reference, so intonation stays unmeasured (null) rather than faked.
-      const intonationSimilarity = await measureIntonation(r.audioUrl);
+      const { similarity: intonationSimilarity, pitch } = await measureIntonation(r.audioUrl);
 
       const score = scoredRecording.current?.id === r.attemptId ? scoredRecording.current.score : await scoreSentence({
         targetText: current.ja_text,
         spokenText: r.transcript || null,
+        spokenAlternatives: r.alternatives,
         originalDurationSeconds: originalDuration,
         userDurationSeconds: audioEvidence.speechSpanSeconds,
         intonationSimilarity,
@@ -1449,18 +1518,22 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
       });
       scoredRecording.current = { id: r.attemptId, score };
       if (!playerMounted.current) return;
+      // The server may have scored a different n-best hypothesis than the top
+      // one; persist and show the transcript that was actually scored.
+      const transcript = score.chosenTranscript?.trim() || r.transcript;
 
       const outcome = await recordAttempt({
         attemptId: r.attemptId,
         sentenceId: current.id,
         score,
         recordingUrl: r.audioUrl,
-        transcript: r.transcript || null,
+        transcript: transcript || null,
         userDurationSeconds: r.durationSeconds,
       });
 
       if (!playerMounted.current) return;
-      setFresh({ score, outcome, audioUrl: r.audioUrl, transcript: r.transcript });
+      setFresh({ score, outcome, audioUrl: r.audioUrl, transcript, pitch });
+      setCombo((c) => (score.passed ? c + 1 : 0));
       // Tell the companion what just happened so it can cheer or reassure. It
       // decides what is worth saying; the player only reports the facts.
       emitCompanionEvent({
@@ -1647,9 +1720,18 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
                   <h2 className="text-2xl font-extrabold tracking-[-0.025em]">Shadowing</h2>
                   <p className="mt-1 text-sm text-muted">{t.step2Body}</p>
                 </div>
-                <Badge tone={currentPassed ? "success" : "neutral"} className="relative border-border bg-white/75 text-fg">
-                  {index + 1}/{total}
-                </Badge>
+                <div className="relative flex flex-col items-end gap-1.5">
+                  <Badge tone={currentPassed ? "success" : "neutral"} className="border-border bg-white/75 text-fg">
+                    {index + 1}/{total}
+                  </Badge>
+                  <span
+                    className="inline-flex items-center gap-1 rounded-full border border-border bg-white/75 px-2 py-0.5 text-xs font-extrabold tabular-nums text-fg"
+                    title={locale === "vi" ? "Tổng sao của bài" : "このレッスンの星"}
+                  >
+                    <Icon name="star" size={13} filled className="text-[var(--c-amber)]" />
+                    {lessonStars}/{total * 3}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -1661,6 +1743,7 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
                   bestAttemptForSentence(state, id)?.total_score ?? null
                 }
                 passedForSentence={(id) => isSentencePassed(state, id)}
+                starsForSentence={bestStarsFor}
                 onSelect={goTo}
                 t={t}
                 pointsLabel={m.common.points}
@@ -1775,7 +1858,13 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
                     )}
                     {displayScore && (
                       <div ref={inlineScoreRef}>
-                        <InlineScore score={displayScore} improvement={improvement} t={t} />
+                        <InlineScore score={displayScore} improvement={improvement} t={t} combo={fresh ? combo : 0} />
+                        <ShadowingCoach
+                          score={displayScore}
+                          locale={locale}
+                          pitch={fresh?.pitch ?? null}
+                          onPlayAB={fresh?.audioUrl ? playModelThenMe : undefined}
+                        />
                       </div>
                     )}
                   </div>
@@ -1841,10 +1930,13 @@ function buildCelebrations(
     out.push({ icon: "sparkles", text: t.levelUp(outcome.newLevel) });
   if (outcome.lessonCompletedNow)
     out.push({ icon: "trophy", text: t.celebrateLesson });
+  if (outcome.starXp && outcome.starXp > 0 && outcome.stars)
+    out.push({ icon: "star", text: `${"★".repeat(outcome.stars)}  +${outcome.starXp} XP` });
   if (
     !outcome.missionCompletedNow &&
     !outcome.leveledUp &&
     !outcome.lessonCompletedNow &&
+    !outcome.starXp &&
     outcome.countedToday &&
     outcome.xpGained > 0
   )

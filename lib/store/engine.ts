@@ -5,6 +5,7 @@
 import { todayKey, toDateKey } from "@/lib/date";
 import { advanceStreak, streakActiveToday } from "@/lib/gamification/streak";
 import { levelFromXp } from "@/lib/gamification/level";
+import { starsFor, starsForAttempt } from "@/lib/scoring/stars";
 import {
   isStreakMilestone,
   xpForReading,
@@ -66,6 +67,12 @@ export interface AttemptOutcome {
   leveledUp: boolean;
   newLevel: number;
   currentStreak: number;
+  /** Stars this attempt earned (0..3). */
+  stars?: number;
+  /** Best stars on this sentence before this attempt. */
+  previousBestStars?: number;
+  /** XP from reaching a new star tier on this attempt. */
+  starXp?: number;
 }
 
 function isToday(iso: string): boolean {
@@ -159,6 +166,23 @@ export function applyAttempt(
     const { amount, type } = xpForSentence(score.total);
     addXp(amount, type, input.sentenceId);
   }
+
+  // Star upgrades: ★★ and ★★★ each pay once per sentence, ever (stars only go
+  // up), so polishing rhythm/melody is rewarded without becoming farmable.
+  const stars = starsFor({
+    passed: score.passed,
+    pronunciation: score.pronunciation,
+    speed: score.speed,
+    intonation: score.intonation,
+    total: score.total,
+  });
+  const previousBestStars = myAttemptsForSentence.reduce(
+    (best, a) => Math.max(best, starsForAttempt(a)),
+    0,
+  );
+  const upgradedTiers = Math.max(0, stars - Math.max(1, previousBestStars));
+  const starXp = upgradedTiers * XP_RULES.starUpgrade;
+  if (starXp > 0) addXp(starXp, "star_upgrade", input.sentenceId);
 
   // ---- lesson_progress ------------------------------------------------ //
   const lessonSentenceIds = state.sentences
@@ -300,6 +324,9 @@ export function applyAttempt(
       leveledUp: newLevel > oldLevel,
       newLevel,
       currentStreak: streak.current_streak,
+      stars,
+      previousBestStars,
+      starXp,
     },
   };
 }

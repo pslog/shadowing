@@ -2,7 +2,9 @@
 // route today and be swapped for a real AI pronunciation API tomorrow.
 
 import { normalizeJa, scorePronunciationDetailed } from "./pronunciation";
-import { scoreSpeed } from "./speed";
+import { scoreSpeed, speedDelta } from "./speed";
+import { starsFor } from "./stars";
+import { buildTips } from "./tips";
 import { scoreIntonation } from "./intonation";
 import { scoreTotal } from "./total";
 import { generateFeedback } from "./feedback";
@@ -12,6 +14,11 @@ import { isLocale, type Locale } from "@/lib/i18n";
 export interface ScoreRequest {
   targetText: string;
   spokenText?: string | null;
+  /**
+   * Other recogniser hypotheses for the same audio (n-best). The route scores
+   * each and keeps the best; scoreAttempt itself only scores `spokenText`.
+   */
+  spokenAlternatives?: string[] | null;
   /** Katakana readings, precomputed server-side (see lib/scoring/kana.ts). */
   targetReading?: string | null;
   spokenReading?: string | null;
@@ -43,7 +50,7 @@ export function scoreAttempt(req: ScoreRequest): ScoreBreakdown {
     throw new UnscorableError("unreliable_audio");
   }
   if (!req.targetReading || !req.spokenReading) throw new UnscorableError("reading_unavailable");
-  if (![req.targetReading, req.spokenReading].every((reading) => /^[ァ-ヺー]+$/u.test(normalizeJa(reading)))) {
+  if (![req.targetReading, req.spokenReading].every((reading) => /^[ァ-ヺー\uE000]+$/u.test(normalizeJa(reading)))) {
     throw new UnscorableError("ambiguous_reading");
   }
 
@@ -70,12 +77,8 @@ export function scoreAttempt(req: ScoreRequest): ScoreBreakdown {
     pronunciation >= MIN_PRONUNCIATION_TO_PASS &&
     coverage >= MIN_COVERAGE_TO_PASS;
 
-  const locale = isLocale(req.locale) ? req.locale : "vi";
-  const counts = { missing: 0, extra: 0, substitution: 0 };
-  for (const item of alignment) if (item.status !== "match") counts[item.status]++;
-  const detail = locale === "vi"
-    ? ` So sánh transcript: ${counts.missing} đơn vị thiếu, ${counts.extra} thêm, ${counts.substitution} khác. Đây là đối chiếu nhận dạng, không xác nhận phát âm chuẩn.`
-    : ` 認識結果の比較：欠落${counts.missing}、追加${counts.extra}、相違${counts.substitution}単位。発音の正確さを保証する評価ではありません。`;
+  const tips = buildTips(alignment, speedDelta(req.originalDurationSeconds, req.userDurationSeconds));
+  const stars = starsFor({ passed, pronunciation, speed, intonation, total });
   return {
     scoringVersion: "transcript-v2",
     confidence: "limited",
@@ -98,7 +101,10 @@ export function scoreAttempt(req: ScoreRequest): ScoreBreakdown {
       // The request crosses the API boundary as JSON, so validate rather than
       // trusting the field's declared type.
       locale: isLocale(req.locale) ? req.locale : undefined,
-    }) + detail,
+    }),
+    stars,
+    tips,
+    chosenTranscript: req.spokenText ?? undefined,
   };
 }
 
@@ -107,3 +113,5 @@ export * from "./speed";
 export * from "./intonation";
 export * from "./total";
 export * from "./feedback";
+export * from "./stars";
+export * from "./tips";

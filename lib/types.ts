@@ -222,6 +222,8 @@ export interface DailyMission {
 export type XpEventType =
   | "sentence_pass"
   | "sentence_pass_high"
+  /** Reached a new star tier (★★ or ★★★) on a sentence. Bounded per sentence. */
+  | "star_upgrade"
   | "lesson_complete"
   | "mission_complete"
   | "streak_milestone"
@@ -275,4 +277,23 @@ export interface ScoreBreakdown {
   total: number;
   passed: boolean;
   feedback: string;
+  /** 0..3 — see lib/scoring/stars.ts. Derived; never persisted. */
+  stars?: 0 | 1 | 2 | 3;
+  /** Concrete coaching points (wrong mora, timing). */
+  tips?: ScoreTip[];
+  /** The recogniser hypothesis that was scored (best of the n-best list). */
+  chosenTranscript?: string;
+}
+
+export interface ScoreTip {
+  kind: "missing" | "extra" | "substitution" | "too_fast" | "too_slow";
+  /** Expected mora (katakana) for missing/substitution. */
+  target?: string;
+  /** Recognised mora for extra/substitution. */
+  spoken?: string;
+  /** Neighbouring target mora, for showing the slip in context. */
+  before?: string;
+  after?: string;
+  /** Speed difference vs reference, for too_fast / too_slow. */
+  percent?: number;
 }

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { scoreAttempt, UnscorableError, type ScoreRequest } from "@/lib/scoring";
+import { LATIN_WILDCARD } from "@/lib/scoring/pronunciation";
 import { toReadingTokens, type ReadingToken } from "@/lib/scoring/kana";
-import type { ScoreAlignmentToken } from "@/lib/types";
+import type { ScoreAlignmentToken, ScoreBreakdown } from "@/lib/types";
 
 export const runtime = "nodejs";
 
@@ -34,31 +35,63 @@ export async function POST(request: Request) {
     }
   }
 
+  const alternatives = body.spokenAlternatives;
+  if (alternatives != null && (!Array.isArray(alternatives) || alternatives.length > MAX_ALTERNATIVES ||
+    alternatives.some((alt) => typeof alt !== "string" || alt.length > 1000))) {
+    return NextResponse.json({ error: "invalid_input" }, { status: 400 });
+  }
+
   // Convert both sides to katakana readings so pronunciation is scored
   // phonetically (kanji vs kana from STT no longer counts as an error). If the
-  // tokenizer is unavailable, toReading returns null and scoring falls back to
-  // kana-folded character comparison.
-  const [targetTokens, spokenTokens] = await Promise.all([
-    toReadingTokens(body.targetText),
-    body.spokenText ? toReadingTokens(body.spokenText) : Promise.resolve([]),
-  ]);
-  const targetReading = targetTokens?.map((tok) => tok.reading).join("") ?? null;
-  const spokenReading = spokenTokens?.map((tok) => tok.reading).join("") ?? null;
+  // tokenizer is unavailable, toReading returns null and scoring is refused.
+  const targetTokens = await toReadingTokens(body.targetText);
+  const joinReadings = (tokens: ReadingToken[] | null) =>
+    tokens?.map((tok) => tok.reading).join("").replace(/\uE000+/g, LATIN_WILDCARD) ?? null;
+  const targetReading = joinReadings(targetTokens);
 
-  let result;
-  try {
-    result = scoreAttempt({ ...body, targetReading, spokenReading });
-  } catch (error) {
-    if (error instanceof UnscorableError) return NextResponse.json({ error: error.code }, { status: 422 });
-    throw error;
+  // Browser STT returns an n-best list; its top hypothesis is often a
+  // near-homophone of what was actually said. Score every hypothesis of the
+  // same recording and keep the best one, as constrained pronunciation
+  // assessment does. The primary transcript is always a candidate, so a single
+  // hypothesis behaves exactly as before.
+  const candidates = [...new Set([body.spokenText ?? "", ...(alternatives ?? [])].map((t) => t.trim()))]
+    .filter((text, i) => i === 0 || text.length > 0);
+
+  let best: { result: ScoreBreakdown; tokens: ReadingToken[] | null } | null = null;
+  let firstError: unknown = null;
+  for (const spokenText of candidates) {
+    const spokenTokens = spokenText ? await toReadingTokens(spokenText) : [];
+    const spokenReading = joinReadings(spokenTokens);
+    try {
+      const result = scoreAttempt({ ...body, spokenText, targetReading, spokenReading });
+      if (!best || rank(result) > rank(best.result)) best = { result, tokens: spokenTokens };
+    } catch (error) {
+      if (!(error instanceof UnscorableError)) throw error;
+      firstError ??= error;
+    }
+  }
+  if (!best) {
+    const code = firstError instanceof UnscorableError ? firstError.code : "no_transcript";
+    return NextResponse.json({ error: code }, { status: 422 });
   }
   return NextResponse.json({
-    ...result,
+    ...best.result,
     textAlignment:
-      targetTokens && spokenTokens
-        ? alignReadingTokens(targetTokens, spokenTokens)
+      targetTokens && best.tokens
+        ? alignReadingTokens(targetTokens, best.tokens)
         : undefined,
   });
+}
+
+const MAX_ALTERNATIVES = 8;
+
+// A Latin-word wildcard in the target accepts any one spoken word for display.
+function sameReading(target: ReadingToken, spoken: ReadingToken): boolean {
+  return target.reading === spoken.reading || target.reading.includes(LATIN_WILDCARD);
+}
+
+function rank(s: ScoreBreakdown): number {
+  return (s.passed ? 1_000_000 : 0) + s.total * 1_000 + s.pronunciation;
 }
 
 function alignReadingTokens(
@@ -79,7 +112,7 @@ function alignReadingTokens(
 
   for (let i = 1; i <= m; i++) {
     for (let j = 1; j <= n; j++) {
-      const cost = target[i - 1].reading === spoken[j - 1].reading ? 0 : 1;
+      const cost = sameReading(target[i - 1], spoken[j - 1]) ? 0 : 1;
       dp[i][j] = Math.min(
         dp[i - 1][j] + 1,
         dp[i][j - 1] + 1,
@@ -97,13 +130,13 @@ function alignReadingTokens(
       j > 0 &&
       dp[i][j] ===
         dp[i - 1][j - 1] +
-          (target[i - 1].reading === spoken[j - 1].reading ? 0 : 1)
+          (sameReading(target[i - 1], spoken[j - 1]) ? 0 : 1)
     ) {
       out.push({
         target: target[i - 1].surface,
         spoken: spoken[j - 1].surface,
         status:
-          target[i - 1].reading === spoken[j - 1].reading
+          sameReading(target[i - 1], spoken[j - 1])
             ? "match"
             : "substitution",
       });

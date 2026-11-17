@@ -273,3 +273,23 @@ export async function extractContourFromUrl(
     void ctx.close();
   }
 }
+
+/**
+ * Pitch contour prepared for drawing: leading/trailing silence trimmed,
+ * semitones relative to the speaker's own mean (so a male and a female voice
+ * overlay), unvoiced frames as null gaps, at most `maxPoints` points.
+ */
+export function displayContour(contour: number[], maxPoints = 120): Array<number | null> {
+  let start = 0;
+  let end = contour.length - 1;
+  while (start <= end && !(contour[start] > 0)) start++;
+  while (end >= start && !(contour[end] > 0)) end--;
+  if (end - start < 2) return [];
+  const span = contour.slice(start, end + 1);
+  const voiced = span.filter((hz) => hz > 0).map((hz) => 12 * Math.log2(hz));
+  if (voiced.length < 3) return [];
+  const mean = voiced.reduce((a, b) => a + b, 0) / voiced.length;
+  const toSemi = (hz: number) => (hz > 0 ? 12 * Math.log2(hz) - mean : null);
+  if (span.length <= maxPoints) return span.map(toSemi);
+  return Array.from({ length: maxPoints }, (_, i) => toSemi(span[Math.round((i * (span.length - 1)) / (maxPoints - 1))]));
+}

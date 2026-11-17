@@ -5,6 +5,7 @@ import type { XpEventType } from "@/lib/types";
 export const XP_RULES = {
   sentencePass: 5,
   sentencePassHigh: 8, // total >= 90
+  starUpgrade: 3, // per new star tier (★★, ★★★) on a sentence, once ever
   lessonComplete: 50,
   missionComplete: 100,
   streakMilestone: 300, // every 7-day milestone

@@ -18,6 +18,28 @@ export interface RecordResult {
   durationSeconds: number;
   /** Japanese transcript from Web Speech API ("" if unsupported/empty). */
   transcript: string;
+  /** Other n-best hypotheses of the whole utterance (may be empty). */
+  alternatives: string[];
+}
+
+const MAX_HYPOTHESES = 8;
+
+/**
+ * Whole-utterance hypotheses from per-segment n-best lists: the top path, then
+ * each single-segment swap to an alternative. Bounded, so long utterances with
+ * many segments cannot explode the list.
+ */
+export function utteranceHypotheses(segments: string[][]): string[] {
+  const top = segments.map((alts) => alts[0] ?? "");
+  const out = new Set<string>([top.join("").trim()]);
+  for (let k = 1; k < 5 && out.size < MAX_HYPOTHESES; k++) {
+    for (let i = 0; i < segments.length && out.size < MAX_HYPOTHESES; i++) {
+      const alt = segments[i][k];
+      if (alt == null) continue;
+      out.add(top.map((t, j) => (j === i ? alt : t)).join("").trim());
+    }
+  }
+  return [...out].filter(Boolean);
 }
 
 export function isSpeechRecognitionSupported(): boolean {
@@ -41,6 +63,7 @@ export function useRecorder() {
   const chunksRef = useRef<BlobPart[]>([]);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const startTimeRef = useRef(0);
+  const finalSegmentsRef = useRef<string[][]>([]);
   const finalTranscriptRef = useRef("");
   const attemptIdRef = useRef("");
   const recognitionCompleteRef = useRef(true);
@@ -84,6 +107,7 @@ export function useRecorder() {
       audioUrl: p.audioUrl,
       durationSeconds: p.duration,
       transcript: finalTranscriptRef.current.trim(),
+      alternatives: utteranceHypotheses(finalSegmentsRef.current).slice(1),
     });
   }, []);
 
@@ -96,6 +120,7 @@ export function useRecorder() {
     setError(null);
     setInterim("");
     finalTranscriptRef.current = "";
+    finalSegmentsRef.current = [];
     chunksRef.current = [];
 
     let stream: MediaStream;
@@ -155,17 +180,24 @@ export function useRecorder() {
       recog.lang = "ja-JP";
       recog.continuous = true;
       recog.interimResults = true;
-      recog.maxAlternatives = 1;
+      // n-best: the server scores each hypothesis of this same recording.
+      recog.maxAlternatives = 5;
       recog.onresult = (ev) => {
         let live = "";
         let final = "";
+        const segments: string[][] = [];
         for (let i = 0; i < ev.results.length; i++) {
           const res = ev.results[i];
           const text = res[0]?.transcript ?? "";
-          if (res.isFinal) final += text;
-          else live += text;
+          if (res.isFinal) {
+            final += text;
+            const alts: string[] = [];
+            for (let k = 0; k < res.length; k++) alts.push(res[k]?.transcript ?? "");
+            segments.push(alts);
+          } else live += text;
         }
         finalTranscriptRef.current = final;
+        finalSegmentsRef.current = segments;
         setInterim(`${finalTranscriptRef.current}${live}`.trim());
       };
       recog.onerror = () => {

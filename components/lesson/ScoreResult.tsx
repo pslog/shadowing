@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/cn";
 import { almostFeedback } from "@/lib/scoring/feedback";
+import { starsFor } from "@/lib/scoring/stars";
+import { StarRow } from "@/components/lesson/ShadowingCoach";
 import type { ScoreBreakdown } from "@/lib/types";
 
 function ScoreRing({ value, passed }: { value: number; passed: boolean }) {
@@ -109,6 +111,9 @@ export function ScoreResult({
           ) : (
             <Badge tone="warning">{m.player.almost}</Badge>
           )}
+          <span className="ml-2 align-middle">
+            <StarRow stars={score.stars ?? starsFor(score)} size={18} />
+          </span>
           {typeof improvement === "number" && improvement > 0 && (
             <p className="mt-1.5 flex items-center gap-1 text-sm font-semibold text-[var(--success)]">
               <Icon name="trending" size={15} />
