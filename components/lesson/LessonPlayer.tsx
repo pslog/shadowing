@@ -1156,6 +1156,7 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
   const [combo, setCombo] = useState(0);
   const [mode, setMode] = useState<PracticeMode>("sentence");
   const [modeRunning, setModeRunning] = useState(false);
+  const [chainHideText, setChainHideText] = useState(false);
   // Read inside async scoring (stale closures): no auto-scroll during a run.
   const modeRunningRef = useRef(false);
   modeRunningRef.current = modeRunning;
@@ -1616,6 +1617,8 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
   const progressPct = (passed / total) * 100;
   const passedRatio = total ? passed / total : 0;
   const effectiveMode: PracticeMode = mode;
+  // Level 2 "hide text": only while a run is on; the text returns for review.
+  const textHidden = effectiveMode === "chain" && chainHideText && modeRunning;
 
   return (
     <div className="space-y-6">
@@ -1759,6 +1762,10 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
                 setMode("sentence");
                 goTo(i, true);
               }}
+              onSwitchToChain={() => {
+                setMode("chain");
+                setFresh(null);
+              }}
             />
           )}
 
@@ -1800,6 +1807,8 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
                   }}
                   onRunningChange={setModeRunning}
                   onReview={(i) => goTo(i, true)}
+                  hideText={chainHideText}
+                  onHideTextChange={setChainHideText}
                 />
               )}
 
@@ -1832,10 +1841,17 @@ export function LessonPlayer({ lessonId }: { lessonId: string }) {
                   {current.speaker && (
                     <SpeakerBadge speaker={current.speaker} label={t.speaker} className="ml-2 align-middle" />
                   )}
-                  <p lang="ja" className="mx-auto mt-6 max-w-2xl text-xl font-bold leading-[2.1] tracking-[-0.015em] sm:text-3xl sm:leading-[2] [&_rt]:text-[0.46em] [&_rt]:font-medium [&_rt]:text-muted">
-                    <Furigana sentence={current} />
-                  </p>
-                  {current.vi_translation && (
+                  {textHidden ? (
+                    // Shadow from memory: same height as the text, no content.
+                    <p aria-hidden className="mx-auto mt-6 max-w-2xl select-none text-xl font-bold leading-[2.1] tracking-[0.2em] text-muted/50 sm:text-3xl sm:leading-[2]">
+                      {"●".repeat(Math.min(12, Math.max(3, Math.ceil(current.ja_text.length / 3))))}
+                    </p>
+                  ) : (
+                    <p lang="ja" className="mx-auto mt-6 max-w-2xl text-xl font-bold leading-[2.1] tracking-[-0.015em] sm:text-3xl sm:leading-[2] [&_rt]:text-[0.46em] [&_rt]:font-medium [&_rt]:text-muted">
+                      <Furigana sentence={current} />
+                    </p>
+                  )}
+                  {current.vi_translation && !textHidden && (
                     <p className="mx-auto mt-3 max-w-xl border-t border-border px-2.5 pt-3 text-xs leading-5 text-muted sm:text-sm">
                       {current.vi_translation}
                     </p>

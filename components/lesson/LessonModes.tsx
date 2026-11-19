@@ -31,8 +31,8 @@ const COPY = {
     modeChain: "Nhại liền mạch",
     modeFull: "Shadow cả bài",
     modeSentenceHint: "Nghe, ghi âm và chấm từng câu.",
-    modeChainHint: "Tự phát câu → bạn nhắc lại → tự sang câu kế. Rảnh tay.",
-    modeFullHint: "Phát cả bài, bạn nói đè theo ngay sau audio. Cấp cao nhất.",
+    modeChainHint: "Tự phát câu → bạn nhắc lại → tự sang câu kế. Dùng loa thoải mái.",
+    modeFullHint: "Phát cả bài, bạn nói đè theo audio. Cần tai nghe hoặc máy khử được tiếng loa.",
     advice: (pct: number) => `Nên pass ${pct}% số câu trước khi lên cấp này`,
     progress: (n: number, total: number) => `Đã pass ${n}/${total} câu`,
     chainStart: "Bắt đầu nhại liền mạch",
@@ -47,8 +47,17 @@ const COPY = {
     fromSentence: (n: number) => `Bắt đầu từ câu ${n}`,
     speed: "Tốc độ",
     hideText: "Ẩn chữ (shadow theo trí nhớ)",
-    headphones: "Tôi đang đeo tai nghe",
-    headphonesWhy: "Bắt buộc: nếu bật loa, micro thu luôn audio mẫu và điểm sẽ không thật.",
+    echoChecking: "Đang kiểm tra loa… giữ im lặng 3 giây",
+    echoIntro: "Lần đầu, app phát thử một câu qua loa (bạn giữ im lặng) để xem micro có thu lẫn tiếng loa không.",
+    echoOk: "Loa ổn — micro không thu lẫn tiếng mẫu. Có thể shadow bằng loa.",
+    echoLeak: "Micro đang thu lẫn tiếng loa, nên máy sẽ chấm cả giọng mẫu. Hãy đeo tai nghe (hoặc giảm âm lượng) rồi kiểm tra lại — hoặc luyện cấp 2, cấp đó dùng loa thoải mái.",
+    echoRetry: "Kiểm tra lại",
+    toChain: "Luyện cấp 2",
+    leakedRun: "Có vẻ micro đã thu lẫn tiếng loa (máy nghe được câu mà bạn không nói). Lượt này không tính kỷ lục — hãy đeo tai nghe rồi thử lại.",
+    summaryTitle: "Tổng kết lượt nhại",
+    summaryAvg: "Điểm TB",
+    summaryStars: "Sao",
+    summaryPassed: "Pass",
     fullStart: "Bắt đầu shadow cả bài",
     fullStop: "Dừng và chấm",
     fullCancel: "Huỷ",
@@ -80,8 +89,8 @@ const COPY = {
     modeChain: "連続リピート",
     modeFull: "全文シャドーイング",
     modeSentenceHint: "一文ずつ聞いて録音・採点します。",
-    modeChainHint: "自動で再生 → リピート → 次の文へ。ハンズフリー。",
-    modeFullHint: "全文を再生し、すぐ後を追って話します。最上級。",
+    modeChainHint: "自動で再生 → リピート → 次の文へ。スピーカーでもOK。",
+    modeFullHint: "全文に重ねて話します。イヤホン、またはエコー除去できる端末が必要。",
     advice: (pct: number) => `${pct}%の文に合格してからがおすすめ`,
     progress: (n: number, total: number) => `合格 ${n}/${total} 文`,
     chainStart: "連続リピート開始",
@@ -96,8 +105,17 @@ const COPY = {
     fromSentence: (n: number) => `${n}文目から開始`,
     speed: "速度",
     hideText: "文字を隠す（記憶でシャドーイング）",
-    headphones: "イヤホンを使用しています",
-    headphonesWhy: "必須：スピーカーだとお手本の音声も録音され、正しく採点できません。",
+    echoChecking: "スピーカーを確認中… 3秒間お静かに",
+    echoIntro: "最初に一文をスピーカーで再生し（話さないでください）、マイクがお手本の音を拾うか確認します。",
+    echoOk: "問題ありません。スピーカーでシャドーイングできます。",
+    echoLeak: "マイクがスピーカーの音を拾っているため、お手本の声まで採点されます。イヤホンを使う（または音量を下げる）か、スピーカーで使える連続リピートを練習してください。",
+    echoRetry: "もう一度確認",
+    toChain: "連続リピートへ",
+    leakedRun: "マイクがスピーカーの音を拾ったようです（話していない文が認識されました）。今回はベストに記録しません。イヤホンで再挑戦してください。",
+    summaryTitle: "連続リピートのまとめ",
+    summaryAvg: "平均点",
+    summaryStars: "星",
+    summaryPassed: "合格",
     fullStart: "全文シャドーイング開始",
     fullStop: "終了して採点",
     fullCancel: "キャンセル",
@@ -214,6 +232,43 @@ export function ModeSwitcher({
 /* Level 2 — chained listen → repeat                                   */
 /* ------------------------------------------------------------------ */
 
+function RunOptions({
+  rate,
+  onRate,
+  hideText,
+  onHideText,
+  c,
+}: {
+  rate: number;
+  onRate: (v: number) => void;
+  hideText: boolean;
+  onHideText: (v: boolean) => void;
+  c: Copy;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
+      <span className="text-muted">{c.speed}</span>
+      {[0.9, 1, 1.1].map((v) => (
+        <button
+          key={v}
+          type="button"
+          onClick={() => onRate(v)}
+          className={cn(
+            "focus-ring rounded-lg border px-2.5 py-1 tabular-nums",
+            rate === v ? "border-primary bg-primary text-white" : "border-border bg-card",
+          )}
+        >
+          {v}x
+        </button>
+      ))}
+      <label className="ml-2 flex cursor-pointer items-center gap-1.5">
+        <input type="checkbox" checked={hideText} onChange={(e) => onHideText(e.target.checked)} />
+        {c.hideText}
+      </label>
+    </div>
+  );
+}
+
 function sentenceSeconds(s: LessonSentence): number {
   if (s.audio_start != null && s.audio_end != null && s.audio_end > s.audio_start) {
     return s.audio_end - s.audio_start;
@@ -233,6 +288,8 @@ export function ChainRunner({
   onIndexChange,
   onRunningChange,
   onReview,
+  hideText,
+  onHideTextChange,
 }: {
   sentences: LessonSentence[];
   startIndex: number;
@@ -243,10 +300,14 @@ export function ChainRunner({
   onRunningChange: (running: boolean) => void;
   /** Open one sentence's result after the run (chips are clickable then). */
   onReview?: (i: number) => void;
+  /** Lifted: the parent hides the sentence card's text while a run is on. */
+  hideText: boolean;
+  onHideTextChange: (v: boolean) => void;
 }) {
   const c = copyFor(locale);
   const recorder = useRecorder();
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const [rate, setRate] = useState(1);
   const [running, setRunning] = useState(false);
   const [phase, setPhase] = useState<"listen" | "speak" | "scoring" | null>(null);
   const [at, setAt] = useState(startIndex);
@@ -280,13 +341,13 @@ export function ChainRunner({
         setAt(i);
         onIndexChange(i);
         setPhase("listen");
-        await playSentence(s);
+        await playSentence(s, rate);
         if (cancelled.current) break;
         await sleep(250);
         setPhase("speak");
         setSpeakProgress(0);
         await recorder.start();
-        const window_ = sentenceSeconds(s) * 1.5 + 1.5;
+        const window_ = (sentenceSeconds(s) / rate) * 1.5 + 1.5;
         const began = performance.now();
         await new Promise<void>((resolve) => {
           finishTurn.current = resolve;
@@ -322,16 +383,32 @@ export function ChainRunner({
   }
 
   const passed = results.filter((r) => r.score?.passed).length;
+  const scored = results.filter((r) => r.score);
+  const avg = scored.length
+    ? Math.round(scored.reduce((sum, r) => sum + (r.score?.total ?? 0), 0) / scored.length)
+    : null;
+  const starSum = results.reduce((sum, r) => sum + (r.score ? (r.score.stars ?? starsFor(r.score)) : 0), 0);
+  const tone = (score: ScoreBreakdown | null) =>
+    score?.passed
+      ? "bg-[var(--success)]"
+      : score && (score.coverage ?? 0) >= 50
+        ? "bg-[var(--warning)]"
+        : score
+          ? "bg-[var(--danger)]"
+          : "bg-[var(--muted)]";
 
   return (
     <div ref={rootRef} className="scroll-mt-24 rounded-xl border border-primary/25 bg-primary/5 p-4">
       {!running ? (
-        <div className="flex flex-wrap items-center gap-3">
-          <Button onClick={run}>
-            <Icon name="play" size={16} />
-            {c.chainStart}
-          </Button>
-          <span className="text-xs font-bold text-muted">{c.fromSentence(at + 1)}</span>
+        <div className="space-y-3">
+          <RunOptions rate={rate} onRate={setRate} hideText={hideText} onHideText={onHideTextChange} c={c} />
+          <div className="flex flex-wrap items-center gap-3">
+            <Button onClick={run}>
+              <Icon name="play" size={16} />
+              {c.chainStart}
+            </Button>
+            <span className="text-xs font-bold text-muted">{c.fromSentence(at + 1)}</span>
+          </div>
         </div>
       ) : (
         <div>
@@ -379,7 +456,7 @@ export function ChainRunner({
               title={`${index + 1}`}
               className={cn(
                 "focus-ring rounded-md px-1.5 py-0.5 text-[11px] font-extrabold tabular-nums text-white enabled:hover:brightness-110",
-                score?.passed ? "bg-[var(--success)]" : score ? "bg-[var(--warning)]" : "bg-[var(--muted)]",
+                tone(score),
               )}
             >
               <span className="opacity-75">{index + 1}·</span>
@@ -388,14 +465,26 @@ export function ChainRunner({
           ))}
         </div>
       )}
-      {finished && (
-        <p className="mt-3 text-sm font-bold text-[var(--success)]">
-          <Icon name="trophy" size={15} className="mr-1 inline" />
-          {c.chainFinished} · {c.chainSummary(passed, results.length)}
-        </p>
-      )}
-      {finished && onReview && (
-        <p className="mt-1 text-xs text-muted">{c.chainReviewHint}</p>
+      {!running && results.length > 0 && (
+        <div className="mt-3 rounded-xl border border-border bg-card p-3">
+          <p className="flex items-center gap-1.5 text-sm font-extrabold">
+            <Icon name="trophy" size={15} />
+            {finished ? c.chainFinished : c.summaryTitle}
+          </p>
+          <div className="mt-2 grid grid-cols-3 gap-2 text-center">
+            {[
+              [c.summaryPassed, `${passed}/${results.length}`],
+              [c.summaryAvg, avg ?? "—"],
+              [c.summaryStars, `${starSum}/${results.length * 3}`],
+            ].map(([label, value]) => (
+              <div key={String(label)} className="rounded-lg bg-surface p-2">
+                <p className="text-xl font-extrabold tabular-nums">{value}</p>
+                <p className="text-[11px] font-bold text-muted">{label}</p>
+              </div>
+            ))}
+          </div>
+          {onReview && <p className="mt-2 text-xs text-muted">{c.chainReviewHint}</p>}
+        </div>
       )}
     </div>
   );
@@ -447,6 +536,27 @@ interface StoredBest {
 }
 
 const bestKey = (lessonId: string) => `shadowing:full-best:${lessonId}`;
+const ECHO_KEY = "shadowing:echo-ok";
+const ECHO_TTL_MS = 14 * 24 * 3600 * 1000;
+
+/** A passed speaker check is remembered per device for two weeks. */
+function echoVerified(): boolean {
+  try {
+    const at = Number(window.localStorage.getItem(ECHO_KEY));
+    return Number.isFinite(at) && at > 0 && Date.now() - at < ECHO_TTL_MS;
+  } catch {
+    return false;
+  }
+}
+
+function rememberEcho(ok: boolean) {
+  try {
+    if (ok) window.localStorage.setItem(ECHO_KEY, String(Date.now()));
+    else window.localStorage.removeItem(ECHO_KEY);
+  } catch {
+    /* storage unavailable: the check simply runs again next time */
+  }
+}
 
 function readBest(lessonId: string): StoredBest | null {
   try {
@@ -476,6 +586,7 @@ export function FullLessonRun({
   locale,
   onPractice,
   onRunningChange,
+  onSwitchToChain,
 }: {
   lessonId: string;
   sentences: LessonSentence[];
@@ -483,12 +594,15 @@ export function FullLessonRun({
   locale: Locale;
   onPractice: (index: number) => void;
   onRunningChange: (running: boolean) => void;
+  onSwitchToChain?: () => void;
 }) {
   const c = copyFor(locale);
   const recorder = useRecorder({ longForm: true });
   const [rate, setRate] = useState(1);
   const [hideText, setHideText] = useState(false);
-  const [headphones, setHeadphones] = useState(false);
+  const probe = useRecorder();
+  const [echo, setEcho] = useState<"unknown" | "checking" | "ok" | "leak">("unknown");
+  const [leaked, setLeaked] = useState(false);
   const [phase, setPhase] = useState<"idle" | "running" | "scoring">("idle");
   const [playing, setPlaying] = useState(-1);
   const [result, setResult] = useState<RunResult | null>(null);
@@ -499,6 +613,9 @@ export function FullLessonRun({
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => setBest(readBest(lessonId)), [lessonId]);
+  useEffect(() => {
+    if (echoVerified()) setEcho("ok");
+  }, []);
   useEffect(() => () => {
     cancelled.current = true;
     audioRef.current?.pause();
@@ -581,10 +698,57 @@ export function FullLessonRun({
     return windows.map((w) => (w.start < 0 ? { start: 0, end: 0 } : { start: w.start, end: w.end < 0 ? now() : w.end }));
   }
 
+  /** Plays ~3 s of the first sentence through the speakers. */
+  async function playSample() {
+    const s = sentences[0];
+    if (!s) return;
+    const clip = s.audio_url
+      ? { url: s.audio_url, from: 0, length: 3 }
+      : mediaUrl && s.audio_start != null && s.audio_end != null
+        ? { url: mediaUrl, from: s.audio_start, length: Math.min(3, s.audio_end - s.audio_start) }
+        : null;
+    if (clip) {
+      const audio = new Audio(clip.url);
+      audioRef.current = audio;
+      audio.currentTime = clip.from;
+      await audio.play().catch(() => undefined);
+      await sleep(clip.length * 1000);
+      audio.pause();
+      return;
+    }
+    await speakJa(s.ja_text).catch(() => undefined);
+  }
+
+  /**
+   * Speaker-leak check. Chrome's speech recogniser opens the mic itself, so
+   * the only reliable test is the real one: play the model while the learner
+   * stays silent and see whether the recogniser transcribes anything.
+   */
+  async function checkEcho(): Promise<boolean> {
+    setEcho("checking");
+    try {
+      await probe.start();
+      await sleep(300);
+      await playSample();
+      await sleep(700);
+      const r = await probe.stop();
+      const heard = r.transcript.replace(/[\s、。！？!?,.]/gu, "");
+      const ok = heard.length < 3;
+      setEcho(ok ? "ok" : "leak");
+      rememberEcho(ok);
+      return ok;
+    } catch {
+      setEcho("unknown");
+      return false;
+    }
+  }
+
   async function start() {
     cancelled.current = false;
     setError(null);
     setResult(null);
+    setLeaked(false);
+    if (echo !== "ok" && !(await checkEcho())) return;
     setPhase("running");
     onRunningChange(true);
     let r: RecordResult | null = null;
@@ -630,8 +794,19 @@ export function FullLessonRun({
       // scaled by how much of the lesson was actually covered.
       const share = played.length / sentences.length;
       const total = Math.round(lessonRunTotal(score.accuracy, keptUp) * share);
+      // Leak guard: sentences recognised well while the learner's own mic
+      // track was silent can only have come from the speakers.
+      const ghost = keptUpPerSentence
+        ? score.sentences.filter((s) => s.status === "good" && !keptUpPerSentence[s.index]).length
+        : 0;
+      const runLeaked = ghost >= Math.max(2, Math.ceil(played.length * 0.2));
+      if (runLeaked) {
+        setLeaked(true);
+        rememberEcho(false);
+        setEcho("unknown");
+      }
       const previous = readBest(lessonId);
-      const newBest = !previous || total > previous.total;
+      const newBest = !runLeaked && (!previous || total > previous.total);
       if (newBest) {
         const next = { total, at: new Date().toISOString() };
         writeBest(lessonId, next);
@@ -661,40 +836,39 @@ export function FullLessonRun({
     <div className="space-y-4 rounded-xl border border-primary/25 bg-primary/5 p-4">
       {phase === "idle" && (
         <div className="space-y-3">
-          <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
-            <span className="text-muted">{c.speed}</span>
-            {[0.9, 1, 1.1].map((v) => (
-              <button
-                key={v}
-                type="button"
-                onClick={() => setRate(v)}
-                className={cn(
-                  "focus-ring rounded-lg border px-2.5 py-1 tabular-nums",
-                  rate === v ? "border-primary bg-primary text-white" : "border-border bg-card",
+          <RunOptions rate={rate} onRate={setRate} hideText={hideText} onHideText={setHideText} c={c} />
+          {echo === "unknown" && <p className="text-xs text-muted">🔈 {c.echoIntro}</p>}
+          {echo === "checking" && (
+            <p role="status" className="flex items-center gap-2 text-sm font-bold">
+              <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-[var(--warning)]" />
+              {c.echoChecking}
+            </p>
+          )}
+          {echo === "ok" && <p className="text-xs font-bold text-[var(--success)]">✓ {c.echoOk}</p>}
+          {echo === "leak" && (
+            <div role="alert" className="rounded-lg bg-[var(--warning-soft)] p-3 text-sm text-[var(--warning)]">
+              <p>🎧 {c.echoLeak}</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" onClick={() => void checkEcho()}>
+                  <Icon name="retry" size={14} />
+                  {c.echoRetry}
+                </Button>
+                {onSwitchToChain && (
+                  <Button variant="secondary" size="sm" onClick={onSwitchToChain}>
+                    <Icon name="arrow-right" size={14} />
+                    {c.toChain}
+                  </Button>
                 )}
-              >
-                {v}x
-              </button>
-            ))}
-            <label className="ml-2 flex cursor-pointer items-center gap-1.5">
-              <input type="checkbox" checked={hideText} onChange={(e) => setHideText(e.target.checked)} />
-              {c.hideText}
-            </label>
-          </div>
-          <label className="flex cursor-pointer items-start gap-2 rounded-lg bg-card p-2.5 text-sm">
-            <input
-              type="checkbox"
-              className="mt-1"
-              checked={headphones}
-              onChange={(e) => setHeadphones(e.target.checked)}
-            />
-            <span>
-              <span className="font-bold">🎧 {c.headphones}</span>
-              <span className="block text-xs text-muted">{c.headphonesWhy}</span>
-            </span>
-          </label>
+              </div>
+            </div>
+          )}
+          {leaked && (
+            <p role="alert" className="rounded-lg bg-[var(--warning-soft)] p-3 text-sm text-[var(--warning)]">
+              {c.leakedRun}
+            </p>
+          )}
           <div className="flex flex-wrap items-center gap-3">
-            <Button onClick={start} disabled={!headphones}>
+            <Button onClick={start} disabled={echo === "checking" || echo === "leak"}>
               <Icon name="mic" size={16} />
               {result ? c.retry : c.fullStart}
             </Button>
